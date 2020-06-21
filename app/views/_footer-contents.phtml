@@ -1,0 +1,24 @@
+
+    <script type="text/javascript">
+
+<? readfile(INST_PATH.'app/webroot/libs/dumbo.min.js'); ?>
+
+<? readfile(INST_PATH.'app/webroot/libs/dmb-factories.min.js'); ?>
+
+<? readfile(INST_PATH.'app/webroot/js/factories.min.js'); ?>
+
+<? readfile(INST_PATH.'app/webroot/libs/dmb-components.min.js'); ?>
+
+<? readfile(INST_PATH.'app/webroot/js/components.min.js'); ?>
+
+if('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+  .then(function(registration) {
+      /* NOOP */
+    });
+    
+    navigator.serviceWorker.ready.then(function(registration) {
+        /* NOOP */
+    });
+}
+</script>

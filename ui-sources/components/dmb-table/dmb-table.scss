@@ -1,0 +1,116 @@
+.dmb-table {
+    clear: both;
+    float: none;
+    margin: auto;
+    overflow-x: auto;
+    position: relative;
+    width: 100%;
+
+    table {
+        border: solid 0.06em var(--secondary-hover);
+        border-radius: 0;
+        border-spacing: 0;
+        clear: both;
+        margin: 1em 0;
+        width: 100%;
+
+        thead {
+            background-color: var(--primary);
+            border: solid 0.06em var(--secondary);
+
+            tr {
+                background-color: var(--primary-hover);
+
+                &:first-child {
+                    background-color: var(--primary);
+                }
+
+                th {
+                    background-color: var(--primary);
+                    border-radius: 0;
+                    margin: 0;
+                    padding: 0.5em;
+                    text-transform: uppercase;
+                }
+            }
+        }
+
+        tbody {
+            tr {
+                td {
+                    border-right: 0.06em var(--secondary) dashed;
+                    border-radius: 0;
+                    padding: 0.5em;
+                    margin: 0;
+                    text-align: center;
+
+                    &:last-child {
+                        border-right: 0 none transparent;
+                    }
+
+                    &.truncated {
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        width: 25em;
+                        white-space: nowrap;
+                    }
+
+                    &.actions {
+                        width: 2em;
+                        white-space: nowrap;
+                    }
+                }
+
+                &:nth-child(odd) {
+                    background-color: var(--secondary-hover);
+                }
+
+                &:hover {
+                    background-color: var(--success-hover);
+                }
+            }
+        }
+
+        tfoot {
+            tr {
+                td {
+                    background-color: var(--secondary-hover);
+                    border-radius: 0;
+                    padding-bottom: 0.6em;
+                    padding-top: 0.6em;
+                    text-align: center;
+                }
+            }
+        }
+    }
+
+    .table-button {
+        background-color: var(--primary);
+        border: 1px solid var(--default-hover);
+        border-radius: 0.2em;
+        box-sizing: border-box;
+        color: var(--primary-contrast);
+        padding: 0.2em; 
+        width: 2.2em;
+
+        &:before {
+            font-size: 1em;
+            color: var(--secondary);
+            width: 2em;
+        }
+    }
+
+    .head-button {
+        background-color: var(--primary-contrast);
+        border: 1px solid var(--default-hover);
+        border-radius: 0.2em;
+        box-sizing: border-box;
+        color: var(--secondary);
+        padding: 0.2em; 
+
+        &:before {
+            font-size: 1em;
+            color: var(--secondary);
+        }
+    }
+}

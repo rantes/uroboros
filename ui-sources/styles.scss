@@ -1,0 +1,43 @@
+@import "base";
+
+html, body {
+    font-family: 'OpenSansRegular', sans-serif;
+    font-size: 14px;
+}
+
+body {
+    &.blur {
+      #page {
+        filter: blur(4px);
+        min-height: 100vh;
+      }
+    }
+}
+
+a {
+  color: var(--default);
+  display: inline-block;
+  text-decoration: none;
+  width: auto;
+
+    &:visited,
+    &:active {
+        color: var(--default);
+    }
+}
+
+* {
+    box-sizing: border-box;
+
+    &::-webkit-scrollbar {
+      widows: 5px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: var(--default);
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--default);
+    }
+}

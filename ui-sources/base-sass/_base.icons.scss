@@ -1,0 +1,761 @@
+.icon {
+    font-family: 'icomoon';
+    font-variant: normal;
+    font-style: normal;
+    font-weight: normal;
+    line-height: 1;
+    speak: none;
+        /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-transform: none;
+    font-size: 2rem;
+    height: 1em;
+    position: relative;
+    text-transform: none;
+    width: 1em;
+
+    &:before {
+        font-family: 'icomoon';
+        font-variant: normal;
+        font-style: normal;
+        font-weight: normal;
+        font-size: 2rem;
+        line-height: 1;
+        height: 1em;
+        width: 1em;
+    }
+
+    &[badge]:after {
+        border-radius: 0.8em;
+        content: attr(badge);
+        font-size: 0.5em;
+        height: 1.4em;
+        left: 1.6em;
+        line-height: normal;
+        min-width: 1em;
+        padding: 0.2em 0.2em 0;
+        position: absolute;
+        text-align: center;
+        top: -0.5em;
+        transform: translateX(0);
+    }
+
+    &-beenhere:before {
+      content: "\e52d";
+    }
+    &-cast:before {
+      content: "\e307";
+    }
+    &-cast_connected:before {
+      content: "\e308";
+    }
+    &-child_care:before {
+      content: "\eb41";
+    }
+    &-child_friendly:before {
+      content: "\eb42";
+    }
+    &-palette:before {
+      content: "\e40a";
+    }
+    &-contact_mail:before {
+      content: "\e0d0";
+    }
+    &-contact_phone:before {
+      content: "\e0cf";
+    }
+    &-contacts:before {
+      content: "\e0ba";
+    }
+    &-payment:before {
+      content: "\e8a1";
+    }
+    &-g_translate:before {
+      content: "\e988";
+    }
+    &-keyboard_arrow_down:before {
+      content: "\e313";
+    }
+    &-keyboard_arrow_left:before {
+      content: "\e314";
+    }
+    &-keyboard_arrow_right:before {
+      content: "\e315";
+    }
+    &-keyboard_arrow_up:before {
+      content: "\e316";
+    }
+    &-menu:before {
+      content: "\e5d2";
+    }
+    &-bars:before {
+      content: "\e5d2";
+    }
+    &-more_horiz:before {
+      content: "\e5d3";
+    }
+    &-more_vert:before {
+      content: "\e5d4";
+    }
+    &-no_encryption:before {
+      content: "\e641";
+    }
+    &-signal_cellular_no_sim:before {
+      content: "\e1ce";
+    }
+    &-note_add:before {
+      content: "\e89c";
+    }
+    &-power_settings_new:before {
+      content: "\e8ac";
+    }
+    &-report:before {
+      content: "\e160";
+    }
+    &-warning1:before {
+      content: "\e002";
+    }
+    &-security:before {
+      content: "\e32a";
+    }
+    &-signal_wifi_off:before {
+      content: "\e1da";
+    }
+    &-store_mall_directory:before {
+      content: "\e563";
+    }
+    &-verified_user:before {
+      content: "\e8e8";
+    }
+    &-view_headline:before {
+      content: "\e8ee";
+    }
+    &-wifi:before {
+      content: "\e63e";
+    }
+    &-times:before {
+      content: "\e959";
+    }
+    &-tick:before {
+      content: "\e95a";
+    }
+    &-plus1:before {
+      content: "\e95b";
+    }
+    &-chevron-right:before {
+      content: "\e95c";
+    }
+    &-chevron-left:before {
+      content: "\e95d";
+    }
+    &-arrow-right-thick:before {
+      content: "\e95e";
+    }
+    &-arrow-left-thick:before {
+      content: "\e95f";
+    }
+    &-th-small:before {
+      content: "\e960";
+    }
+    &-th-menu:before {
+      content: "\e961";
+    }
+    &-group:before {
+      content: "\e902";
+    }
+    &-news:before {
+      content: "\e903";
+    }
+    &-group-outline:before {
+      content: "\e904";
+    }
+    &-contacts1:before {
+      content: "\e905";
+    }
+    &-shopping-cart:before {
+      content: "\e906";
+    }
+    &-monitor:before {
+      content: "\e985";
+    }
+    &-picture:before {
+      content: "\e907";
+    }
+    &-pictures:before {
+      content: "\e908";
+    }
+    &-pictures1:before {
+      content: "\e909";
+    }
+    &-checkmark1:before {
+      content: "\e90a";
+    }
+    &-cancel:before {
+      content: "\e90b";
+    }
+    &-cloud:before {
+      content: "\e90c";
+    }
+    &-upload:before {
+      content: "\e90d";
+    }
+    &-chart:before {
+      content: "\e986";
+    }
+    &-phone:before {
+      content: "\e90e";
+    }
+    &-phone1:before {
+      content: "\e90f";
+    }
+    &-trashcan:before {
+      content: "\e910";
+    }
+    &-archive:before {
+      content: "\e964";
+    }
+    &-box:before {
+      content: "\e911";
+    }
+    &-chat:before {
+      content: "\e967";
+    }
+    &-comments:before {
+      content: "\e968";
+    }
+    &-chat1:before {
+      content: "\e969";
+    }
+    &-chat2:before {
+      content: "\e96a";
+    }
+    &-equalizer1:before {
+      content: "\e987";
+    }
+    &-profile:before {
+      content: "\e912";
+    }
+    &-profile1:before {
+      content: "\e913";
+    }
+    &-profile2:before {
+      content: "\e914";
+    }
+    &-dollar:before {
+      content: "\e915";
+    }
+    &-dollar1:before {
+      content: "\e916";
+    }
+    &-pig:before {
+      content: "\e917";
+    }
+    &-bookmark1:before {
+      content: "\e918";
+    }
+    &-bookmark2:before {
+      content: "\e919";
+    }
+    &-presentation:before {
+      content: "\e91a";
+    }
+    &-info1:before {
+      content: "\e96b";
+    }
+    &-info2:before {
+      content: "\e96c";
+    }
+    &-info:before {
+        content: "\e96c";
+    }
+    &-car:before {
+      content: "\e91b";
+    }
+    &-bike:before {
+      content: "\e91c";
+    }
+    &-truck:before {
+      content: "\e91d";
+    }
+    &-bus:before {
+      content: "\e91e";
+    }
+    &-bike1:before {
+      content: "\e91f";
+    }
+    &-book:before {
+      content: "\e920";
+    }
+    &-book1:before {
+      content: "\e921";
+    }
+    &-cone:before {
+      content: "\e922";
+    }
+    &-brush:before {
+      content: "\e901";
+    }
+    &-painting:before {
+      content: "\e901";
+    }
+    &-art:before {
+      content: "\e901";
+    }
+    &-drawing:before {
+      content: "\e901";
+    }
+    &-add-outline:before {
+      content: "\e962";
+    }
+    &-add-solid:before {
+      content: "\e963";
+    }
+    &-anchor:before {
+      content: "\e923";
+    }
+    &-chart-bar:before {
+      content: "\e924";
+    }
+    &-checkmark2:before {
+      content: "\e96e";
+    }
+    &-cheveron-down:before {
+      content: "\e925";
+    }
+    &-cheveron-left:before {
+      content: "\e926";
+    }
+    &-cheveron-right:before {
+      content: "\e92a";
+    }
+    &-cheveron-up:before {
+      content: "\e92b";
+    }
+    &-close:before {
+      content: "\e92c";
+    }
+    &-close-outline:before {
+      content: "\e92d";
+    }
+    &-close-solid:before {
+      content: "\e92e";
+    }
+    &-error:before {
+        content: "\e92e";
+    }
+    &-cloud-upload:before {
+      content: "\e92f";
+    }
+    &-code:before {
+      content: "\e930";
+    }
+    &-cog1:before {
+      content: "\e931";
+    }
+    &-edit-copy:before {
+      content: "\e932";
+    }
+    &-edit-cut:before {
+      content: "\e933";
+    }
+    &-edit-pencil:before {
+      content: "\e934";
+    }
+    &-education:before {
+      content: "\e935";
+    }
+    &-envelope:before {
+      content: "\e936";
+    }
+    &-factory:before {
+      content: "\e937";
+    }
+    &-flag:before {
+      content: "\e938";
+    }
+    &-format-bold:before {
+      content: "\e939";
+    }
+    &-format-italic:before {
+      content: "\e93a";
+    }
+    &-home1:before {
+      content: "\e93b";
+    }
+    &-inbox:before {
+      content: "\e96f";
+    }
+    &-inbox-check:before {
+      content: "\e970";
+    }
+    &-inbox-download:before {
+      content: "\e977";
+    }
+    &-inbox-full:before {
+      content: "\e978";
+    }
+    &-library1:before {
+      content: "\e979";
+    }
+    &-location:before {
+      content: "\e93c";
+    }
+    &-location-food:before {
+      content: "\e93d";
+    }
+    &-location-gas-station:before {
+      content: "\e93e";
+    }
+    &-location-hotel:before {
+      content: "\e93f";
+    }
+    &-location-restroom:before {
+      content: "\e940";
+    }
+    &-lock-closed:before {
+      content: "\e941";
+    }
+    &-lock-open:before {
+      content: "\e942";
+    }
+    &-navigation-more:before {
+      content: "\e97a";
+    }
+    &-network:before {
+      content: "\e943";
+    }
+    &-news-paper:before {
+      content: "\e944";
+    }
+    &-paste:before {
+      content: "\e945";
+    }
+    &-save-disk:before {
+      content: "\e946";
+    }
+    &-store-front:before {
+      content: "\e97b";
+    }
+    &-travel-bus:before {
+      content: "\e97c";
+    }
+    &-travel-car:before {
+      content: "\e97d";
+    }
+    &-travel-case:before {
+      content: "\e97e";
+    }
+    &-travel-taxi-cab:before {
+      content: "\e97f";
+    }
+    &-travel-train:before {
+      content: "\e980";
+    }
+    &-travel-walk:before {
+      content: "\e981";
+    }
+    &-tuning:before {
+      content: "\e982";
+    }
+    &-view-list:before {
+      content: "\e947";
+    }
+    &-bucket:before {
+      content: "\e900";
+    }
+    &-home:before {
+      content: "\e948";
+    }
+    &-office:before {
+      content: "\e949";
+    }
+    &-newspaper:before {
+      content: "\e94a";
+    }
+    &-pencil:before {
+      content: "\e94b";
+    }
+    &-image:before {
+      content: "\e94c";
+    }
+    &-images:before {
+      content: "\e94d";
+    }
+    &-connection:before {
+      content: "\e94e";
+    }
+    &-library:before {
+      content: "\e94f";
+    }
+    &-file-text2:before {
+      content: "\e983";
+    }
+    &-file-picture:before {
+      content: "\e927";
+    }
+    &-file-music:before {
+      content: "\e928";
+    }
+    &-file-play:before {
+      content: "\e929";
+    }
+    &-file-video:before {
+      content: "\e950";
+    }
+    &-file-zip:before {
+      content: "\e951";
+    }
+    &-copy:before {
+      content: "\e984";
+    }
+    &-folder-open:before {
+      content: "\e952";
+    }
+    &-price-tag:before {
+      content: "\e953";
+    }
+    &-price-tags:before {
+      content: "\e954";
+    }
+    &-barcode:before {
+      content: "\e955";
+    }
+    &-cart:before {
+      content: "\e956";
+    }
+    &-coin-dollar:before {
+      content: "\e957";
+    }
+    &-printer:before {
+      content: "\e958";
+    }
+    &-undo:before {
+      content: "\e965";
+    }
+    &-redo:before {
+      content: "\e966";
+    }
+    &-bubbles2:before {
+      content: "\e96d";
+    }
+    &-user:before {
+      content: "\e971";
+    }
+    &-users:before {
+      content: "\e972";
+    }
+    &-user-plus:before {
+      content: "\e973";
+    }
+    &-user-minus:before {
+      content: "\e974";
+    }
+    &-user-check:before {
+      content: "\e975";
+    }
+    &-user-tie:before {
+      content: "\e976";
+    }
+    &-key:before {
+      content: "\e98d";
+    }
+    &-lock:before {
+      content: "\e98f";
+    }
+    &-unlocked:before {
+      content: "\e990";
+    }
+    &-wrench:before {
+      content: "\e991";
+    }
+    &-equalizer:before {
+      content: "\e992";
+    }
+    &-equalizer2:before {
+      content: "\e993";
+    }
+    &-cog:before {
+      content: "\e994";
+    }
+    &-cogs:before {
+      content: "\e995";
+    }
+    &-pie-chart:before {
+      content: "\e99a";
+    }
+    &-stats-dots:before {
+      content: "\e99b";
+    }
+    &-stats-bars:before {
+      content: "\e99c";
+    }
+    &-fire:before {
+      content: "\e9a9";
+    }
+    &-bin:before {
+      content: "\e9ac";
+    }
+    &-bin2:before {
+      content: "\e9ad";
+    }
+    &-accessibility:before {
+      content: "\e9b2";
+    }
+    &-shield:before {
+      content: "\e9b4";
+    }
+    &-switch:before {
+      content: "\e9b6";
+    }
+    &-list-numbered:before {
+      content: "\e9b9";
+    }
+    &-list:before {
+      content: "\e9ba";
+    }
+    &-sphere:before {
+      content: "\e9c9";
+    }
+    &-earth:before {
+      content: "\e9ca";
+    }
+    &-link:before {
+      content: "\e9cb";
+    }
+    &-attachment:before {
+      content: "\e9cd";
+    }
+    &-bookmark:before {
+      content: "\e9d2";
+    }
+    &-bookmarks:before {
+      content: "\e9d3";
+    }
+    &-man:before {
+      content: "\e9dc";
+    }
+    &-woman:before {
+      content: "\e9dd";
+    }
+    &-man-woman:before {
+      content: "\e9de";
+    }
+    &-warning:before {
+      content: "\ea07";
+    }
+    &-notification:before {
+      content: "\ea08";
+    }
+    &-question:before {
+      content: "\ea09";
+    }
+    &-plus:before {
+      content: "\ea0a";
+    }
+    &-minus:before {
+      content: "\ea0b";
+    }
+    &-info:before {
+      content: "\ea0c";
+    }
+    &-cancel-circle:before {
+      content: "\ea0d";
+    }
+    &-blocked:before {
+      content: "\ea0e";
+    }
+    &-cross:before {
+      content: "\ea0f";
+    }
+    &-checkmark:before {
+      content: "\ea10";
+    }
+    &-enter:before {
+      content: "\ea13";
+    }
+    &-exit:before {
+      content: "\ea14";
+    }
+    &-scissors:before {
+      content: "\ea5a";
+    }
+    &-filter:before {
+      content: "\ea5b";
+    }
+    &-font:before {
+      content: "\ea5c";
+    }
+    &-font-size:before {
+      content: "\ea61";
+    }
+    &-bold:before {
+      content: "\ea62";
+    }
+    &-underline:before {
+      content: "\ea63";
+    }
+    &-italic:before {
+      content: "\ea64";
+    }
+    &-page-break:before {
+      content: "\ea68";
+    }
+    &-superscript2:before {
+      content: "\ea6b";
+    }
+    &-subscript2:before {
+      content: "\ea6c";
+    }
+    &-text-color:before {
+      content: "\ea6d";
+    }
+    &-pagebreak:before {
+      content: "\ea6e";
+    }
+    &-table:before {
+      content: "\ea70";
+    }
+    &-pilcrow:before {
+      content: "\ea73";
+    }
+    &-paragraph-left:before {
+      content: "\ea77";
+    }
+    &-paragraph-center:before {
+      content: "\ea78";
+    }
+    &-paragraph-right:before {
+      content: "\ea79";
+    }
+    &-paragraph-justify:before {
+      content: "\ea7a";
+    }
+    &-indent-increase:before {
+      content: "\ea7b";
+    }
+    &-indent-decrease:before {
+      content: "\ea7c";
+    }
+    &-mail:before {
+      content: "\ea83";
+    }
+    &-dropbox:before {
+      content: "\eaae";
+    }
+    &-file-pdf:before {
+      content: "\eadf";
+    }
+    &-file-openoffice:before {
+      content: "\eae0";
+    }
+    &-file-word:before {
+      content: "\eae1";
+    }
+    &-file-excel:before {
+      content: "\eae2";
+    }
+    &-libreoffice:before {
+      content: "\eae3";
+    }
+}

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <? require_once(INST_PATH.'app/views/_header-contents.phtml'); ?>
+</head>
+<body style="background: url(/images/logo.svg) no-repeat; background-size: contain;background-position: center;height: 100vh;width: 100vw;overflow: hidden;">
+    <noscript>
+        <h1>Your browser does not support JS</h1>
+    </noscript>
+    <dmb-dialog open>
+        <dmb-login target="/index/">
+            <? readfile(INST_PATH.'app/webroot/images/logo.svg'); ?>
+        </dmb-login>
+    </dmb-dialog>
+    <? require_once(INST_PATH.'app/views/_footer-contents.phtml'); ?>
+</body>
+</html>

@@ -1,0 +1,62 @@
+{
+  "name": "Uroboros",
+  "version": "1.0.0",
+  "author": "Rantes",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/npm/npm.git"
+  },
+  "license": "CC0-1.0",
+  "engines": {
+    "node": "0.10.28",
+    "npm": "1.4.10"
+  },
+  "watch": {
+    "sass": {
+      "patterns": [
+        "components"
+      ],
+      "extensions": "scss",
+      "quiet": false
+    },
+    "lint": {
+      "patterns": [
+        "components"
+      ],
+      "extensions": "js"
+    },
+    "build": {
+      "patterns": [
+        "ui-sources",
+        "components"
+      ],
+      "extensions": "js,scss",
+      "quiet": false
+    }
+  },
+  "scripts": {
+    "test": "karma start --single-run --browsers ChromeHeadless karma.conf.js",
+    "test-watch": "npm-watch build & karma start --auto-watch --browsers Chrome karma.conf.js",
+    "sass": "dumbo run background/setsass | xargs -I{} sh -c \"cat {}; echo ''\" | sass --stdin app/webroot/css/styles.css -s compressed --no-source-map -I ui-sources/base-sass --trace --no-quiet",
+    "sass-watch": "dumbo run background/setsass | xargs -I{} sh -c \"cat {}; echo ''\" | sass --stdin app/webroot/css/styles.css -s compressed --no-source-map -I ui-sources/base-sass --watch",
+    "uglify-directives": "dumbo run background/setdirectives | xargs -I{} sh -c \"cat {}; echo ''\" | terser -c -m -o app/webroot/js/components.min.js",
+    "uglify-factories": "dumbo run background/setfactories | xargs -I{} sh -c \"cat {}; echo ''\" | terser -c -m -o app/webroot/js/factories.min.js",
+    "lint": "eslint ui-sources/components/**/*.js",
+    "dev": "npm-watch build",
+    "build-spec": "dumbo run background/copylibs",
+    "build": "npm run lint & npm run sass & npm run uglify-factories & npm run uglify-directives & npm run build-spec & npm run test"
+  },
+  "dependencies": {
+    "eslint": "^5.15.1",
+    "jasmine-core": "^2.99.1",
+    "jasmine-spec-reporter": "^4.2.1",
+    "karma": "^5.0.2",
+    "karma-chrome-launcher": "^2.2.0",
+    "karma-coverage-istanbul-reporter": "^2.0.1",
+    "karma-jasmine": "^1.1.2",
+    "karma-jasmine-html-reporter": "^0.2.2",
+    "npm-watch": "^0.6.0",
+    "sass": "^1.22.12",
+    "terser": "^3.16.1"
+  }
+}

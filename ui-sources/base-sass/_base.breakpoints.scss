@@ -1,0 +1,45 @@
+//	-----------------------------------------------------------------------------
+//
+//	The base for all SASS files. Only includes columns since those need to be
+//	reset per breakpoint.
+//
+//	-----------------------------------------------------------------------------
+//	Table of Contents (keep up-to-date)
+//	-----------------------------------------------------------------------------
+//
+//	_media-queries
+//		_breakpoint()
+//
+//	-----------------------------------------------------------------------------
+
+  $breakpoint-large: 1600px;
+  $breakpoint-medium: 1023px;
+  $breakpoint-small: 767px;
+  $max-width: 1200px;
+
+//	-----------------------------------------------------------------------------
+//	_media-queries
+//	-----------------------------------------------------------------------------
+
+
+  //	_breakpoint()
+  //	-----------------------------------------------------------------------------
+    //	Useful for maintaining your breakpoint locations in a single
+    //	location. Reset breakpoint specific variables inside each
+    //	conditional and include the mixins files at the top of each file
+    //	since SASS does not currently have variable scope.
+    @mixin breakpoint($breakpoint-type) {
+      @if $breakpoint-type == large {
+        @media screen and (min-width: $breakpoint-large) {
+          @content;
+        }
+      } @else if $breakpoint-type == medium {
+        @media screen and (max-width: $breakpoint-medium) {
+          @content;
+        }
+      } @else if $breakpoint-type == small {
+        @media screen and (max-width: $breakpoint-small) {
+          @content;
+        }
+      }
+    }

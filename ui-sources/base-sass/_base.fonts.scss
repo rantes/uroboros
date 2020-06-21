@@ -1,0 +1,27 @@
+
+@mixin icomoon() {
+    font-family: 'icomoon';
+    font-variant: normal;
+    font-style: normal;
+    font-weight: normal;
+    line-height: 1;
+    speak: none;
+        /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-transform: none;
+}
+
+@mixin WalkwayRounded() {
+    font-family: 'WalkwayRounded';
+    font-variant: normal;
+    font-style: normal;
+    font-weight: normal;
+    letter-spacing: 2px;
+    line-height: 1;
+    speak: none;
+        /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-transform: none;
+}

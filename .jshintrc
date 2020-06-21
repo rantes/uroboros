@@ -1,0 +1,29 @@
+{
+  "bitwise": true,
+  "browser": true,
+  "camelcase": false,
+  "curly": true,
+  "devel": true,
+  "eqeqeq": false,
+  "esversion": 6,
+  "expr": true,
+  "immed": true,
+  "indent": 4,
+  "latedef": false,
+  "laxbreak": true,
+  "newcap": true,
+  "noarg": true,
+  "node": true,
+  "quotmark": "single",
+  "strict": true,
+  "trailing": true,
+  "undef": false,
+  "unused": true,
+  "validthis": true,
+  "white"    : false,
+  "globals": {
+    "customElements": true,
+    "vDom": true,
+    "DumboDirective": true
+  }
+}

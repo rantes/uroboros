@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <? require_once(INST_PATH.'app/views/_header-contents.phtml'); ?>
+</head>
+<body>
+holi
+    <noscript>
+        <h1>Your browser does not support JS</h1>
+    </noscript>
+    <dmb-view id="page">
+	    <dmb-header></dmb-header>
+        <dmb-content>
+        <?=$this->yield;?>
+        </dmb-content>
+    </dmb-view>
+    <dmb-page-loader id="page-loader" class="active">
+        <div class="wrapper">
+            <img src="/images/logo.svg" alt="uroboros">
+        </div>
+    </dmb-page-loader>
+    <? require_once(INST_PATH.'app/views/_footer-contents.phtml'); ?>
+</body>
+</html>

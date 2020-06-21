@@ -1,0 +1,19 @@
+dmb-login {
+    display: block;
+    margin: auto;
+    max-width: 320px;
+    padding: 10px;
+    text-align: center;
+    width: 100%;
+
+    dmb-input {
+        float: left;
+        margin: 0 5%;
+        width: 40%;
+    }
+
+    dmb-button {
+        margin: 0 5%;
+        width: 90%;
+    }
+}
