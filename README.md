@@ -1,3 +1,3 @@
 # Uroboros
 CD/CI Tool
-![Uroboros](/images/logo.png "Uroboros")
+![Uroboros](/app/webroot/images/logo.png "Uroboros")
