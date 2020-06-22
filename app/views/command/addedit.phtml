@@ -1,0 +1,33 @@
+<dmb-simple-form>
+    <dmb-form action="/command/savecommands" id="form-command" name="command" method="post" async>
+        <dmb-header>
+            <dmb-close-panel orientation="right"></dmb-close-panel>
+            <? if(empty($this->data->id)): ?>
+                <h3>Add reg</h3>
+            <? else: ?>
+                <h3>Edit</h3>
+            <? endif; ?>
+        </dmb-header>
+        <dmb-content>
+            <dmb-add-command project-id="<?=$this->project->id;?>" counter="<?=$this->data->counter();?>">Add Command</dmb-add-command>
+            <? foreach($this->data as $i => $command): ?>
+            <input type="hidden" value="<?=$command->id;?>" name="command[<?=$i;?>][id]" />
+            <input type="hidden" value="<?=$command->project_id;?>" name="command[<?=$i;?>][project_id]" />
+            <dmb-input
+                label="Command"
+                value="<?=$command->command;?>"
+                dmb-name="command[<?=$i;?>][command]"
+                validate="required"
+            ></dmb-input>
+            <? endforeach; ?>
+        </dmb-content>
+        <dmb-footer class="section group">
+            <div class="col col6">
+                <dmb-button type="reset" class="button button-error" onClick="location.reload();"><span class="text">Cancel</span></dmb-button>
+            </div>
+            <div class="col col6">
+                <dmb-button type="submit" class="button button-success"><span class="text">Save</span></dmb-button>
+            </div>
+        </dmb-footer>
+    </dmb-form>
+</dmb-simple-form>

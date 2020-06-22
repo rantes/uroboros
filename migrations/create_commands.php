@@ -10,6 +10,7 @@
 
     function up() {
       $this->Create_Table();
+      $this->Add_Single_Index('project_id');
     }
 
     function down() {

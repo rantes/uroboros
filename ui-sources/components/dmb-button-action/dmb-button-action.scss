@@ -1,0 +1,12 @@
+muy-button-action {
+
+    &.main-add {
+        align-items: center;
+        font-size: 1.2em;
+
+        &::before {
+            font-size: 1.2em;
+            margin: 0 0.5em;
+        }
+    }
+}

@@ -1,1 +1,63 @@
-holi
+<section>
+    <dmb-button-action
+    action="new"
+    panel="#panel-project"
+    url="/project/addedit/"
+    behavior="open-panel">
+        Add Project
+    </dmb-button-action>
+</section>
+<? if ($this->projects->counter() > 0): ?>
+<section class="section dmb-table">
+    <table>
+        <thead>
+            <tr>
+                <th>Project</th>
+                <th>Estado</th>
+                <th>&Uacute;ltima ejecuci&oacute;n</th>
+                <th colspan="3">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        <? foreach($this->projects as $project): ?>
+            <? $execution = $project->getLastExecution(); ?>
+            <tr>
+                <td><?=$project->name;?></td>
+                <td><?=$this->projectstatus[0 + $execution->result];?></td>
+                <td><?=date('d/m/Y h:i:s', 0 + $execution->created_at);?></td>
+                <td>
+                    <dmb-button-action
+                        action="edit"
+                        panel="#panel-commands"
+                        url="/command/addedit/"
+                        behavior="open-panel">
+                        Commands
+                    </dmb-button-action>
+                </td>
+                <td>
+                    <dmb-button-action
+                        action="execute"
+                        url="/command/runbuild/<?=$project->id;?>"
+                        behavior="ajax">
+                        Commands
+                    </dmb-button-action>
+                </td>
+                <td>
+                    <dmb-button-action
+                        action="edit"
+                        panel="#panel-project"
+                        url="/project/addedit/<?=$project->id;?>"
+                        behavior="open-panel">
+                        Edit Project
+                    </dmb-button-action>
+                </td>
+            </tr>
+            <? endforeach; ?>
+        </tbody>
+    </table>
+</section>
+<? else: ?>
+<h3>No records.</h3>
+<? endif; ?>
+<dmb-panel id="panel-project" source=""></dmb-panel>
+<dmb-panel id="panel-commands" source=""></dmb-panel>

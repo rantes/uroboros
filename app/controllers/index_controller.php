@@ -8,6 +8,8 @@ class IndexController extends Page {
     }
 
     public function indexAction() {
+        $this->projects = $this->Project->Find();
+        $this->projectstatus = ['Fail','Success'];
     }
 
     public function loginAction() {
