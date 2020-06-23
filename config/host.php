@@ -6,9 +6,6 @@ define('APP_ENV', $env_vars['APP_ENV']);
 define('INST_URI', $env_vars['INST_URI']);
 define('SALT', $env_vars['SALT']);
 define('APP_HASH', $env_vars['APP_HASH']);
-define('APP_ID', $env_vars['APP_ID']);
-define('REX_URL', $env_vars['REX_URL']);
-define('RAPTOR_URL', $env_vars['RAPTOR_URL']);
 
 //dbconstants
 define('DB_DRIVER', $env_vars['DB_DRIVER']);
