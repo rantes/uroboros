@@ -16,7 +16,7 @@ class CommandController extends Page {
     
     public function addeditAction() {
         $this->layout = false;
-        if(empty($this->params['id'])):
+        if(!empty($this->params['id'])):
             $this->project = $this->Project->Find($this->params['id']);
             $this->data = $this->Command->Find_by_project_id($this->project->id);
 
