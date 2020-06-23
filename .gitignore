@@ -6,9 +6,6 @@
 *.log
 all-concat.js
 app/webroot/all.min.js
-app/webroot/css/*.*
-app/webroot/js/*.*
-app/webroot/libs/*.*
 app/webroot/uploads
 dumbophp/
 dumbophp
