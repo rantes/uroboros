@@ -90,7 +90,7 @@ class CommandController extends Page {
                 $escaped = escapeshellcmd($command['command']);
                 $fullcommand = "cd {$project->path} && {$escaped}";
                 echo date('H:i:s'), ": Running command {$fullcommand}\n";
-                system($fullcommand, $returnval);
+                passthru($fullcommand, $returnval);
                 if($returnval !== 0):
                     break;
                 endif;
