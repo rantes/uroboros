@@ -68,6 +68,10 @@ class CommandController extends Page {
     public function execcommandsAction() {
         $this->layout = false;
         if(!empty($this->params['projectid'])):
+            $executionsdir = INST_PATH.'app/webroot/executions/';
+            is_dir($executionsdir) or mkdir($executionsdir, 0775);
+            $projectexecs = "{$executionsdir}project-{$project->id}/";
+            is_dir($projectexecs) or mkdir($projectexecs, 0775);
             $success = 0;
             $returnval = 0;
             $percentage = 0;
@@ -77,6 +81,9 @@ class CommandController extends Page {
             $execution = $this->Execution->Niu();
             $execution->project_id = $project->id;
 
+            ob_start();
+
+            echo date('H:i:s'), ": Starting Job\n";
             while(null != ($command = array_shift($commands))):
                 $escaped = escapeshellcmd($command['command']);
                 $fullcommand = "cd {$project->path} && {$escaped}";
@@ -86,11 +93,13 @@ class CommandController extends Page {
                 endif;
                 $success++;
             endwhile;
-
+            echo date('H:i:s'), ": Finishing Job\n";
+            $buf = ob_get_clean();
             $percentage = (integer) round(($success / $total) * 100);
             $execution->result = (integer) ($percentage === 100);
             $execution->percentage = $percentage;
             $execution->Save();
+            file_put_contents("{$projectexecs}execution_{$execution->id}.log");
         endif;
         $this->render = ['layout'=>false, 'text'=>'Done.'];
     }

@@ -3,6 +3,10 @@ require_once INST_PATH.'app/controllers/admin_base_trait.php';
 class IndexController extends Page {
     use AdminBaseTrait;
 
+    public $excepts_before_filter = [
+        'actions' => 'login,logout'
+    ];
+
     public function __construct() {
         $this->_init();
     }
