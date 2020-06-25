@@ -68,10 +68,7 @@ class CommandController extends Page {
     public function execcommandsAction() {
         $this->layout = false;
         if(!empty($this->params['projectid'])):
-            $executionsdir = INST_PATH.'app/webroot/executions/';
-            is_dir($executionsdir) or mkdir($executionsdir, 0775);
-            $projectexecs = "{$executionsdir}project-{$project->id}/";
-            is_dir($projectexecs) or mkdir($projectexecs, 0775);
+            
             $success = 0;
             $returnval = 0;
             $percentage = 0;
@@ -80,6 +77,11 @@ class CommandController extends Page {
             $total = sizeof($commands);
             $execution = $this->Execution->Niu();
             $execution->project_id = $project->id;
+
+            $executionsdir = INST_PATH.'app/webroot/executions/';
+            is_dir($executionsdir) or mkdir($executionsdir, 0775);
+            $projectexecs = "{$executionsdir}project-{$project->id}/";
+            is_dir($projectexecs) or mkdir($projectexecs, 0775);
 
             ob_start();
 
