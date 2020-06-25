@@ -101,7 +101,7 @@ class CommandController extends Page {
             $execution->result = (integer) ($percentage === 100);
             $execution->percentage = $percentage;
             $execution->Save();
-            file_put_contents("{$projectexecs}execution_{$execution->id}.log");
+            file_put_contents("{$projectexecs}execution_{$execution->id}.log", $buf);
         endif;
         $this->render = ['layout'=>false, 'text'=>'Done.'];
     }
