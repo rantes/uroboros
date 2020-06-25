@@ -24,7 +24,7 @@
             <tr>
                 <td><?=$project->name;?></td>
                 <td><?=$this->projectstatus[0 + $execution->result];?></td>
-                <td><a href="/exections/project-<?=$project->id;?>/execution_<?=$execution->id;?>.log">#<?=$execution->id;?></a> - <?=date('d/m/Y h:i:s', 0 + $execution->created_at);?></td>
+                <td><a href="/executions/project-<?=$project->id;?>/execution_<?=$execution->id;?>.log">#<?=$execution->id;?></a> - <?=date('d/m/Y h:i:s', 0 + $execution->created_at);?></td>
                 <td>
                     <dmb-button-action
                         action="edit"
