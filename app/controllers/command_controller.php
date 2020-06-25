@@ -58,7 +58,7 @@ class CommandController extends Page {
         if(!empty($this->params['id'])):
             $code = HTTP_201;
             $response['message'] = 'Runing';
-            exec('cd '.INST_PATH." && dumbo run command/execcommands projectid={$this->params['id']} & "); // > /dev/null 2>&1
+            exec('cd '.INST_PATH." && dumbo run command/execcommands projectid={$this->params['id']} > /dev/null 2>&1 & ");
         endif;
 
         http_response_code($code);
