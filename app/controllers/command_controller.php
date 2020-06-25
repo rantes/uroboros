@@ -58,7 +58,7 @@ class CommandController extends Page {
         if(!empty($this->params['id'])):
             $code = HTTP_201;
             $response['message'] = 'Runing';
-            exec('cd '.INST_PATH." && dumbo run command/execcommands projectid={$this->params['id']} > /dev/null 2>&1 & ");
+            exec('cd '.INST_PATH." && dumbo run command/execcommands projectid={$this->params['id']} & "); // > /dev/null 2>&1
         endif;
 
         http_response_code($code);
@@ -89,6 +89,7 @@ class CommandController extends Page {
             while(null != ($command = array_shift($commands))):
                 $escaped = escapeshellcmd($command['command']);
                 $fullcommand = "cd {$project->path} && {$escaped}";
+                echo date('H:i:s'), ": Running command {$fullcommand}\n";
                 system($fullcommand, $returnval);
                 if($returnval !== 0):
                     break;
