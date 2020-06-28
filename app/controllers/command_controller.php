@@ -88,9 +88,9 @@ class CommandController extends Page {
             echo date('H:i:s'), ": Starting Job\n";
             while(null != ($command = array_shift($commands))):
                 $escaped = escapeshellcmd($command['command']);
-                $fullcommand = "cd {$project->path} && {$escaped}";
-                echo date('H:i:s'), ": Running command {$fullcommand}\n";
-                passthru($fullcommand, $returnval);
+                chdir($project->path);
+                echo date('H:i:s'), ": Running command {$escaped}\n";
+                passthru($escaped, $returnval);
                 if($returnval !== 0):
                     break;
                 endif;
