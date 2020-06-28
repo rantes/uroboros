@@ -1,22 +1,25 @@
 <?php
-  class CreateProject extends Migrations {
+class CreateProject extends Migrations {
     function _init_() {
-          $this->_fields = array(
-              array('field'=>'id', 'type'=>'INT AUTO_INCREMENT PRIMARY KEY', 'null'=>'false'),
-				array('field'=>'name', 'type'=>'VARCHAR', 'null'=>'false', 'limit'=>'255'),
-				array('field'=>'description', 'type'=>'TEXT', 'null'=>'true'),
-				array('field'=>'path', 'type'=>'VARCHAR', 'null'=>'false', 'limit'=>'255'),
-				array('field'=>'created_at', 'type'=>'INT', 'null'=>'false', 'default'=>'0'),
-				array('field'=>'updated_at', 'type'=>'INT', 'null'=>'false', 'default'=>'0')
-          );
+        $this->_fields = [
+            ['field'=>'id', 'type'=>'INT AUTO_INCREMENT PRIMARY KEY', 'null'=>'false'],
+            ['field'=>'name', 'type'=>'VARCHAR', 'null'=>'false', 'limit'=>'255'],
+            ['field'=>'description', 'type'=>'TEXT', 'null'=>'true'],
+            ['field'=>'path', 'type'=>'VARCHAR', 'null'=>'false', 'limit'=>'255'],
+            ['field'=>'run_after', 'type'=>'INT', 'null'=>'false', 'default'=>'0'],
+            ['field'=>'created_at', 'type'=>'INT', 'null'=>'false', 'default'=>'0'],
+            ['field'=>'updated_at', 'type'=>'INT', 'null'=>'false', 'default'=>'0']
+        ];
     }
 
     function up() {
-      $this->Create_Table();
+        $this->Create_Table();
+        $this->Add_Column(['field'=>'run_after', 'type'=>'INT', 'null'=>'false', 'default'=>'0']);
+        $this->Add_Single_Index('run_after');
     }
 
     function down() {
-      $this->Drop_Table();
+        $this->Drop_Table();
     }
-  }
+}
 ?>

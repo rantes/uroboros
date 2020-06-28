@@ -65,6 +65,17 @@ class CommandController extends Page {
         $this->respondToAJAX(json_encode($response));
     }
 
+    private function _dispatchChainedProjects($mainProject) {
+        $projects = $this->Project->Find_by_run_after($mainProject);
+        if($projects->counter()):
+            chdir(INST_PATH);
+            foreach($projects as $project):
+                exec("dumbo run command/execcommands projectid={$project->id} > /dev/null 2>&1 & ");
+            endforeach;
+        endif;
+        return true;
+    }
+
     public function execcommandsAction() {
         $this->layout = false;
         if(!empty($this->params['projectid'])):
@@ -103,6 +114,7 @@ class CommandController extends Page {
             $execution->percentage = $percentage;
             $execution->Save();
             file_put_contents("{$projectexecs}execution_{$execution->id}.log", $buf);
+            $execution->result and $this->_dispatchChainedProjects($project->id);
         endif;
         $this->render = ['layout'=>false, 'text'=>'Done.'];
     }

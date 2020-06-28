@@ -12,8 +12,10 @@ class ProjectController extends Page {
         $this->layout = false;
         if(empty($this->params['id'])):
             $this->data = $this->Project->Niu();
+            $this->projects = $this->Project->Find();
         else:
             $this->data = $this->Project->Find($this->params['id']);
+            $this->projects = $this->Project->Find(['conditions' => "`id` <> {$this->data->id}"]);
         endif;
     }
 }

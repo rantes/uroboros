@@ -30,6 +30,20 @@
                     ></dmb-input>
                 </div>
             </div>
+            <div class="section group">
+                <div class="col col12">
+                    <dmb-select
+                        label="Build after"
+                        value="<?=$this->data->run_after;?>"
+                        dmb-name="project[run_after]"
+                    >
+                        <option value="0"></option>
+                        <? foreach($this->projects as $project): ?>
+                        <option value="<?=$project->id?>"><?=$project->name;?></option>
+                        <? endforeach; ?>
+                    </dmb-select>
+                </div>
+            </div>
         </dmb-content>
         <dmb-footer class="section group">
             <div class="col col6">
