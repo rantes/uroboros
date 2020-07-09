@@ -44,6 +44,19 @@
                     </dmb-select>
                 </div>
             </div>
+            <div class="section group">
+                <div class="col col12">
+                    <dmb-select
+                        label="Clone commands from another project"
+                        dmb-name="project[clone_from]"
+                    >
+                        <option value="0"></option>
+                        <? foreach($this->projects as $project): ?>
+                        <option value="<?=$project->id?>"><?=$project->name;?></option>
+                        <? endforeach; ?>
+                    </dmb-select>
+                </div>
+            </div>
         </dmb-content>
         <dmb-footer class="section group">
             <div class="col col6">

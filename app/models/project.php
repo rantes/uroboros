@@ -2,6 +2,7 @@
   class Project extends ActiveRecord {
     function _init_() {
         $this->has_many = ['execution', 'command'];
+        $this->after_save = ['cloneCommands'];
     }
 
     public function getLastExecution() {
@@ -11,8 +12,22 @@
             ':first',
             'conditions' => "project_id='{$this->id}'",
             'sort' => 'id DESC'
-        ]);
-        return $last;
+            ]);
+            return $last;
+        }
+        
+        public function cloneCommands() {
+        if(!empty($_POST['project']['clone_from'])):
+            require_once INST_PATH.'app/models/command.php';
+            $Command = new Command();
+            $commands = $Command->Find_by_project_id($_POST['project']['clone_from']);
+            foreach($commands as $command):
+                $Command->Niu([
+                    'project_id' => $this->id,
+                    'command' => $command->command
+                ])->Save();
+            endforeach;
+        endif;
     }
   }
 ?>
