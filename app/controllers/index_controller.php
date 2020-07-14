@@ -23,10 +23,8 @@ class IndexController extends Page {
         $code = HTTP_401;
 
         if (!empty($_POST['e']) and !empty($_POST['p'])):
-            $user = $this->User->Find([
-                'conditions' => "`email`='{$_POST['e']}' AND `password`='".sha1($_POST['p'])."'"
-            ]);
-            $user->counter() === 1 and ($code = HTTP_202) and ($_SESSION['user'] = $user->id);
+            $id = $this->User->login($_POST['e'], $_POST['p']);
+            $id > 0 and ($code = HTTP_202) and ($_SESSION['user'] = $id);
         endif;
 
         http_response_code($code);
@@ -38,7 +36,6 @@ class IndexController extends Page {
     */
     public function logoutAction() {
         $this->layout = false;
-        setSession();
         empty($_SESSION) or session_destroy();
         header('Location: /index/login');
     }

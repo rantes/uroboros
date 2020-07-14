@@ -8,7 +8,11 @@
         <h1>Your browser does not support JS</h1>
     </noscript>
     <dmb-view id="page">
-	    <dmb-header></dmb-header>
+	    <dmb-header class="section group">
+            <div class="col col2"></div>
+            <div class="col col8">Uroboros CI/CD</div>
+            <div class="col col2"><a href="/index/logout">Cerrar sesi&oacute;n</a></div>
+        </dmb-header>
         <dmb-content>
         <?=$this->yield;?>
         </dmb-content>
