@@ -5,7 +5,7 @@ class CommandController extends Page {
 
     public $noTemplate = ['execcommands'];
 
-    public $excepts_before_filter = [
+    public $exceptsBeforeFilter = [
         'actions' => 'execcommands'
     ];
 
