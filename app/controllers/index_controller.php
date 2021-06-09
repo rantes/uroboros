@@ -13,7 +13,7 @@ class IndexController extends Page {
 
     public function indexAction() {
         $conditions = null;
-        $this->params['group'] = (integer) $this->params['group'];
+        $this->params['group'] = (integer) ($this->params['group'] ?? 0);
         if(!empty($this->params['group'])):
             $conditions = $this->params['group'];
         endif;
