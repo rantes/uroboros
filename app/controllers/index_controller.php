@@ -15,7 +15,9 @@ class IndexController extends Page {
         $conditions = null;
         $this->params['group'] = $this->params['group'] ?? 0;
         if(!empty($this->params['group'])):
-            $conditions = (integer) $this->params['group'];
+            $conditions = ['conditions' => [
+                ['project_group_id', (integer) $this->params['group']]
+            ]];
         endif;
         $this->projects = $this->Project->Find($conditions);
         $this->groups = $this->ProjectGroup->Find();
