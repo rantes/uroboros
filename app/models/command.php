@@ -1,7 +1,6 @@
 <?php
-  class Command extends ActiveRecord {
+class Command extends ActiveRecord {
     function _init_() {
 
     }
-  }
-?>
+}

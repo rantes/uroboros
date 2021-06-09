@@ -7,6 +7,17 @@
         Add Project
     </dmb-button-action>
 </section>
+<section class="section dmb-table">
+    <table>
+        <tbody>
+            <tr>
+                <? foreach($this->groups as $group): ?>
+                <td><a href="/index/index?group=<?=$group->id;?>"><?=$group->name;?></a></td>
+                <? endforeach; ?>
+            <tr>
+        </tbody>
+    </table>
+<section>
 <? if ($this->projects->counter() > 0): ?>
 <section class="section dmb-table">
     <table>

@@ -3,6 +3,7 @@
     function _init_() {
         $this->has_many = ['execution', 'command'];
         $this->after_save = ['cloneCommands'];
+        $this->belongs_to = ['project_group'];
     }
 
     public function getLastExecution() {
@@ -16,7 +17,7 @@
             return $last;
         }
         
-        public function cloneCommands() {
+    public function cloneCommands() {
         if(!empty($_POST['project']['clone_from'])):
             require_once INST_PATH.'app/models/command.php';
             $Command = new Command();
@@ -29,5 +30,4 @@
             endforeach;
         endif;
     }
-  }
-?>
+}

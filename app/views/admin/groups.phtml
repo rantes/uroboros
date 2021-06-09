@@ -1,0 +1,48 @@
+<section>
+    <dmb-button-action
+    action="new"
+    panel="#panel-group"
+    url="/admin/addeditgroup/"
+    behavior="open-panel">
+        Add Group
+    </dmb-button-action>
+</section>
+<? if ($this->groups->counter() > 0): ?>
+<section class="section dmb-table">
+    <table>
+        <thead>
+            <tr>
+                <th>Grupo</th>
+                <th colspan="2">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        <? foreach($this->groups as $group): ?>
+            <tr>
+                <td><?=$group->name;?></td>
+                <td>
+                    <dmb-button-action
+                        action="edit"
+                        panel="#panel-group"
+                        url="/admin/addeditgroup/<?=$group->id;?>"
+                        behavior="open-panel">
+                        Delete
+                    </dmb-button-action>
+                </td>
+                <td>
+                    <dmb-button-action
+                        action="delete"
+                        url="/admin/deletegroup/<?=$group->id;?>"
+                        behavior="ajax">
+                        Delete 
+                    </dmb-button-action>
+                </td>
+            </tr>
+            <? endforeach; ?>
+        </tbody>
+    </table>
+</section>
+<? else: ?>
+<h3>No records.</h3>
+<? endif; ?>
+<dmb-panel id="panel-group" source=""></dmb-panel>

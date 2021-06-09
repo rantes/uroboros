@@ -1,0 +1,33 @@
+<dmb-simple-form>
+    <dmb-form action="/admin/groupaddreg" id="form-project-group" name="project_group" method="post" async>
+        <input type="hidden" value="<?=$this->data->id;?>" name="project_group[id]" />
+        <dmb-header>
+            <dmb-close-panel orientation="right"></dmb-close-panel>
+            <? if(empty($this->data->id)): ?>
+                <h3>Add reg</h3>
+            <? else: ?>
+                <h3>Edit</h3>
+            <? endif; ?>
+        </dmb-header>
+        <dmb-content>
+            <div class="section group">
+                <div class="col col12">
+                    <dmb-input
+                        label="Name"
+                        value="<?=$this->data->name;?>"
+                        dmb-name="project_group[name]"
+                        validate="required"
+                    ></dmb-input>
+                </div>
+            </div>
+        </dmb-content>
+        <dmb-footer class="section group">
+            <div class="col col6">
+                <dmb-button type="reset" class="button button-error" onClick="location.reload();"><span class="text">Cancel</span></dmb-button>
+            </div>
+            <div class="col col6">
+                <dmb-button type="submit" class="button button-success"><span class="text">Save</span></dmb-button>
+            </div>
+        </dmb-footer>
+    </dmb-form>
+</dmb-simple-form>

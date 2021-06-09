@@ -41,4 +41,3 @@ class User extends ActiveRecord {
         return ($user->counter() === 1 and $user->password === sha1($password)) * $user->id;
     }
 }
-?>

@@ -47,6 +47,20 @@
             <div class="section group">
                 <div class="col col12">
                     <dmb-select
+                        label="Group"
+                        dmb-value="<?=$this->data->run_after;?>"
+                        dmb-name="project[project_group_id]"
+                    >
+                        <option value="0"></option>
+                        <? foreach($this->groups as $group): ?>
+                        <option value="<?=$group->id?>"><?=$group->name;?></option>
+                        <? endforeach; ?>
+                    </dmb-select>
+                </div>
+            </div>
+            <div class="section group">
+                <div class="col col12">
+                    <dmb-select
                         label="Clone commands from another project"
                         dmb-name="project[clone_from]"
                     >

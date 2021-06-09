@@ -10,6 +10,7 @@ class ProjectController extends Page {
 
     public function addeditAction() {
         $this->layout = false;
+        $this->groups = $this->ProjectGroup->Find();
         if(empty($this->params['id'])):
             $this->data = $this->Project->Niu();
             $this->projects = $this->Project->Find();

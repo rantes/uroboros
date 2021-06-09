@@ -12,7 +12,13 @@ class IndexController extends Page {
     }
 
     public function indexAction() {
-        $this->projects = $this->Project->Find();
+        $conditions = null;
+        $this->params['group'] = (integer) $this->params['group'];
+        if(!empty($this->params['group'])):
+            $conditions = $this->params['group'];
+        endif;
+        $this->projects = $this->Project->Find($conditions);
+        $this->groups = $this->ProjectGroup->Find();
         $this->projectstatus = ['Fail','Success'];
     }
 
@@ -40,4 +46,3 @@ class IndexController extends Page {
         header('Location: /index/login');
     }
 }
-?>

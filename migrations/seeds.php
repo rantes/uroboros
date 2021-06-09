@@ -1,7 +1,6 @@
 <?php
 class Seed extends Page {
 
-    public function sow() {
-    }
+    public function sow() { }
 }
 ?>
