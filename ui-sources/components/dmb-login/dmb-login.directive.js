@@ -1,54 +1,63 @@
 /**
- * Component handle login 
- */ 
+ * Component handle login
+ */
 
-class DmbLogin extends DumboDirective {
+ class DmbLogin extends DumboDirective {
+    #_form;
+
     constructor() {
         super();
 
-        const template = '<dmb-form dmb-name="login" method="post" action="?" class="login" async>' +
-                            '<dmb-input class="dmb-input" label="User" validate="required" dmb-name="e" dmb-id="email"></dmb-input>' +
-                            '<dmb-input class="dmb-input" label="Password" type="password" dmb-name="p" autocomplete="off" validate="required" dmb-id="password"></dmb-input>' +
-                            '<dmb-button class="button button-primary" id="login-button">Ingresar</dmb-button>' +
+        const template = '<dmb-form dmb-name="login" method="post" action="?" autocomplete="off" class="login" async>' +
+                            '<dmb-input class="dmb-input" label="" validate="required" dmb-name="u" dmb-id="email"></dmb-input>' +
+                            '<dmb-input class="dmb-input" label="" type="password" dmb-name="p" autocomplete="off" validate="required" dmb-id="password"></dmb-input>' +
+                            '<dmb-button type="submit" class="button button-primary" id="login-button"></dmb-button>' +
                         '</dmb-form>';
         this.setTemplate(template);
         this.valids = [];
-        this.form = null;
+        this.#_form = null;
     }
 
     init() {
         const button = this.querySelector('dmb-button');
-        this.form = this.querySelector('dmb-form');
+        const inputs = this.querySelectorAll('dmb-input');
+        const target = this.getAttribute('target');
+        let areaSelector = null;
 
-        this.form.setAttribute('action', `${this.getAttribute('target')}signin`);
-        button.click((e) => {
-            e.preventDefault(e);
-            this.loginClick();
-        });
-    }
+        this.#_form = this.querySelector('dmb-form');
+        inputs[0].setAttribute('label', this.getAttribute('user-label') || '');
+        inputs[1].setAttribute('label', this.getAttribute('pass-label') || '');
 
-    /**
-     * * Reset and set validations, and send fields content to target on click
-     */
-    loginClick() {
+        this.#_form.setAttribute('action', `${target}signin`);
+        this.#_form.setAttribute('redirect', `${target}index`);
+        this.#_form.callback = this.#_handleLogin;
+        button.innerText = this.getAttribute('button-label') || '';
 
-        const canSend = this.form.submit();
-
-        if (canSend) {
-            this.handleLogin(this.getAttribute('target'));
+        if (target === '/guarda/') {
+            areaSelector = document.createElement('dmb-select');
+            areaSelector.setAttribute('label', 'Puesto Asignado');
+            areaSelector.setAttribute('dmb-name', 'pos');
+            areaSelector.setAttribute('validate', 'required');
+            areaSelector.setAttribute('dmb-id', 'position');
+            window.AreasModel.getGuardPositions()
+                .then(data => {
+                    data.unshift({value: '', text: 'Seleccione...'});
+                    areaSelector.values = data;
+                });
+            this.#_form.querySelector('form').prepend(areaSelector);
         }
     }
-
     /**
      * Send fields to backend for login process
-     * @param target string - target controler for login, and redirect
      */
-    handleLogin(target) {
+    #_handleLogin() {
+        const target = this.getAttribute('action');
+        const redirect = this.getAttribute('redirect');
         const init = {
             method: 'POST',
-            body: this.form.getFormData()
+            body: this.getFormData()
         };
-        const loginRequest = new Request(`${target}signin`, init);
+        const loginRequest = new Request(target, init);
 
         fetch(loginRequest)
             .then(response => {
@@ -56,7 +65,7 @@ class DmbLogin extends DumboDirective {
                 return response.json();
             })
             .then(() => {
-                window.location = `${target}index`;
+                window.location = redirect;
             })
             .catch(error => {
                 window.dmbDialogService.error(error);

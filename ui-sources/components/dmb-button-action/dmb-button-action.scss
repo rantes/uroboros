@@ -1,4 +1,12 @@
-muy-button-action {
+dmb-button-action {
+    &.icon {
+        width: auto;
+
+        &:before {
+            align-items: center;
+            font-size: 1.2em;
+        }
+    }
 
     &.main-add {
         align-items: center;

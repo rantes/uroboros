@@ -1,48 +1,92 @@
 /**
- * 
+ *
  */
 class DmbSimpleForm extends DumboDirective {
     constructor () {
         super();
     }
-    
+
     init() {
         const form = this.querySelector('dmb-form');
+        const method = this.getAttribute('method') || 'POST';
         const init = {
-            method: 'POST',
+            method,
             body: null
         };
-
+        const accept = this.getAttribute('accept') || 'json';
+        const result = this.getAttribute('result') || 'info';
+        const size = this.getAttribute('size') || 'large';
+        const noreload = this.hasAttribute('no-reload');
+        const pageLoader = document.querySelector('#page-loader');
         let fullReload = false;
+        let data = null;
+        let url = form.getAttribute('action');
 
-        form.callback = () => {
+        form.callback = (e) => {
             fullReload = this.hasAttribute('full-reload');
 
-            init.body = form.getFormData();
-            init.method = form.getAttribute('method');
+            init.method = init.method || form.getAttribute('method');
+            init.body = init.method === 'POST' ? form.getFormData() : null;
 
-            const loginRequest = new Request(form.getAttribute('action'), init);
+            if (init.method === 'GET') {
+                data = new URLSearchParams(form.getFormData()).toString();
+                url = `${url}?${data}`
+            }
+            pageLoader.classList.add('active');
+            const request = new Request(url, init);
 
-            fetch(loginRequest)
-                .then(response => {
-                    response.json().then(resp => {
-                        if(response.ok) {
+            fetch(request)
+                .then(async response => {
+                    let ret = null;
+					let resp = null
 
-                            window.dmbDialogService.closeAll();
+                    switch (accept) {
+                        case 'html':
+                            ret = response.text();
+                        break;
+                        case 'json':
+                        default:
+                            ret = response.json();
+                        break;
+                    }
+
+					if (!response.ok && accept === 'json') {
+						resp = await ret;
+						throw new Error(resp.message);							
+					}
+
+                    return ret;
+                })
+                .then(resp => {
+                    pageLoader.classList.remove('active');
+                    window.dmbDialogService.closeAll();
+                    switch (result) {
+                        case 'drawer':
+                            window.dmbDialogService.drawer(resp, size);
+                        break;
+                        case 'new-window':
+                            window.open(resp.openUrl);
+                        break;
+						case 'self':
+							location.assign(resp.openUrl);
+						break;
+                        case 'info':
+                        default:
                             window.dmbDialogService.info(resp.message);
-
-                            setTimeout(() => {
-                                fullReload ? location.replace(location.href) : location.reload();
-                            }, 1500);
-                        } else {
-                            window.dmbDialogService.closeAll();
-                            window.dmbDialogService.error(resp.message);
-                        }
-                    });
+                        break;
+                    }
                 })
                 .catch(error => {
+                    pageLoader.classList.remove('active');
                     window.dmbDialogService.closeAll();
                     window.dmbDialogService.error(error.message);
+                    console.error(error.message);
+                }).finally(() => {
+                    if (!noreload) {
+                        setTimeout(() => {
+                            fullReload ? location.replace(location.href) : location.reload();
+                        }, 3000);
+                    }
                 });
         };
     }

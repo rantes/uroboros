@@ -21,4 +21,3 @@ class CreateUser extends Migrations{
         $this->Drop_Table();
     }
 }
-?>

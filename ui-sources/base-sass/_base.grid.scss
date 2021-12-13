@@ -41,7 +41,6 @@ $width-col: (100 + $grid-margin-horizontal) / $grid-columns;
     .col#{$i} {
         width: 100% - (($grid-columns - $i) * $width-col);
     }
-    
 }
 
 @include breakpoint(medium) {

@@ -39,15 +39,31 @@ trait AdminBaseTrait {
             'message' => 'Error Saving'
         ];
 
-        if(!empty($this->_model) and !empty($_POST[$this->_model])):
+        try {
+            if(empty($this->_model) or empty($_POST[$this->_model])) throw new Exception('Not enough params', HTTP_400);
             $model = Camelize(Singulars($this->_model));
             $data = $this->{$model}->Niu($_POST[$this->_model]);
-            (
-                $data->Save()
-                and ($response['d'] = $data and ($response['message'] = 'Success') and $code = HTTP_200)
-            )
-            or ($response['message'] = (string)$data->_error);
-        endif;
+            if(!$data->Save()) throw new Exception($data->_error, HTTP_402);
+
+            switch ($this->_getController_()):
+                case 'project':
+                    if(!empty($_POST['env'])):
+                        $envString = '';
+                        while (null !== ($entry = array_shift($_POST['env']))):
+                            $envString = "{$envString}{$entry['key']}={$entry['value']}\n";
+                        endwhile;
+                        file_put_contents("{$data->path}.env", $envString);
+                    endif;
+                break;
+            endswitch;
+
+            $response['d'] = $data;
+            $response['message'] = 'Success';
+            $code = HTTP_200;
+        } catch (\Throwable $th) {
+            $response['message'] = $th->getMessage();
+            $code = $th->getCode();
+        }
 
         http_response_code($code);
         $this->respondToAJAX(json_encode($response));

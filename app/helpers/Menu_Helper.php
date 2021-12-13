@@ -24,4 +24,3 @@ class menuEntry {
         $this->hasItems = !empty($this->items);
     }
 }
-?>

@@ -5,7 +5,7 @@
 
 <? readfile(INST_PATH.'app/webroot/libs/dmb-factories.min.js'); ?>
 
-<? readfile(INST_PATH.'app/webroot/js/factories.min.js'); ?>
+<? file_exists(INST_PATH.'app/webroot/js/factories.min.js') and readfile(INST_PATH.'app/webroot/js/factories.min.js'); ?>
 
 <? readfile(INST_PATH.'app/webroot/libs/dmb-components.min.js'); ?>
 
@@ -16,7 +16,7 @@ if('serviceWorker' in navigator) {
   .then(function(registration) {
       /* NOOP */
     });
-    
+
     navigator.serviceWorker.ready.then(function(registration) {
         /* NOOP */
     });

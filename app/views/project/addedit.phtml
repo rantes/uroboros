@@ -71,6 +71,17 @@
                     </dmb-select>
                 </div>
             </div>
+
+            <fieldset>
+                <legend>Environment</legend>
+                <? $i = 0; ?>
+                <dmb-env-inputs counter="<?=sizeof($this->environment);?>">
+                <? foreach ($this->environment as $input => $value): ?>
+                    <dmb-env-input counter="<?=$i;?>" key="<?=$input;?>" val="<?=$value;?>"></dmb-env-input>
+                <? $i++; ?>
+                <? endforeach; ?>
+                </dmb-env-inputs>
+            </fieldset>
         </dmb-content>
         <dmb-footer class="section group">
             <div class="col col6">

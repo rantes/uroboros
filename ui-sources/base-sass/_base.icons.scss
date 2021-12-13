@@ -1,43 +1,37 @@
 .icon {
-    font-family: 'icomoon';
-    font-variant: normal;
-    font-style: normal;
-    font-weight: normal;
-    line-height: 1;
-    speak: none;
-        /* Better Font Rendering =========== */
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-transform: none;
-    font-size: 2rem;
     height: 1em;
     position: relative;
-    text-transform: none;
     width: 1em;
 
     &:before {
         font-family: 'icomoon';
-        font-variant: normal;
+        font-size: 1em;
         font-style: normal;
+        font-variant: normal;
         font-weight: normal;
-        font-size: 2rem;
-        line-height: 1;
         height: 1em;
+        line-height: 1;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-transform: none;
         width: 1em;
     }
 
     &[badge]:after {
-        border-radius: 0.8em;
+        background-color: var(--primary);
+        border-radius: 1em;
+        color: var(--primary-contrast);
         content: attr(badge);
-        font-size: 0.5em;
+        font-size: 1em;
+        font-style: normal;
         height: 1.4em;
-        left: 1.6em;
+        left: -2.5em;
         line-height: normal;
-        min-width: 1em;
-        padding: 0.2em 0.2em 0;
+        min-width: 1.5em;
+        padding: 0.1em 0.2em;
         position: absolute;
         text-align: center;
-        top: -0.5em;
+        top: -0.1em;
         transform: translateX(0);
     }
 
@@ -642,6 +636,9 @@
       content: "\e9de";
     }
     &-warning:before {
+      content: "\ea07";
+    }
+    &-alert:before {
       content: "\ea07";
     }
     &-notification:before {

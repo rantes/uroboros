@@ -2,9 +2,9 @@
 /**
  * Modelo Usuarios
  *
- * @author Javier Serrano <jserrano@muy.co>
+ * @author Javier Serrano <rantes.javier@gmail.com>
  * @version  1.0
- * @package MUYCCTV
+ * @package Uroboros
  * @subpackage Models
  */
 class User extends ActiveRecord {

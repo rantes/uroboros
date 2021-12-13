@@ -8,7 +8,12 @@
         <h1>Your browser does not support JS</h1>
     </noscript>
     <dmb-dialog open>
-        <dmb-login target="/index/">
+        <dmb-login
+            target="/index/"
+            user-label="Usuario"
+            pass-label="Password"
+            button-label="Ingresar"
+        >
             <? readfile(INST_PATH.'app/webroot/images/logo.svg'); ?>
         </dmb-login>
     </dmb-dialog>

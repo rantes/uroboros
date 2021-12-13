@@ -1,5 +1,5 @@
 <?php
-define('INST_PATH', dirname(dirname(__FILE__)).'/');
+defined('INST_PATH') or define('INST_PATH', dirname(dirname(__FILE__)).'/');
 $env_vars = parse_ini_file(INST_PATH.'.env');
 
 define('APP_ENV', $env_vars['APP_ENV']);

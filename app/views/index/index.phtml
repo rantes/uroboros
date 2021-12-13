@@ -7,7 +7,8 @@
         Add Project
     </dmb-button-action>
 </section>
-<section class="section dmb-table">
+<section class="section group body">
+    <dmb-table>
     <table>
         <tbody>
             <tr>
@@ -18,9 +19,11 @@
             <tr>
         </tbody>
     </table>
+    </dmb-table>
 <section>
 <? if ($this->projects->counter() > 0): ?>
-<section class="section dmb-table">
+<section class="section group body">
+    <dmb-table>
     <table>
         <thead>
             <tr>
@@ -35,8 +38,8 @@
             <? $execution = $project->getLastExecution(); ?>
             <tr>
                 <td><?=$project->name;?></td>
-                <td><?=$this->projectstatus[0 + $execution->result];?></td>
-                <td><a href="/executions/project-<?=$project->id;?>/execution_<?=$execution->id;?>.log">#<?=$execution->id;?></a> - <?=date('d/m/Y h:i:s', 0 + $execution->created_at);?></td>
+                <td><?=$this->projectstatus[(int)$execution->result];?></td>
+                <td><a href="/executions/project-<?=$project->id;?>/execution_<?=$execution->id;?>.log">#<?=$execution->id;?></a> - <?=date('d/m/Y h:i:s', (int)$execution->created_at);?></td>
                 <td>
                     <dmb-button-action
                         action="edit"
@@ -67,6 +70,7 @@
             <? endforeach; ?>
         </tbody>
     </table>
+    </dmb-table>
 </section>
 <? else: ?>
 <h3>No records.</h3>
