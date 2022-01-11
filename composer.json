@@ -1,0 +1,61 @@
+{
+    "name": "rantes/uroboros",
+    "description": "Simple Project Manager",
+    "keywords": [
+        "rantes",
+        "CI",
+        "CD",
+        "continous",
+        "delivery",
+        "integration"
+    ],
+    "license": "MIT",
+    "type": "project",
+    "require": {
+        "php": "^7.4.0",
+        "ext-pdo": "*",
+        "rantes/dumbophp": "^2.8.20"
+    },
+    "require-dev": {},
+    "autoload": {
+        "classmap": [],
+        "psr-4": {}
+    },
+    "autoload-dev": {
+        "classmap": []
+    },
+    "scripts": {
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-install-cmd": [
+            "rm ./dumbo -f 2>/dev/null ||:",
+            "rm ./dumboTest -f 2>/dev/null ||:",
+            "ln -s vendor/rantes/dumbophp/bin/dumbo dumbo",
+            "ln -s vendor/rantes/dumbophp/bin/dumboTest dumboTest"
+        ],
+        "post-update-cmd": [
+            "rm ./dumbo -f 2>/dev/null ||:",
+            "rm ./dumboTest -f 2>/dev/null ||:",
+            "ln -s vendor/rantes/dumbophp/bin/dumbo dumbo",
+            "ln -s vendor/rantes/dumbophp/bin/dumboTest dumboTest"
+        ],
+        "post-create-project-cmd": [
+            "rm ./dumbo -f 2>/dev/null ||:",
+            "rm ./dumboTest -f 2>/dev/null ||:",
+            "ln -s vendor/rantes/dumbophp/bin/dumbo dumbo",
+            "ln -s vendor/rantes/dumbophp/bin/dumboTest dumboTest"
+        ]
+    },
+    "config": {
+        "repositories.packagist.org.url": "https://repo.packagist.org",
+        "capath": "/etc/ssl/certs",
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "disable-tls": false,
+        "secure-http": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
