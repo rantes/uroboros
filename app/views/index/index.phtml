@@ -13,9 +13,11 @@
         <tbody>
             <tr>
                 <td><a href="/index/index">All projects</a></td>
+                <? if ($this->groups->counter() > 0): ?>
                 <? foreach($this->groups as $group): ?>
                 <td><a href="/index/index?group=<?=$group->id;?>"><?=$group->name;?></a></td>
                 <? endforeach; ?>
+                <? endif; ?>
             <tr>
         </tbody>
     </table>

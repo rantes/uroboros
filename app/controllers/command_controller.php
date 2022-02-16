@@ -58,7 +58,8 @@ class CommandController extends Page {
         if(!empty($this->params['id'])):
             $code = HTTP_201;
             $response['message'] = 'Runing';
-            exec('cd '.INST_PATH." && dumbo run command/execcommands projectid={$this->params['id']} > /dev/null 2>&1 & ");
+            chdir(INST_PATH);
+            exec("dumbo run command/execcommands projectid={$this->params['id']} > /dev/null 2>&1 & ");
         endif;
 
         http_response_code($code);
@@ -79,7 +80,6 @@ class CommandController extends Page {
     public function execcommandsAction() {
         $this->layout = false;
         if(!empty($this->params['projectid'])):
-            
             $success = 0;
             $returnval = 0;
             $percentage = 0;
@@ -99,10 +99,13 @@ class CommandController extends Page {
             echo date('H:i:s'), ": Starting Job\n";
             while(null != ($command = array_shift($commands))):
                 $escaped = escapeshellcmd($command['command']);
+                echo date('H:i:s'), ": Entering into the working directory: {$project->path}\n";
                 chdir($project->path);
-                echo date('H:i:s'), ": Running command {$escaped}\n";
-                passthru($escaped, $returnval);
+                echo date('H:i:s'), ': Current working directory: ', getcwd(), "\n";
+                echo date('H:i:s'), ": Running command: {$escaped}\n";
+                passthru("{$escaped} 2>&1", $returnval);
                 if($returnval !== 0):
+                    echo date('H:i:s'), ": There was an error executing: {$escaped}\n";
                     break;
                 endif;
                 $success++;
