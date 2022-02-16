@@ -7,7 +7,9 @@ class testIndexController extends dumboTests {
         $this->_migrateTables([
             'users',
             'projects',
-            'project_groups'
+            'project_groups',
+            'commands',
+            'executions'
         ]);
         http_response_code(HTTP_200);
         $_SESSION = [];
