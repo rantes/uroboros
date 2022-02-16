@@ -23,4 +23,3 @@ $databases = [
         'unix_socket' =>  DB_UNIX_SOCKET
     ]
 ];
-?>
