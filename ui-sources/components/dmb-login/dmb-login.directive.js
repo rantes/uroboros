@@ -32,20 +32,6 @@
         this.#_form.setAttribute('redirect', `${target}index`);
         this.#_form.callback = this.#_handleLogin;
         button.innerText = this.getAttribute('button-label') || '';
-
-        if (target === '/guarda/') {
-            areaSelector = document.createElement('dmb-select');
-            areaSelector.setAttribute('label', 'Puesto Asignado');
-            areaSelector.setAttribute('dmb-name', 'pos');
-            areaSelector.setAttribute('validate', 'required');
-            areaSelector.setAttribute('dmb-id', 'position');
-            window.AreasModel.getGuardPositions()
-                .then(data => {
-                    data.unshift({value: '', text: 'Seleccione...'});
-                    areaSelector.values = data;
-                });
-            this.#_form.querySelector('form').prepend(areaSelector);
-        }
     }
     /**
      * Send fields to backend for login process

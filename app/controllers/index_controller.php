@@ -4,8 +4,10 @@ class IndexController extends Page {
     use AdminBaseTrait;
 
     public $exceptsBeforeFilter = [
-        'actions' => 'login,logout'
+        'actions' => 'logout,signin'
     ];
+
+    public $noTemplate = ['logout'];
 
     public function __construct() {
         $this->_init();
@@ -26,9 +28,11 @@ class IndexController extends Page {
 
     public function loginAction() {
         $this->layout = false;
+        !empty($_SESSION['user']) and header('Location: /admin/index');
     }
     public function signinAction() {
         $code = HTTP_401;
+        $id = null;
 
         if (!empty($_POST['u']) and !empty($_POST['p'])):
             $id = $this->User->login($_POST['u'], $_POST['p']);
@@ -36,7 +40,7 @@ class IndexController extends Page {
         endif;
 
         http_response_code($code);
-        $this->respondToAJAX('{}');
+        $this->respondToAJAX('{"user":"'.$id.'"}');
     }
     /**
     * Destroy all registered information of a session and redirect to the login page.

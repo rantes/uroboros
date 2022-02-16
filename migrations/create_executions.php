@@ -1,14 +1,14 @@
 <?php
   class CreateExecution extends Migrations {
     function _init_() {
-          $this->_fields = array(
-              array('field'=>'id', 'type'=>'INT AUTO_INCREMENT PRIMARY KEY', 'null'=>'false'),
-				array('field'=>'project_id', 'type'=>'INT', 'null'=>'false'),
-				array('field'=>'result', 'type'=>'INT', 'null'=>'false'),
-				array('field'=>'percentage', 'type'=>'INT', 'null'=>'false'),
-				array('field'=>'created_at', 'type'=>'INT', 'null'=>'false', 'default'=>'0'),
-				array('field'=>'updated_at', 'type'=>'INT', 'null'=>'false', 'default'=>'0')
-          );
+          $this->_fields = [
+              ['field' => 'id', 'type' => 'INTEGER', 'autoincrement' => true, 'primary' => true],
+              ['field'=>'project_id', 'type'=>'INTEGER', 'null'=>'false'],
+              ['field'=>'result', 'type'=>'INTEGER', 'null'=>'false'],
+              ['field'=>'percentage', 'type'=>'INTEGER', 'null'=>'false'],
+              ['field'=>'created_at', 'type'=>'INTEGER', 'null'=>'false', 'default'=>'0'],
+              ['field'=>'updated_at', 'type'=>'INTEGER', 'null'=>'false', 'default'=>'0']
+          ];
     }
 
     function up() {

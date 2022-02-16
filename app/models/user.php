@@ -16,6 +16,7 @@ class User extends ActiveRecord {
                 ['field'=>'firstname','message'=>_('model.error.required.firstname')],
                 ['field'=>'lastname','message'=>_('model.error.required.lastname')],
                 ['field'=>'email','message'=>_('model.error.required.email')],
+                ['field'=>'password','message'=>_('model.error.required.password')],
             ],
             'email' => [
                 ['field'=>'email','message'=>_('model.error.format.email')]
@@ -35,9 +36,9 @@ class User extends ActiveRecord {
         empty($this->password) or ($this->password = sha1($this->password));
     }
 
-    public function login($user, $password) {
-        $user = $this->Find_by_email($user);
+    public function login($email, $password) {
+        $user = $this->Find_by_email($email);
         // will return 0 or the user id
-        return ($user->counter() === 1 and $user->password === sha1($password)) * $user->id;
+        return ($user->counter() === 1 and $user->password === sha1($password)) * (int)$user->id;
     }
 }
