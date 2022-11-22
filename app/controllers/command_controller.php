@@ -103,8 +103,8 @@ class CommandController extends Page {
                 chdir($project->path);
                 echo date('H:i:s'), ': Current working directory: ', getcwd(), "\n";
                 echo date('H:i:s'), ": Running command: {$escaped}\n";
-                passthru("{$escaped} 2>&1", $returnval);
-                if($returnval !== 0):
+                $result = passthru("{$escaped} 2>&1", $returnval);
+                if($returnval !== 0 or $result === false):
                     echo date('H:i:s'), ": There was an error executing: {$escaped}\n";
                     break;
                 endif;
