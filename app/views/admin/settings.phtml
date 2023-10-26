@@ -1,0 +1,50 @@
+<section>
+    <dmb-button-action
+    action="new"
+    panel="#panel-setting"
+    url="/admin/addeditsetting/"
+    behavior="open-panel">
+        Add Setting
+    </dmb-button-action>
+</section>
+<? if ($this->settings->counter() > 0): ?>
+<section class="section dmb-table">
+    <table>
+        <thead>
+            <tr>
+                <th>Setting Name</th>
+                <th>Setting Value</th>
+                <th colspan="2">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        <? foreach($this->settings as $setting): ?>
+            <tr>
+                <td><?=$setting->name;?></td>
+                <td><?=$setting->value;?></td>
+                <td>
+                    <dmb-button-action
+                        action="edit"
+                        panel="#panel-setting"
+                        url="/admin/addeditsetting/<?=$setting->id;?>"
+                        behavior="open-panel">
+                        Delete
+                    </dmb-button-action>
+                </td>
+                <td>
+                    <dmb-button-action
+                        action="delete"
+                        url="/admin/deletesetting/<?=$setting->id;?>"
+                        behavior="ajax">
+                        Delete 
+                    </dmb-button-action>
+                </td>
+            </tr>
+            <? endforeach; ?>
+        </tbody>
+    </table>
+</section>
+<? else: ?>
+<h3>No records.</h3>
+<? endif; ?>
+<dmb-panel id="panel-setting" source=""></dmb-panel>

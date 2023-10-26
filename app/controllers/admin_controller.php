@@ -33,4 +33,27 @@ class AdminController extends Page {
             $this->data = $this->ProjectGroup->Find($this->params['id']);
         endif;
     }
+
+    public function settingsAction() {
+        $this->settings = $this->Setting->Find();
+    }
+
+    public function addeditsettingAction() {
+        $this->layout = false;
+        if(empty($this->params['id'])):
+            $this->data = $this->Setting->Niu();
+        else:
+            $this->data = $this->Setting->Find($this->params['id']);
+        endif;
+    }
+
+    public function deletesettingAction() {
+        $this->_model = 'setting';
+        $this->deleteregAction();
+    }
+
+    public function settingaddregAction() {
+        $this->_model = 'setting';
+        $this->addregAction();
+    }
 }

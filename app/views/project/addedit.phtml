@@ -32,6 +32,16 @@
             </div>
             <div class="section group">
                 <div class="col col12">
+                    <dmb-input
+                        label="Git Repo"
+                        value="<?=$this->data->git_repo;?>"
+                        dmb-name="project[git_repo]"
+                        validate="required"
+                    ></dmb-input>
+                </div>
+            </div>
+            <div class="section group">
+                <div class="col col12">
                     <dmb-select
                         label="Build after"
                         dmb-value="<?=$this->data->run_after;?>"

@@ -22,4 +22,3 @@ class ProjectController extends Page {
         endif;
     }
 }
-?>

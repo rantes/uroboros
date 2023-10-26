@@ -1,9 +1,10 @@
 <?php
-  class Project extends ActiveRecord {
+class Project extends ActiveRecord {
     function _init_() {
         $this->has_many = ['execution', 'command'];
         $this->after_save = ['cloneCommands'];
         $this->belongs_to = ['project_group'];
+        $this->before_insert = ['setFolder', 'setFiles'];
     }
 
     public function getLastExecution() {
@@ -29,5 +30,13 @@
                 ])->Save();
             endforeach;
         endif;
+    }
+
+    public function setFolder() {
+        is_dir($this->path) or mkdir($this->path);
+    }
+
+    public function setFiles() {
+        !empty($this->git_repo) && is_dir($this->path) && exec("git clone {$this->git_repo} {$this->path}");
     }
 }
