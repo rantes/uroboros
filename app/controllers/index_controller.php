@@ -36,10 +36,9 @@ class IndexController extends Page {
 
         if (!empty($_POST['u']) and !empty($_POST['p'])):
             $id = $this->User->login($_POST['u'], $_POST['p']);
-            $id > 0 and ($code = HTTP_202) and ($_SESSION['user'] = $id);
+            $id > 0 and ($code = HTTP_201) and ($_SESSION['user'] = $id);
         endif;
-
-        http_response_code($code);
+        $this->setResponseCode($code);
         $this->respondToAJAX('{"user":"'.$id.'"}');
     }
     /**

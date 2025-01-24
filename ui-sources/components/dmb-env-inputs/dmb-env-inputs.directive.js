@@ -1,8 +1,7 @@
-class DmbEnvInputs extends DumboDirective {
-    constructor() {
-        super();
-
-        const template = `
+import { DumboDirective } from '../../libs/dumbojs/dumbo.min.js';
+export class DmbEnvInputs extends DumboDirective {
+    static selector = 'dmb-env-inputs';
+    static template = `
             <section transclude>
             </section>
             <section>
@@ -18,8 +17,6 @@ class DmbEnvInputs extends DumboDirective {
                 </div>
             </section>
         `;
-        this.setTemplate(template);
-    }
 
     init() {
         let counter = 0;
@@ -39,5 +36,3 @@ class DmbEnvInputs extends DumboDirective {
         });
     }
 }
-
-customElements.define('dmb-env-inputs', DmbEnvInputs);

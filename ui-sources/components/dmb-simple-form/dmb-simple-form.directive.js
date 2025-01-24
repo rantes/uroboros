@@ -1,10 +1,6 @@
-/**
- *
- */
-class DmbSimpleForm extends DumboDirective {
-    constructor () {
-        super();
-    }
+import { DumboDirective } from "../../libs/dumbojs/dumbo.min.js";
+export class DmbSimpleForm extends DumboDirective {
+    static selector = 'dmb-simple-form';
 
     init() {
         const form = this.querySelector('dmb-form');
@@ -91,5 +87,3 @@ class DmbSimpleForm extends DumboDirective {
         };
     }
 }
-
-customElements.define('dmb-simple-form', DmbSimpleForm);

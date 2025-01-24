@@ -1,3 +1,27 @@
+@font-face {
+  font-family: 'icomoon';
+  font-display: fallback;
+  font-style: normal;
+  font-weight: normal;
+  src: url('/fonts/icomoon/icomoon.woff');
+  src: url('/fonts/icomoon/icomoon.eot?#iefix') format('embedded-opentype'),
+    url('/fonts/icomoon/icomoon.woff') format('woff'),
+    url('/fonts/icomoon/icomoon.ttf') format('truetype'),
+    url('/fonts/icomoon/icomoon.svg') format('svg');
+}
+
+@font-face {
+  font-family: 'OpenSansRegular';
+  font-display: swap;
+  font-style: normal;
+  font-weight: normal;
+  src: url('/fonts/openSans/Regular/OpenSans-Regular.ttf');
+  src: url('/fonts/openSans/Regular/OpenSans-Regular.otf') format('opentype'),
+    url('/fonts/openSans/Regular/OpenSans-Regular.woff') format('woff'),
+    url('/fonts/openSans/Regular/OpenSans-Regular.ttf') format('truetype'),
+    url('/fonts/openSans/Regular/OpenSans-Regular.svg') format('svg');
+}
+
 @import "base";
 
 html, body {

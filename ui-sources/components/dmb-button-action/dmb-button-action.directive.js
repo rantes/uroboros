@@ -1,7 +1,6 @@
-class DmbButtonAction extends DumboDirective {
-    constructor() {
-        super();
-    }
+import { DumboDirective } from '../../libs/dumbojs/dumbo.min.js';
+export class DmbButtonAction extends DumboDirective {
+    static selector = 'dmb-button-action';
 
     init() {
         const action = this.getAttribute('action') || '';
@@ -110,5 +109,3 @@ class DmbButtonAction extends DumboDirective {
         }
     }
 }
-
-customElements.define('dmb-button-action', DmbButtonAction);

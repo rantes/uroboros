@@ -1,0 +1,24 @@
+:root {
+  --primary: #007bff;
+  --primary-contrast: #FFFFFF;
+  --primary-hover: #007bff99;
+  --secondary: #6c757d;
+  --secondary-contrast: #FFFFFF;
+  --secondary-hover: #6c757d99;
+  --default: #000000;
+  --default-contrast: #FFFFFF;
+  --default-hover: #99999999;
+  --success: #28a745;
+  --success-contrast: #FFFFFF;
+  --success-hover: #28a74599;
+  --information: #17a2b8;
+  --information-contrast: #FFFFFF;
+  --information-hover: #17a2b899;
+  --warning: #ffc107;
+  --warning-contrast: #FFFFFF;
+  --warning-hover: #ffc10799;
+  --error: #dc3545;
+  --error-contrast: #FFFFFF;
+  --error-hover: #dc354599;
+  --hover-opacity: 0.5;
+}

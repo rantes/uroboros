@@ -24,5 +24,13 @@ set_include_path(
 require_once 'dumbophp.php';
 require_once INST_PATH.'config/host.php';
 if (file_exists(INST_PATH.'vendor/autoload.php')) require_once INST_PATH.'vendor/autoload.php';
+
+if (!isset($_SESSION) or (session_status() === PHP_SESSION_NONE)):
+    // session_set_save_handler($session);
+    // empty($_COOKIE[COOKIE_ID]) or session_id($_COOKIE[COOKIE_ID]);
+    // register_shutdown_function('session_write_close');
+    session_start();
+endif;
+
 $index = new index();
 $index->page->display();

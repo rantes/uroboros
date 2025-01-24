@@ -1,0 +1,6 @@
+{
+    "src": "ui-sources/",
+    "target": "app/webroot/",
+    "tests": "app/webroot/",
+    "dumbojsSource": "../../libs/dumbojs/"
+}

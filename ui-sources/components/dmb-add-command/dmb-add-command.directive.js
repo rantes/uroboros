@@ -1,7 +1,6 @@
-class DmbAddCommand extends DumboDirective {
-    constructor() {
-        super();
-    }
+import { DumboDirective } from '../../libs/dumbojs/dumbo.min.js';
+export class DmbAddCommand extends DumboDirective {
+    static selector = 'dmb-add-command';
 
     init() {
         this.classList.add('icon');
@@ -42,5 +41,3 @@ class DmbAddCommand extends DumboDirective {
         target.setAttribute('counter', counter);
     }
 }
-
-customElements.define('dmb-add-command', DmbAddCommand);

@@ -1,22 +1,15 @@
-/**
- * Component handle login
- */
+import { DumboDirective } from '../../libs/dumbojs/dumbo.min.js';
 
- class DmbLogin extends DumboDirective {
-    #_form;
-
-    constructor() {
-        super();
-
-        const template = '<dmb-form dmb-name="login" method="post" action="?" autocomplete="off" class="login" async>' +
-                            '<dmb-input class="dmb-input" label="" validate="required" dmb-name="u" dmb-id="email"></dmb-input>' +
+export class DmbLogin extends DumboDirective {
+    static selector = 'dmb-login';
+    static template = '<dmb-form dmb-name="login" method="post" action="?" autocomplete="off" class="login" async>' +
+                            '<dmb-input class="dmb-input" label="" autocomplete="on" validate="required" dmb-name="u" dmb-id="email"></dmb-input>' +
                             '<dmb-input class="dmb-input" label="" type="password" dmb-name="p" autocomplete="off" validate="required" dmb-id="password"></dmb-input>' +
                             '<dmb-button type="submit" class="button button-primary" id="login-button"></dmb-button>' +
                         '</dmb-form>';
-        this.setTemplate(template);
-        this.valids = [];
-        this.#_form = null;
-    }
+    #_form = null;
+    valids = [];
+
 
     init() {
         const button = this.querySelector('dmb-button');
@@ -58,5 +51,3 @@
             });
     }
 }
-
-customElements.define('dmb-login', DmbLogin);

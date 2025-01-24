@@ -114,15 +114,18 @@
 
 AddDefaultCharset UTF-8
 <IfModule mod_rewrite.c>
-    RewriteEngine on
+    RewriteEngine On
 
     RewriteCond %{REQUEST_FILENAME} -f
-    RewriteRule ^(.*\.php)$ index.php?url=$1&%1 [QSA,L]
+    RewriteRule ^(.*\.(php))$ index.php?url=$1&%1 [QSA,L]
 
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteRule ^(.*)$ index.php?url=$1&%1 [QSA,L]
+    # RewriteCond %{REQUEST_FILENAME} -f
+    # RewriteRule ^(.*\.(html))$ index.php?url=$1&%1 [QSA,L]
 
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule    ^(.*)$ $1  [NC,L]
-    RewriteRule    ^(.*\.(png|gif|jpg|html|htm|jpeg|swf|js|pdf|css|ico))$ $1  [NC,L]
- </IfModule>
+    RewriteRule    ^(.*\.(png|gif|jpg|jpeg|swf|js|pdf|css|ico|woff|svg|html|otf|json|ttf))$ $1  [NC,L]
+
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^(.*)$ index.php?url=$1&%1 [QSA,L]
+</IfModule>

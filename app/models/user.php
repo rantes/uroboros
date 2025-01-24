@@ -37,7 +37,8 @@ class User extends ActiveRecord {
     }
 
     public function login($email, $password) {
-        $user = $this->Find_by_email($email);
+        $N = new User();
+        $user = $N->Find_by_email($email);
         // will return 0 or the user id
         return ($user->counter() === 1 and $user->password === sha1($password)) * (int)$user->id;
     }

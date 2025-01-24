@@ -2,16 +2,19 @@
 
 trait AdminBaseTrait {
     private $_model = '';
+    public string $nonce = '';
+    public string $uid = '';
 
     private function _init() {
         parent::__construct();
 
         $this->layout = 'layout';
-        $this->helper = ['Sessions'];
+        $this->uid = $_SERVER['UNIQUE_ID'] ?? strGenerate();
+        $this->nonce = 'nonce-'.base64_encode($this->uid);
     }
 
     public function before_filter() {
-        Require_login();
+        $this->_requireLogin();
     }
 
     public function deleteregAction() {
@@ -68,7 +71,15 @@ trait AdminBaseTrait {
         http_response_code($code);
         $this->respondToAJAX(json_encode($response));
     }
+
+    private function _requireLogin(): bool {
+        $actions = ['login', 'signin', 'logout'];
+        $canGo = true;
+        if (empty($_SESSION['user']) and !in_array($this->_getAction_(), $actions)):
+            $canGo = false;
+            $this->redirect(INST_URI.'/index/login');
+        endif;
+
+        return $canGo;
+    }
 }
-
-
-?>
