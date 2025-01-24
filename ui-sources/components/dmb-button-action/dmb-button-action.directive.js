@@ -50,7 +50,6 @@ export class DmbButtonAction extends DumboDirective {
         const url = this.getAttribute('url');
         const target = this.getAttribute('target');
         const formToExec = this.getAttribute('form');
-        const pageLoader = document.querySelector('#page-loader');
         const service = this.getAttribute('service');
 		const init = {
             method: 'GET',
@@ -79,7 +78,6 @@ export class DmbButtonAction extends DumboDirective {
             break;
             case 'ajax':
 
-                if (pageLoader) pageLoader.open();
 				if (this.hasAttribute('method')) init.method = this.getAttribute('method');
 				if (init.method === 'POST' || init.method === 'PUT') init.body = this.getAttribute('body');
 

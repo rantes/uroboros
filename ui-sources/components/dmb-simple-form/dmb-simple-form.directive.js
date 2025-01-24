@@ -13,7 +13,6 @@ export class DmbSimpleForm extends DumboDirective {
         const result = this.getAttribute('result') || 'info';
         const size = this.getAttribute('size') || 'large';
         const noreload = this.hasAttribute('no-reload');
-        const pageLoader = document.querySelector('#page-loader');
         let fullReload = false;
         let data = null;
         let url = form.getAttribute('action');
@@ -28,7 +27,6 @@ export class DmbSimpleForm extends DumboDirective {
                 data = new URLSearchParams(form.getFormData()).toString();
                 url = `${url}?${data}`
             }
-            pageLoader.classList.add('active');
             const request = new Request(url, init);
 
             fetch(request)
@@ -54,7 +52,6 @@ export class DmbSimpleForm extends DumboDirective {
                     return ret;
                 })
                 .then(resp => {
-                    pageLoader.classList.remove('active');
                     window.dmbDialogService.closeAll();
                     switch (result) {
                         case 'drawer':
@@ -73,7 +70,6 @@ export class DmbSimpleForm extends DumboDirective {
                     }
                 })
                 .catch(error => {
-                    pageLoader.classList.remove('active');
                     window.dmbDialogService.closeAll();
                     window.dmbDialogService.error(error.message);
                     console.error(error.message);
