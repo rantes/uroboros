@@ -29,6 +29,52 @@ y **DumboJS** (Web Components nativos). MySQL vía PDO..
   no agregar JS adicional para esto
 - **Campos nuevos en tablas existentes** — modificar la migración directamente
   y ejecutar `dumbo migration reset [tabla]`; nunca `Add_Column`
+- Gobierno de arquitectura — lo propio prima sobre lo importado.
+  Toda propuesta de patrón, capa o abstracción que provenga de otro
+  ecosistema (DDD, Java, frameworks de mensajería externos, etc.) se
+  evalúa contra las convenciones ya establecidas del proyecto. Si entra
+  en conflicto real con alguna de ellas (no una preferencia de estilo,
+  sino una incompatibilidad técnica o de principios), se descarta por
+  completo — nunca se pospone "para evaluar después". No existen
+  abstracciones "archivadas" esperando el momento de retomarse: si en
+  el futuro aparece un requisito genuino que las justifique, se diseña
+  una solución propia desde cero, evaluada contra las convenciones
+  vigentes en ese momento, no se recicla la propuesta rechazada. Ante
+  cualquier duda entre una solución nativa del proyecto (ActiveRecord,
+  PHP plano, convención DumboPHP existente) y un patrón de terceros que
+  resuelve lo mismo, se prioriza siempre la solución propia.
+  Caso aplicado: la abstracción Message (base común de Command/Event)
+  propuesta en la revisión de arquitectura del núcleo OEM fue
+  rechazada — no diferida — por chocar con "Event extiende
+  ActiveRecord" + "PHP sin herencia múltiple". Ver
+  .claude/specs/nucleo-oem/design.md, Decisión 3.
+- Aprovechamiento de lo existente. Antes de construir una
+  abstracción propia o traer una dependencia externa, verificar si el
+  sistema operativo, PHP nativo, o una herramienta ya presente en el
+  stack del proyecto resuelve el mismo problema. No se abstrae ni se
+  reemplaza algo que el entorno ya sabe hacer bien. Ejemplos ya
+  aplicados en el proyecto:
+
+  - Ejecución diferida / scheduling → cron + dumbo run
+    (controladores de background), no un scheduler propio ni un
+    broker de mensajería externo.
+  - Internacionalización → mecanismos nativos del SO/PHP
+    (gettext/Intl), no una librería de i18n de terceros ni una
+    solución hecha a mano.
+    Esta regla es un caso particular de la anterior ("lo propio prima
+    sobre lo importado"): aquí "lo propio" no es código del proyecto
+    sino la plataforma sobre la que corre. Construir una abstracción para
+    algo que cron, el sistema de archivos, o una extensión nativa de
+    PHP ya resuelven es complejidad accidental, no esencial — va en
+    contra de DRY/KISS tanto como reinventar código propio ya existente.
+
+  Caso aplicado: se descartaron permanentemente los brokers de
+  mensajería externos (Redis, Kafka, RabbitMQ, SQS) como evolución del
+  Event Bus del núcleo OEM — no solo por chocar con "sin dependencias
+  Composer en runtime", sino porque el patrón nativo ya disponible
+  (cola en BD + controlador de background + cron) resuelve la
+  ejecución asíncrona sin abstraer nada nuevo. Ver
+  .claude/specs/nucleo-oem/design.md, Decisión 7.
 
 ## Reglas PHP — imports y use
 
