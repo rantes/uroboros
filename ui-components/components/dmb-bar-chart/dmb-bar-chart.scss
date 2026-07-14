@@ -1,0 +1,45 @@
+dmb-bar-chart {
+    display: block;
+    width: 100%;
+
+    .dmb-bar-chart-wrap {
+        width: 100%;
+        overflow: visible;
+    }
+
+    .chart {
+        width: 100%;
+        height: auto;
+        display: block;
+        max-height: 12em;
+
+        .axis {
+            stroke: var(--border-default);
+            stroke-width: 0.3;
+        }
+
+        .bar {
+            fill: var(--primary-hover);
+            transition: all 0.3s ease-in-out;
+        }
+
+        text.value {
+            fill: var(--primary);
+            font-size: 0.5em;    /* em relativo al contexto del componente */
+            font-weight: var(--font-weight-medium);
+        }
+
+        text.label {
+            fill: var(--primary);
+            font-size: 0.5em;    /* em relativo al contexto del componente */
+        }
+
+        &.color-primary     .bar { fill: var(--primary); }
+        &.color-secondary   .bar { fill: var(--secondary); }
+        &.color-success     .bar { fill: var(--success); }
+        &.color-error       .bar { fill: var(--error); }
+        &.color-warning     .bar { fill: var(--warning); }
+        &.color-information .bar { fill: var(--information); }
+        &.color-default     .bar { fill: var(--primary); }
+    }
+}

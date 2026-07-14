@@ -1,0 +1,116 @@
+.button {
+    border: none;
+    border-radius: 6px;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: inline-block;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    padding: 0.65rem 1.25rem;
+    position: relative;
+    text-align: center;
+    transition: opacity 0.15s ease;
+
+    * {
+        pointer-events: none;
+    }
+
+    &:focus { outline: 0 none; }
+    &:active { opacity: 0.7; }
+    &:before { color: inherit; }
+
+    .col & { width: 100%; }
+
+    // Span interno de texto (estructura existente)
+    .text { display: inline-block; }
+
+    // type="submit" → primario
+    &[type="submit"] {
+        background: var(--primary);
+        color: var(--primary-contrast);
+        &::before { color: var(--primary-contrast); }
+        &:hover { opacity: 0.85; }
+        &:visited { color: var(--primary-contrast); }
+    }
+
+    // type="reset" → secundario ghost
+    &[type="reset"] {
+        background: transparent;
+        border: 1px solid var(--border-default);
+        color: var(--primary);
+        transition: background 0.15s ease, border-color 0.15s ease;
+        &::before { color: var(--primary); }
+        &:hover { background: var(--surface-2); border-color: var(--primary); }
+        &:visited { color: var(--primary); }
+    }
+
+    // Modificador .primary
+    &.primary {
+        background: var(--primary);
+        color: var(--primary-contrast);
+        &::before { color: var(--primary-contrast); }
+        &:hover { opacity: 0.85; }
+        &:visited { color: var(--primary-contrast); }
+    }
+
+    // Modificador .secondary → ghost
+    &.secondary {
+        background: transparent;
+        border: 1px solid var(--border-default);
+        color: var(--primary);
+        transition: background 0.15s ease, border-color 0.15s ease;
+        &::before { color: var(--primary); }
+        &:hover { background: var(--surface-2); border-color: var(--primary); }
+        &:visited { color: var(--primary); }
+    }
+
+    // Modificadores .text / .link
+    &.text,
+    &.link {
+        background: transparent;
+        border: none;
+        color: var(--secondary);
+        padding: 0.65rem 0;
+        transition: color 0.15s ease;
+        &::after { content: " →"; }
+        &:hover { color: var(--primary); }
+    }
+
+    // Variantes semánticas — hover unificado con opacity
+    &.default {
+        background: var(--primary); color: var(--primary-contrast);
+        &::before { color: var(--primary-contrast); }
+        &:hover { opacity: 0.85; }
+        &:visited { color: var(--primary-contrast); }
+    }
+    &.error {
+        background: var(--error); color: var(--error-contrast);
+        &::before { color: var(--error-contrast); }
+        &:hover { opacity: 0.85; }
+        &:visited { color: var(--error-contrast); }
+    }
+    &.success {
+        background: var(--success); color: var(--success-contrast);
+        &::before { color: var(--success-contrast); }
+        &:hover { opacity: 0.85; }
+        &:visited { color: var(--success-contrast); }
+    }
+    &.warning {
+        background: var(--warning); color: var(--warning-contrast);
+        &::before { color: var(--warning-contrast); }
+        &:hover { opacity: 0.85; }
+        &:visited { color: var(--warning-contrast); }
+    }
+    &.information {
+        background: var(--information); color: var(--information-contrast);
+        &::before { color: var(--information-contrast); }
+        &:hover { opacity: 0.85; }
+        &:visited { color: var(--information-contrast); }
+    }
+
+    &.icon { height: auto; }
+}
+
+dmb-button {
+    @extend .button;
+}

@@ -1,0 +1,62 @@
+dmb-pagination {
+    align-items: center;
+    color: var(--information);
+    display: flex;
+    font-size: var(--font-size-xs);
+    gap: 0.25rem;
+    padding: 0.75rem 0;
+
+    // Texto "Página:" y "de X"
+    .paginate {
+        color: var(--information);
+        font-size: var(--font-size-xs);
+        margin-right: 0.5rem;
+    }
+
+    // Links de página y botones de navegación
+    .paginate-page {
+        align-items: center;
+        background: transparent;
+        border: none;
+        border-radius: 6px;
+        color: var(--information);
+        cursor: pointer;
+        display: inline-flex;
+        font-size: var(--font-size-xs);
+        font-weight: 400;
+        height: 1.75rem;
+        justify-content: center;
+        transition: background 0.15s ease, color 0.15s ease;
+        width: 1.75rem;
+
+        &:hover:not(.paginate-page-active) {
+            background: var(--surface-2);
+            color: var(--primary);
+        }
+
+        // Página activa
+        &-active {
+            background: var(--primary);
+            color: var(--primary-contrast);
+            cursor: default;
+            font-weight: 600;
+
+            &:hover {
+                opacity: 0.85;
+            }
+        }
+    }
+
+    // Botones de navegación (>, <, >>|, |<<)
+    .paginate-next,
+    .paginate-prev,
+    .paginate-first,
+    .paginate-last {
+        color: var(--secondary);
+        font-weight: 600;
+
+        &:hover {
+            color: var(--primary);
+        }
+    }
+}

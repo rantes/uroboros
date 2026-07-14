@@ -1,0 +1,29 @@
+dmb-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: .15em .5em;
+    border-radius: .6em;
+    font-size: var(--font-size-xs);
+    border: 1px solid currentColor;
+
+    &[tone="warning"] {
+        color: var(--warning);
+        background: var(--warning-hover);
+    }
+    &[tone="error"] {
+        color: var(--error);
+        background: var(--error-hover);
+    }
+    &[tone="success"] {
+        color: var(--success);
+        background: var(--success-hover);
+    }
+    &[tone="information"] {
+        color: var(--information);
+        background: var(--information-hover);
+    }
+    &[tone="default"] {
+        color: var(--information);
+        background: var(--information-hover);
+    }
+}

@@ -1,0 +1,18 @@
+[draggable="true"] {
+    cursor: move;
+    position: relative;
+    transition: all 200ms;
+    user-select: none;
+    will-change: transform;
+
+    &.over {
+        transform: scale(1.1, 1.1);
+    }
+
+    &:hover {
+        &:after {
+            opacity: 1;
+            transform: translate(0);
+        }
+    }
+}

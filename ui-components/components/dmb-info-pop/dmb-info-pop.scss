@@ -1,0 +1,30 @@
+dmb-info-pop {
+    cursor: help;
+    position: relative;
+
+    .float-content {
+        background-color: var(--primary-contrast);
+        border: 1px solid var(--primary);
+        color: var(--primary);
+        display: inline-block;
+        left: 2em;
+        opacity: 0;
+        padding: 1em;
+        position: absolute;
+        top: -2em;
+        transition: 0.6s all;
+        visibility: hidden;
+        z-index: 3;
+
+        &_large {
+            width: 30em;
+        }
+    }
+
+    &:hover, &:active {
+        .float-content {
+            opacity: 1;
+            visibility: visible;
+        }
+    }
+}

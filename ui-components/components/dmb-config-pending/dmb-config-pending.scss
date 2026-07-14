@@ -1,0 +1,34 @@
+.config-pending-btn {
+    align-items: center;
+    background: var(--warning);
+    border-radius: 1.5em;
+    box-shadow: 0 0.15em 0.4em var(--overlay-subtle);
+    color: var(--warning-contrast);
+    cursor: pointer;
+    display: inline-flex;
+    font-weight: var(--font-weight-bold);
+    gap: 0.35em;
+    padding: 0.4em 0.85em;
+    position: fixed;
+    right: 5em;
+    top: 5em;
+    z-index: 50;
+
+    &::before {
+        content: attr(alt);
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: var(--primary-contrast);
+        color: var(--primary);
+        padding: 0.5em 1em;
+        border-radius: 0.5em;
+        white-space: nowrap;
+    }
+
+    &:hover::before {
+        display: block;
+    }
+}

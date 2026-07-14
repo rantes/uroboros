@@ -1,0 +1,18 @@
+dmb-property {
+    background-color: var(--success);
+    border: solid 1px var(--primary);
+    cursor: pointer;
+    display: inline-block;
+    height: 3em;
+    margin-bottom: 0.2em;
+    text-align: center;
+    width: 3em;
+
+    &[status="overdue"] {
+        background-color: var(--error);
+    }
+
+    &[status="active"] {
+        background-color: var(--warning);
+    }
+}

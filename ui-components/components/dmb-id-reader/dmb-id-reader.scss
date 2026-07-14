@@ -1,0 +1,24 @@
+.dmb-id-reader {
+    .title {
+        margin: 0;
+    }
+
+    dmb-button-action {
+        &.icon {
+            font-size: 1em;
+            left: 0;
+            position: relative;
+            top: 0;
+            transform: none;
+        }
+    }
+
+    .reader-form {
+        .reader-field {
+            border: 0 none transparent;
+            height: 0;
+            padding: 0;
+            width: 0;
+        }
+    }
+}

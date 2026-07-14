@@ -1,0 +1,57 @@
+dmb-donut-chart {
+    justify-content: space-around;
+    width: 100%;
+
+    .chart {
+        display: block;
+        margin: 1em auto;
+        max-height: 90%;
+        max-width: 90%;
+
+        .circle-bg {
+            fill: none;
+            stroke: var(--primary-hover);
+            stroke-width: 3.8;
+        }
+
+        .circle {
+            fill: none;
+            stroke-width: 2.8;
+            stroke-linecap: round;
+            animation: progress 1s ease-in-out forwards;
+        }
+
+        &.red {
+            .circle {
+                stroke: var(--error);
+            }
+        }
+
+        &.orange {
+            .circle {
+                stroke: var(--warning);
+            }
+        }
+
+        &.green {
+            .circle {
+                stroke: var(--success);
+            }
+        }
+
+        &.blue {
+            .circle {
+                stroke: var(--primary);
+            }
+        }
+
+        fill: var(--primary);
+        font-size: 0.5em;
+        text-anchor: middle;
+    }
+}
+@keyframes progress {
+    0% {
+        stroke-dasharray: 0 100;
+    }
+}

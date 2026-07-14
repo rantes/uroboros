@@ -1,0 +1,150 @@
+dmb-tree-view {
+    display: block;
+    position: relative;
+
+    > li.puc-list-item {
+        list-style: none;
+        position: relative;
+    }
+
+    .trunk {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        position: relative;
+    }
+
+    .branch {
+        list-style: none;
+        margin: 0;
+        padding: 0 0 0 2em;
+        position: relative;
+
+        > li {
+            list-style: none;
+            position: relative;
+
+            &::before {
+                border-left: 1px dashed var(--information);
+                bottom: 0;
+                content: "";
+                left: -1em;
+                position: absolute;
+                top: 0;
+                width: 0;
+            }
+
+            &::after {
+                border-top: 1px dashed var(--information);
+                content: "";
+                left: -1em;
+                position: absolute;
+                top: 0.8em;
+                width: 1em;
+            }
+
+            &:last-child::before {
+                bottom: auto;
+                height: 0.8em;
+            }
+        }
+    }
+
+    li:hover > details > summary .node-actions {
+        opacity: 1;
+    }
+
+    details {
+        margin: 0.3em 0;
+
+        > summary::before {
+            color: var(--information);
+            content: "▶";
+            flex-shrink: 0;
+            font-size: 0.7em;
+            margin-right: 0.4em;
+        }
+
+        &[open] > summary::before {
+            content: "▼";
+        }
+
+        summary {
+            align-items: center;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            padding: 0.3em 0.6em;
+            transition: background-color 0.15s ease;
+
+            &::marker {
+                content: "";
+                font-size: 0;
+            }
+
+            &:hover {
+                background-color: var(--secondary-hover);
+            }
+
+            .node-row {
+                align-items: center;
+                display: flex;
+                flex: 1;
+                gap: 0.4em;
+                min-width: 0;
+            }
+
+            .node-actions {
+                align-items: center;
+                display: flex;
+                flex-shrink: 0;
+                gap: 0.25em;
+                opacity: 0;
+                transition: opacity 0.15s ease;
+
+                dmb-button-action {
+                    background: transparent;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    padding: 0.3em 0.4em;
+                    transition: background-color 0.15s ease, color 0.15s ease;
+
+                    &::before,
+                    &::after {
+                        color: inherit;
+                        font-size: 1em;
+                    }
+
+                    &[action="edit"] {
+                        color: var(--information);
+
+                        &:hover {
+                            background-color: var(--information-hover);
+                            color: var(--information-contrast);
+                        }
+                    }
+
+                    &[action="delete"] {
+                        color: var(--error);
+
+                        &:hover {
+                            background-color: var(--error-hover);
+                            color: var(--error-contrast);
+                        }
+                    }
+
+                    &[action="new"] {
+                        color: var(--success);
+
+                        &:hover {
+                            background-color: var(--success-hover);
+                            color: var(--success-contrast);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

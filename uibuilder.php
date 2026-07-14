@@ -1,44 +1,43 @@
 #!/usr/bin/php -d display_errors
 <?php
+namespace UIBuilder;
+
 $dir = dirname(realpath(__FILE__));
-define('INST_PATH', exec('pwd').'/');
+defined('INST_PATH') || define('INST_PATH', exec('pwd').'/');
 set_include_path(
     '/etc/dumbophp'.PATH_SEPARATOR.
     '/etc/dumbophp/bin'.PATH_SEPARATOR.
+    '/etc/dumbophp/lib'.PATH_SEPARATOR.
+    INST_PATH.'vendor'.PATH_SEPARATOR.
+    INST_PATH.'vendor/rantes/dumbophp'.PATH_SEPARATOR.
+    INST_PATH.'vendor/rantes/dumbophp/bin'.PATH_SEPARATOR.
+    INST_PATH.'vendor/rantes/dumbophp/lib'.PATH_SEPARATOR.
     INST_PATH.PATH_SEPARATOR.
-    INST_PATH.'bin'.PATH_SEPARATOR.
-    INST_PATH.'lib'.PATH_SEPARATOR.
     get_include_path().PATH_SEPARATOR.
     PEAR_EXTENSION_DIR.PATH_SEPARATOR.
     '/windows/dumbophp'.PATH_SEPARATOR.
     '/windows/dumbophp/bin'.PATH_SEPARATOR.
+    '/windows/dumbophp/lib'.PATH_SEPARATOR.
     '/windows/system32/dumbophp'.PATH_SEPARATOR.
     '/windows/system32/dumbophp/bin'.PATH_SEPARATOR.
+    '/windows/system32/dumbophp/lib'.PATH_SEPARATOR.
     INST_PATH.'DumboPHP'
 );
 
-function Camelize($params, &$obj = null) {
-    if ($obj === null):
-        $string = $params;
-    else:
-        $string = $params[0];
-    endif;
+require_once 'dumbophp.php';
 
-    $newName = "";
-    if (preg_match("[-]", $string)):
-        $names = preg_split("[-]", $string);
-        $i     = 1;
-        foreach ($names as $single):
-            $newName .= ucfirst($single);
-            $i++;
-        endforeach;
-    else:
-        $newName .= ucfirst($string);
-    endif;
-    return $newName;
-}
+spl_autoload_register(function ($class) {
+    $path = explode('\\', $class);
+    require_once implode('/', array_slice($path, 1)).'.php';
 
-class generatorException extends Exception {}
+});
+
+
+use DumboPHP\lib\DumboShellColors;
+use function DumboPHP\strGenerate;
+use function DumboPHP\Camelize;
+
+class generatorException extends \Exception {}
 
 class UIGenerator {
     private $_path = '';
@@ -51,7 +50,7 @@ class UIGenerator {
         $this->_dmbSRC = $this->_mainConfig->dumbojsSource;
         $this->_path = $path;
         $this->_dumboJsDirectiveImportHeader =<<<DUMBO
-        import { DumboDirective } from '{$this->_dmbSRC}dumbo.min.js';
+import { DumboDirective } from '{$this->_dmbSRC}dumbo.min.js';
 DUMBO;
     }
 
@@ -60,17 +59,23 @@ DUMBO;
         $sourceJS = "{$name}.directive.js";
         $testJS = "{$name}.directive.spec.js";
         $sass = "{$name}.scss";
-        $camelizedName = Camelize($name);
+        $tpl = "{$name}.html";
+        $camelizedName = Camelize($name, '-');
 
         if(!mkdir($componentsPath)):
             throw new generatorException("Cannot create component directory: {$componentsPath}");
         endif;
 
+        $tplContent = <<<DUMBO
+<p>This is the {$name} component</p>
+DUMBO;
+
         $directiveContent = <<<DUMBO
-\n{$this->_dumboJsDirectiveImportHeader}
+{$this->_dumboJsDirectiveImportHeader}
 
 export class {$camelizedName} extends DumboDirective {
     static selector = '{$name}';
+    static templateUrl = '{$tpl}';
 
     constructor() {
         super();
@@ -115,6 +120,7 @@ DUMBO;
         file_put_contents("{$componentsPath}/{$sourceJS}", $directiveContent);
         file_put_contents("{$componentsPath}/{$testJS}", $specContent);
         file_put_contents("{$componentsPath}/{$sass}", $sassContent);
+        file_put_contents("{$componentsPath}/{$tpl}", $tplContent);
     }
 }
 class UIBuilder {
@@ -134,15 +140,16 @@ class UIBuilder {
     private $_specFiles = [];
     private $_mainConfig = null;
     private $_dmbSRC = '';
-    private $_targetPath = '';
+    private $uid = '';
+    private $nonce = '';
 
     public function __construct() {
 
-        require_once "/etc/dumbophp/lib/DumboShellColors.php";
         $this->_colors = new DumboShellColors();
         $this->_mainConfig = json_decode(file_get_contents('./dumbojs.conf.json'));
-        $this->_dmbSRC = $this->_mainConfig->dumbojsSource;
-        $this->_targetPath = $this->_mainConfig->target;
+        $this->_dmbSRC = $this->_mainConfig->src;
+        $this->uid = $_SERVER['UNIQUE_ID'] ?? strGenerate();
+        $this->nonce = 'nonce-'.base64_encode($this->uid);
     }
 
     private function _logger($source, $message) {
@@ -215,7 +222,7 @@ class UIBuilder {
                             $match[2] = trim((string)$match[2]);
                         break;
                         default:
-                            throw new Exception("Value not allowed for {$match[1]}");
+                            throw new \Exception("Value not allowed for {$match[1]}");
                         break;
                     }
                     $this->_options[$match[1]]['value'] = strlen($match[2]) > 0 ? $match[2] : null;
@@ -244,18 +251,30 @@ class UIBuilder {
         return preg_replace($search, $replace, $code);
     }
 
+    private function _cleanHTML($code) {
+        $search = [
+            '/\>[^\S ]+/s',     // strip whitespaces after tags, except space
+            '/[^\S ]+\</s',     // strip whitespaces before tags, except space
+            '/<!--(.|\s)*?-->/' // Remove HTML comments
+        ];
+        $replace = [
+            '>',
+            '<',
+            ''
+        ];
+        return preg_replace($search, $replace, $code);
+    }
+
     public function sassAction() {
-        fwrite(STDOUT, "Compiling SASS...\n");
         is_dir(INST_PATH.'app/webroot/css') or mkdir(INST_PATH.'app/webroot/css');
-        $sass = new Sass();
-        $sass->setStyle(Sass::STYLE_COMPRESSED);
-        $sass->setIncludePath(INST_PATH.$this->_mainConfig->src.'base-sass');
-        $files = $this->_readFiles(INST_PATH.$this->_mainConfig->src.'components/', '/(.+)\.scss/');
-        array_unshift($files, INST_PATH.$this->_mainConfig->src.'styles.scss');
+        $sass = new \Sass();
+        $sass->setStyle(\Sass::STYLE_COMPRESSED);
+        $sass->setIncludePath(INST_PATH.'ui-components/base-sass');
+        $files = $this->_readFiles(INST_PATH.'ui-components/components/', '/(.+)\.scss/');
+        array_unshift($files, INST_PATH.'ui-components/styles.scss');
         $bigFile = '';
         if(sizeof($files) > 0):
             while (null !== ($file = array_shift($files))):
-                fwrite(STDOUT, "Reading data from file: {$file}\n");
                 $bigFile .= file_get_contents($file)."\n";
             endwhile;
         endif;
@@ -275,31 +294,85 @@ class UIBuilder {
     }
 
     public function setlibsAction() {
-        fwrite(STDOUT, "Setting libs up...\n");
-        file_exists("app/webroot/{$this->_mainConfig->src}libs/") or mkdir("app/webroot/{$this->_mainConfig->src}libs/", 0775);
-        $filesjs = $this->_readFiles(INST_PATH."{$this->_mainConfig->src}/libs/", '/(.+)\.js/');
-        $filescss = $this->_readFiles(INST_PATH."{$this->_mainConfig->src}/libs/", '/(.+)\.css/');
+        file_exists('app/webroot/ui-components/libs/') or mkdir('app/webroot/ui-components/libs/', 0775);
+        $filesjs = $this->_readFiles(INST_PATH."{$this->_dmbSRC}/libs/", '/(.+)\.js/');
+        $filescss = $this->_readFiles(INST_PATH."{$this->_dmbSRC}/libs/", '/(.+)\.css/');
 
         if(sizeof($filesjs) > 0):
             while (null !== ($file = array_shift($filesjs))):
-                fwrite(STDOUT, "Reading data from file: {$file}\n");
                 $name = basename($file);
-                copy($file, INST_PATH."app/webroot/libs/{$name}");
+                copy($file, INST_PATH."app/webroot/ui-components/libs/{$name}");
             endwhile;
         endif;
 
         if(sizeof($filescss) > 0):
             while (null !== ($file = array_shift($filescss))):
-                fwrite(STDOUT, "Reading data from file: {$file}\n");
                 $name = basename($file);
-                copy($file, INST_PATH."app/webroot/libs/{$name}");
+                copy($file, INST_PATH."app/webroot/ui-components/libs/{$name}");
             endwhile;
         endif;
     }
 
+    public function setComponents() {
+        $filesjs = $this->_readFiles(INST_PATH."{$this->_mainConfig->src}components/", '/(.+)\.js/');
+        $fileContent = '';
+
+        if(sizeof($filesjs) > 0):
+            while (null !== ($file = array_shift($filesjs))):
+                $name = basename($file);
+                $fileContent = file_get_contents($file);
+                $fileContent = $this->_cleanJS($fileContent);
+                $fileContent = $this->_setImport($fileContent);
+
+                file_put_contents(INST_PATH."dist/{$name}", $fileContent);
+            endwhile;
+        endif;
+    }
+
+    public function setTemplates() {
+        $files = $this->_readFiles(INST_PATH."{$this->_mainConfig->src}components/", '/(.+)\.html$/');
+        $fileContent = '';
+        $tpls = '';
+
+        if(sizeof($files) > 0):
+            while (null !== ($file = array_shift($files))):
+                $name = basename($file);
+                $nameClean = ucfirst(str_replace('.html', '', $name));
+                $fileContent = file_get_contents($file);
+                $fileContent = $this->_cleanHTML($fileContent);
+                $tpls .= "<template id=\"{$nameClean}-template\">{$fileContent}</template>\n";
+            endwhile;
+            file_put_contents(INST_PATH."app/views/_ui_components-templates.phtml", $tpls);
+        endif;
+    }
+
+    // public function setIndexes() {
+    //     $directives = $this->_readFiles(INST_PATH."{$this->_mainConfig->src}components/", '/^(?=.*\.directive).+\.js$/');
+    //     $factories = $this->_readFiles(INST_PATH."{$this->_mainConfig->src}components/", '/^(?=.*\.factory).+\.js$/');
+
+    //     $includes = [];
+    //     if(sizeof($directives) > 0):
+    //         while (null !== ($file = array_shift($directives))):
+    //             $includes[] = "export * from './".basename($file)."';";
+    //         endwhile;
+    //     endif;
+
+    //     file_put_contents(INST_PATH.'{$this->_mainConfig->src}components/directives.js', implode("\n",$includes));
+
+    //     $includes = [];
+    //     if(sizeof($factories) > 0):
+    //         while (null !== ($file = array_shift($factories))):
+    //             $includes[] = "export * from './".basename($file)."';";
+    //         endwhile;
+    //     endif;
+
+    //     file_put_contents(INST_PATH."{$this->_mainConfig->src}components/factories.js", implode("\n",$includes));
+    // }
+
+
     public function buildUIAction() {
         $this->sassAction();
-        $this->setlibsAction();
+        $this->setTemplates();
         $this->setTestPageAction();
 
         $this->_options['watch']['value'] && $this->watchUIAction();
@@ -318,19 +391,28 @@ class UIBuilder {
     <script src="{$file}" type="module"></script>
 DUMBO;
         endwhile;
+        $templates = file_get_contents(INST_PATH."app/views/_ui_components-templates.phtml");
         $page = <<<DUMBO
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Tests">
+    <meta name="keywords" content="test">
+    <meta name="theme-color" content="#16253F">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Dumbo UI tests</title>
     <link rel="preconnect" href="./">
 
     <link rel="stylesheet" type="text/css" href="/ui-components/libs/styles/jasmine.css">
     <link rel="stylesheet" type="text/css" href="/ui-components/libs/styles/dmb-styles.css">
 
-    <link rel="preload" href="/fonts/openSans/Regular/OpenSans-Regular.woff2" as="font" crossOrigin="same" />
     <link rel="preload" as="style" type="text/css" href="/ui-components/libs/main.css">
     <link rel="preload" as="style" type="text/css" href="/ui-components/libs/styles/dmb-styles.css">
     <link rel="preload" as="style" type="text/css" href="/css/styles.css">
@@ -353,9 +435,11 @@ DUMBO;
     <div id="components">
     </div>
 
-    <script src="./libs/jasmine.js" type="text/javascript"></script>
-    <script src="./libs/jasmine-html.js" type="text/javascript"></script>
-    <script src="./libs/jasmine-boot.js" type="text/javascript"></script>
+    {$templates}
+
+    <script src="/libs/jasmine.js" type="text/javascript"></script>
+    <script src="/libs/jasmine-html.js" type="text/javascript"></script>
+    <script src="/libs/jasmine-boot.js" type="text/javascript"></script>
     {$specs}
 </body>
 </html>
@@ -467,15 +551,16 @@ DUMBO;
 
     public function watchUIAction() {
         $this->_logger('dumbo_ui_watcher', 'Setting up files for watch...');
-        $files = new ArrayObject();
+        $files = new \ArrayObject();
         $list = [
-            ...$this->_readFiles(INST_PATH."{$this->_mainConfig->source}actions/", '/^(.+)\.js$/'),
-            ...$this->_readFiles(INST_PATH."{$this->_mainConfig->source}base-sass/", '/(.+)\.scss/', false),
-            ...$this->_readFiles(INST_PATH."{$this->_mainConfig->source}components/", '/^(.+)\.js$/'),
-            ...$this->_readFiles(INST_PATH."{$this->_mainConfig->source}components/", '/(.+)\.scss/'),
-            ...$this->_readFiles(INST_PATH."{$this->_mainConfig->source}libs/", '/(.+)\.js/'),
-            ...$this->_readFiles(INST_PATH."{$this->_mainConfig->source}libs/", '/(.+)\.css/'),
-            ...$this->_readFiles(INST_PATH."{$this->_mainConfig->source}", '/(.+)\.scss/', false)
+            ...$this->_readFiles(INST_PATH.'ui-components/actions/', '/^(.+)\.js$/'),
+            ...$this->_readFiles(INST_PATH.'ui-components/base-sass/', '/(.+)\.scss/', false),
+            ...$this->_readFiles(INST_PATH.'ui-components/components/', '/^(.+)\.js$/'),
+            ...$this->_readFiles(INST_PATH.'ui-components/components/', '/^(.+)\.html$/'),
+            ...$this->_readFiles(INST_PATH.'ui-components/components/', '/(.+)\.scss/'),
+            ...$this->_readFiles(INST_PATH.'ui-components/libs/', '/(.+)\.js/'),
+            ...$this->_readFiles(INST_PATH.'ui-components/libs/', '/(.+)\.css/'),
+            ...$this->_readFiles(INST_PATH.'ui-components/', '/(.+)\.scss/', false)
         ];
         $this->_logger('dumbo_ui_watcher', "Watching for changes in files: \n".implode("\n", $list));
 
@@ -493,6 +578,7 @@ DUMBO;
                     $this->_logger('dumbo_ui_watcher', 'Runing tasks...');
                     $start = microtime(true);
                     $this->sassAction();
+                    $this->setTemplates();
                     $this->setTestPageAction();
                     $total = microtime(true) - $start;
                     $this->_logger('dumbo_ui_watcher', "Jobs finished, took {$total} seconds.");

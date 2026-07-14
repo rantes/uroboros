@@ -1,0 +1,303 @@
+// Ocultar header del layout en el portal de residente
+dmb-view:has(.user-portal) > header {
+    display: none;
+}
+
+dmb-view:has(.user-portal) #page-content {
+    margin-top: 0;
+    padding-top: 0;
+}
+
+.user-portal {
+    background: var(--surface-2);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+
+    // ── HEADER ───────────────────────────────────────
+    .user-header {
+        align-items: center;
+        background: var(--primary);
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .user-header-left {
+        align-items: center;
+        display: flex;
+        gap: 0.625rem;
+    }
+
+    .user-avatar {
+        align-items: center;
+        background: var(--secondary);
+        border-radius: 50%;
+        color: var(--primary-contrast);
+        display: flex;
+        flex-shrink: 0;
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        height: 2.25rem;
+        justify-content: center;
+        width: 2.25rem;
+    }
+
+    .user-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .user-greeting {
+        color: var(--primary-contrast);
+        font-size: 1rem;
+        font-weight: var(--font-weight-medium);
+        line-height: var(--line-height-tight);
+    }
+
+    .user-unit {
+        color: var(--primary-contrast);
+        font-size: var(--font-size-xs);
+        margin-top: 0.125rem;
+        opacity: 0.6;
+    }
+
+    .user-header-right {
+        align-items: center;
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .user-header-action {
+        align-items: center;
+        color: var(--primary-contrast);
+        display: flex;
+        opacity: 0.8;
+        position: relative;
+
+        [icon]::before { font-size: 1.5rem; }
+        &:hover { opacity: 1; }
+    }
+
+    .user-notif-badge {
+        align-items: center;
+        background: var(--warning);
+        border-radius: 50%;
+        color: var(--primary-contrast);
+        display: flex;
+        font-size: 0.65em;
+        font-weight: var(--font-weight-bold);
+        height: 1rem;
+        justify-content: center;
+        position: absolute;
+        right: -0.25rem;
+        top: -0.25rem;
+        width: 1rem;
+    }
+
+    // ── SITUACIONES ──────────────────────────────────
+    .user-situations {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 1rem 1.25rem;
+    }
+
+    .situation-card {
+        align-items: flex-start;
+        border-left: 4px solid transparent;
+        border-radius: 12px;
+        display: flex;
+        gap: 0.75rem;
+        padding: 1rem;
+
+        &.pago    { background: var(--situation-bg-warning); border-left-color: var(--warning); }
+        &.accion  { background: var(--situation-bg-info);    border-left-color: var(--action-info); }
+        &.ok      { background: var(--situation-bg-ok);      border-left-color: var(--success); }
+        &.critico { background: var(--situation-bg-error);   border-left-color: var(--error); }
+    }
+
+    .situation-icon {
+        flex-shrink: 0;
+        font-size: 1.5rem;
+        line-height: 1;
+    }
+
+    .situation-body { flex: 1; }
+
+    .situation-title {
+        color: var(--primary);
+        font-size: var(--font-size-sm);
+        font-weight: 600;
+        margin: 0 0 0.15rem;
+    }
+
+    .situation-sub {
+        color: var(--information);
+        font-size: var(--font-size-xs);
+        margin: 0 0 0.25rem;
+    }
+
+    .situation-amount {
+        color: var(--primary);
+        font-size: var(--font-size-lg);
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .situation-action {
+        align-items: center;
+        border-radius: 6px;
+        display: inline-flex;
+        flex-shrink: 0;
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        padding: 0.35rem 0.75rem;
+
+        &.warning { background: var(--warning);     color: var(--primary-contrast); }
+        &.info    { background: var(--action-info);  color: var(--primary-contrast); }
+    }
+
+    // ── ETIQUETAS DE SECCIÓN ─────────────────────────
+    .section-label {
+        color: var(--information);
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        margin: 0 0 0.75rem;
+        text-transform: uppercase;
+    }
+
+    // ── ACCIONES FRECUENTES ──────────────────────────
+    .user-actions {
+        padding: 1rem 1.25rem;
+    }
+
+    .user-actions-grid {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .action-card {
+        align-items: flex-start;
+        background: var(--surface-1);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        color: var(--primary);
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        padding: 1rem;
+        transition: border-color 0.15s ease;
+
+        &:hover { border-color: var(--secondary); }
+
+        .action-icon::before { color: var(--secondary); font-size: 1.6rem; }
+        .action-label { font-size: var(--font-size-sm); font-weight: 600; }
+        .action-sub   { color: var(--information); font-size: var(--font-size-xs); }
+    }
+
+    // ── MÁS SERVICIOS ────────────────────────────────
+    .user-services {
+        padding: 0 1.25rem 1rem;
+    }
+
+    .user-services-grid {
+        display: grid;
+        gap: 0.5rem;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .service-card {
+        align-items: center;
+        background: var(--surface-1);
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+        color: var(--primary);
+        display: flex;
+        font-size: var(--font-size-xs);
+        font-weight: 500;
+        gap: 0.5rem;
+        padding: 0.65rem 0.75rem;
+        transition: background 0.15s ease;
+
+        &:hover { background: var(--surface-2); }
+        [icon]::before { color: var(--information); font-size: 1.1rem; }
+    }
+
+    // ── NOVEDADES ────────────────────────────────────
+    .user-news {
+        padding: 0 1.25rem 1rem;
+    }
+
+    .news-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .news-item {
+        align-items: center;
+        background: var(--surface-1);
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+        display: flex;
+        gap: 0.5rem;
+        padding: 0.65rem 0.75rem;
+    }
+
+    .news-dot {
+        background: var(--success);
+        border-radius: 50%;
+        flex-shrink: 0;
+        height: 0.4rem;
+        width: 0.4rem;
+    }
+
+    .news-text {
+        color: var(--primary);
+        flex: 1;
+        font-size: var(--font-size-xs);
+        font-weight: 500;
+    }
+
+    .news-date {
+        color: var(--information);
+        flex-shrink: 0;
+        font-size: var(--font-size-xs);
+    }
+
+    // ── FOOTER ───────────────────────────────────────
+    .user-footer {
+        align-items: center;
+        background: var(--primary);
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        margin-top: auto;
+        padding: 1.5rem 1.25rem;
+        text-align: center;
+    }
+
+    .user-footer-brand {
+        color: var(--primary-contrast);
+        font-size: var(--font-size-md);
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .user-footer-tagline {
+        color: var(--primary-contrast);
+        font-size: var(--font-size-xs);
+        letter-spacing: 0.1em;
+        margin: 0;
+        opacity: 0.4;
+    }
+}

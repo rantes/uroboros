@@ -1,0 +1,129 @@
+.dmb-menu {
+    .wrapper {
+        background: var(--primary);
+    }
+
+    header {
+        background: var(--primary);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 1rem;
+
+        h3 {
+            color: var(--primary-contrast);
+            font-size: var(--font-size-md);
+            font-weight: 600;
+            margin: 0;
+        }
+
+        dmb-close-panel {
+            color: var(--primary-contrast);
+            opacity: 0.7;
+            transition: opacity 0.15s ease;
+
+            &:hover {
+                opacity: 1;
+            }
+        }
+    }
+
+    dmb-content {
+        background: var(--primary);
+        color: var(--primary-contrast);
+        display: flex;
+        flex-direction: column;
+        padding: 0.5rem;
+        text-align: left;
+
+        &::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .item:nth-last-child(2) {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: auto;
+        }
+    }
+
+    .item {
+        align-items: center;
+        border-radius: 6px;
+        box-sizing: border-box;
+        color: var(--primary-contrast);
+        cursor: pointer;
+        display: flex;
+        float: none;
+        font-size: var(--font-size-sm);
+        gap: 0.75rem;
+        height: auto;
+        opacity: 0.8;
+        padding: 0.75rem 1rem;
+        position: relative;
+        transition: background 0.15s ease, opacity 0.15s ease;
+        width: 100%;
+
+        &[icon]::before {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        &::after {
+            display: none;
+        }
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.08);
+            opacity: 1;
+        }
+
+        &.selected,
+        &.actived,
+        &.active {
+            background: var(--secondary);
+            font-weight: 600;
+            opacity: 1;
+        }
+    }
+
+    .item-main {
+        & ~ .submenu {
+            display: none;
+        }
+
+        &.actived {
+            & ~ .submenu {
+                display: flex;
+                flex-direction: column;
+            }
+        }
+    }
+
+    .item-secondary {
+        font-size: var(--font-size-xs);
+        opacity: 0.7;
+        padding: 0.5rem 1rem 0.5rem 2.5rem;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.06);
+            opacity: 1;
+        }
+    }
+}
+
+dmb-menu-button {
+    .legend {
+        font-size: 1.3em;
+        height: 2em;
+    }
+}
+
+@include breakpoint(small) {
+    dmb-menu-button {
+        .legend {
+            display: none;
+        }
+    }
+}

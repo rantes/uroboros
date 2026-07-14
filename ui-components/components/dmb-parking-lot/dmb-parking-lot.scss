@@ -1,0 +1,26 @@
+dmb-parking-lot {
+    background-color: var(--success);
+    border: solid 1px var(--primary);
+    cursor: pointer;
+    display: inline-block;
+    height: 3em;
+    margin-bottom: 0.2em;
+    text-align: center;
+    width: 3em;
+
+    &[occupied] {
+        background-color: var(--error);
+    }
+}
+
+dmb-view.guard-portal dmb-parking-lot {
+    background: var(--success-hover);
+    border-color: var(--success);
+    color: var(--success-contrast);
+
+    &[occupied] {
+        background: var(--warning-hover);
+        border-color: var(--warning);
+        color: var(--warning-contrast);
+    }
+}

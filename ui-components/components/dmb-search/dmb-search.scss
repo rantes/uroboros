@@ -1,0 +1,25 @@
+dmb-search {
+    width: 100%;
+
+    dmb-input {
+        float: left;
+        margin-right: 1em;
+        width: calc(99% - 9em);
+
+        label {
+            display: none;
+        }
+
+        input {
+            height: 2.7em;
+        }
+    }
+
+    .col & {
+        dmb-button {
+            float: left;
+            margin-left: 1em;
+            width: 3em;
+        }
+    }
+}

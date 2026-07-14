@@ -1,0 +1,103 @@
+dmb-input {
+    box-sizing: border-box;
+    display: block;
+    padding-bottom: 1em;
+    position: relative;
+
+    [icon] {
+        display: none;
+        font-size: 0.6rem;
+        position: absolute;
+        right: 0.5em;
+        top: 3em;
+    }
+
+    label {
+        box-sizing: border-box;
+        display: block;
+        font-weight: 800;
+        margin-bottom: 0.4em;
+        overflow: hidden;
+        padding-left: 0.4em;
+        text-align: left;
+        transition: all 0.3s cubic-bezier(0.64, 0.09, 0.08, 1);
+        width: 99%;
+
+        ._error & {
+            color: var(--error);
+        }
+    }
+
+    input {
+        border: 1px solid var(--information);
+        border-radius: 4px;
+        box-sizing: border-box;
+        display: block;
+        line-height: normal;
+        margin: 0;
+        outline: none;
+        padding: 0.5em 0.5em 0.3em;
+        transition: all 0.3s cubic-bezier(0.64, 0.09, 0.08, 1);
+        width: 100%;
+
+        &:focus {
+            border-color: var(--primary);
+        }
+
+        &[type="checkbox"] {
+            float: left;
+            width: auto;
+
+            &~label {
+                float: left;
+                width: auto;
+            }
+        }
+    }
+
+
+    .error-container {
+        color: var(--error);
+        display: none;
+        line-height: 1;
+    }
+
+    &._error {
+        input {
+            border-color: var(--error);
+        }
+
+        .error-container {
+            display: inline-block;
+        }
+
+        [icon="warning"] {
+            display: inline-block;
+            color: var(--error);
+        }
+    }
+
+    &._success {
+        input {
+            border-color: var(--primary);
+        }
+
+        .success-container {
+            display: inline-block;
+        }
+
+        [icon="check_circle"] {
+            display: inline-block;
+            color: var(--primary);
+        }
+    }
+
+    &[type="hidden"] {
+        height: 0;
+        width: 0;
+
+        &~label {
+            display: none;
+        }
+    }
+}

@@ -1,0 +1,29 @@
+dmb-page-loader {
+    background-color: white;
+    bottom: 0;
+    display: none;
+    height: 100%;
+    left: 0;
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+
+    &.active {
+        display: block;
+    }
+
+    .wrapper {
+        height: 50vh;
+        left: 50%;
+        position: absolute;
+        transform: translate(-50%, -50%);
+        top: 50%;
+        width: 164px;
+    }
+
+    &.transparent {
+        background-color: #00000066;
+    }
+}

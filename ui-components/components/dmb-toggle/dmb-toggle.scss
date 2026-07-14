@@ -1,0 +1,30 @@
+dmb-toggle {
+    background-color: var(--primary-contrast);
+    border-radius: 1em;
+    cursor: pointer;
+    display: inline-block;
+    height: 2em;
+    position: relative;
+    width: 4em;
+
+    .switch {
+        background-color: var(--primary);
+        border-radius: 1em;
+        height: calc(2em - 6px);
+        position: absolute;
+        left: 3px;
+        top: 3px;
+        transition: left 1s ease;
+        width: calc(2em - 6px);
+    }
+
+    &.on {
+        background-color: var(--success-hover);
+
+        .switch {
+            background-color: var(--success);
+            left: auto;
+            right: 3px;
+        }
+    }
+}

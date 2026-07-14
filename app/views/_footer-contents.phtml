@@ -1,1 +1,6 @@
-<script src="/libs/sw.js" type="text/javascript" nonce="<?=$this->nonce;?>"></script>
+<script src="/sw.js" type="text/javascript" nonce="<?=$this->nonce;?>"></script>
+
+<script src="/ui-components/actions/<?=$this->_getController_();?>.js" type="module" nonce="<?=$this->nonce;?>"></script>
+<? if ($this->adminCRUDAction === 'list'): ?>
+    <script src="/ui-components/actions/admin-list-items.js" type="module" nonce="<?=$this->nonce;?>"></script>
+<? endif; ?>

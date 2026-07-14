@@ -1,6 +1,7 @@
 {
-    "src": "ui-sources/",
-    "target": "app/webroot/",
-    "tests": "app/webroot/",
-    "dumbojsSource": "../../libs/dumbojs/"
+    "src": "./ui-components/",
+    "target": "./app/webroot/dist/",
+    "tests": "./tests/",
+    "dumbojsSource": "/../../libs/dumbojs/",
+    "baseUrl": "/ui-components/"
 }

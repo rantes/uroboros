@@ -1,0 +1,20 @@
+.confirm-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25em;
+    padding: 0.5em;
+    text-align: center;
+
+    .confirm-dialog-message {
+        color: var(--primary);
+        font-size: var(--font-size-md);
+        font-weight: var(--font-weight-medium);
+        margin: 0;
+    }
+
+    .confirm-dialog-actions {
+        display: flex;
+        gap: 0.75em;
+        justify-content: center;
+    }
+}

@@ -1,0 +1,121 @@
+dmb-combobox {
+    box-sizing: border-box;
+    display: block;
+    padding-bottom: 1em;
+    position: relative;
+
+    label {
+        box-sizing: border-box;
+        display: inline-block;
+        margin-bottom: 5px;
+        padding-left: 6px;
+        text-align: left;
+        width: 99%;
+
+        ._error & {
+            color: var(--error);
+        }
+    }
+
+    &.required label:after {
+        content: "*";
+    }
+
+    .dmb-combobox-control {
+        position: relative;
+    }
+
+    // Spinner de carga mientras se consulta la fuente remota (atributo `src`).
+    &.loading .dmb-combobox-control:after {
+        animation: dmb-combobox-spin 0.6s linear infinite;
+        border: 2px solid var(--border-default);
+        border-radius: 50%;
+        border-top-color: var(--primary);
+        box-sizing: border-box;
+        content: "";
+        height: 1em;
+        margin-top: -0.5em;
+        position: absolute;
+        right: 0.5em;
+        top: 50%;
+        width: 1em;
+    }
+
+    .dmb-combobox-input {
+        background-color: var(--primary-contrast);
+        border: 0 none;
+        border-bottom: 1px solid var(--primary-hover);
+        box-sizing: border-box;
+        color: var(--primary);
+        display: block;
+        line-height: normal;
+        margin: 0;
+        outline: 0 none;
+        padding: 0.5em 0.5em 0.3em;
+        transition: all 0.3s cubic-bezier(0.64, 0.09, 0.08, 1);
+        width: 100%;
+
+        &:focus {
+            border-color: var(--primary);
+        }
+    }
+
+    .dmb-combobox-list {
+        background-color: var(--surface-1);
+        border: 1px solid var(--border-default);
+        border-top: 0 none;
+        box-sizing: border-box;
+        list-style: none;
+        margin: 0;
+        max-height: 16em;
+        overflow-y: auto;
+        padding: 0;
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 100%;
+        z-index: 20;
+
+        .dmb-combobox-option,
+        .dmb-combobox-empty {
+            box-sizing: border-box;
+            color: var(--primary);
+            cursor: pointer;
+            line-height: normal;
+            padding: 0.5em 0.75em;
+        }
+
+        .dmb-combobox-option:hover,
+        .dmb-combobox-option.active {
+            background-color: var(--overlay-light);
+        }
+
+        .dmb-combobox-empty {
+            color: var(--primary-hover);
+            cursor: default;
+            font-style: italic;
+        }
+    }
+
+    &._error {
+        .dmb-combobox-input {
+            border-color: var(--error);
+        }
+
+        .error-container {
+            display: inline-block;
+        }
+    }
+
+    .error-container {
+        color: var(--error);
+        display: none;
+        line-height: normal;
+    }
+}
+
+@keyframes dmb-combobox-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

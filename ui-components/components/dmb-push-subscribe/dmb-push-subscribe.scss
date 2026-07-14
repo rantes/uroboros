@@ -1,0 +1,16 @@
+dmb-push-subscribe {
+    display: block;
+
+    .push-status {
+        margin: 0 0 0.5em;
+        color: var(--information);
+    }
+
+    .push-toggle {
+        cursor: pointer;
+    }
+
+    &[data-state="subscribed"] .push-toggle {
+        color: var(--error);
+    }
+}

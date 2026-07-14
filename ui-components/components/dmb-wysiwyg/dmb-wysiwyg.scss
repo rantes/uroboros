@@ -1,0 +1,369 @@
+dmb-wysiwyg {
+    display: block;
+
+    .dmb-wysiwyg__root {
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--border-default);
+        border-radius: 0.5em;
+        overflow: hidden;
+        background: var(--surface-1);
+        position: relative;
+    }
+
+    // ── Toolbar ───────────────────────────────────────────────────────────────
+
+    .dmb-wysiwyg__toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.125em;
+        padding: 0.375em 0.5em;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .dmb-wysiwyg__btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2em;
+        height: 2em;
+        padding: 0.25em;
+        border: 1px solid transparent;
+        border-radius: 0.375em;
+        background: transparent;
+        color: var(--primary);
+        cursor: pointer;
+        transition: background 0.12s, border-color 0.12s, color 0.12s;
+
+        svg {
+            width: 1em;
+            height: 1em;
+            display: block;
+            pointer-events: none;
+        }
+
+        &:hover {
+            background: var(--primary-hover);
+            border-color: var(--border-default);
+        }
+
+        &:active {
+            background: var(--primary-hover);
+        }
+
+        &.dmb-wysiwyg__btn--active {
+            background: var(--primary-hover);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+    }
+
+    .dmb-wysiwyg__sep {
+        display: inline-block;
+        width: 1px;
+        height: 1.5em;
+        background: var(--border-subtle);
+        margin: 0 0.25em;
+        flex-shrink: 0;
+    }
+
+    // ── Editor area ───────────────────────────────────────────────────────────
+
+    .dmb-wysiwyg__editor {
+        min-height: 8em;
+        padding: 0.75em 1em;
+        outline: none;
+        font-size: var(--font-size-base);
+        line-height: var(--line-height-base);
+        color: var(--primary);
+        overflow-y: auto;
+
+        // Content styles inside editor
+        p {
+            margin: 0 0 0.5em;
+        }
+
+        h1 {
+            font-size: var(--font-size-xl);
+            font-weight: var(--font-weight-bold);
+            margin: 0.5em 0;
+        }
+
+        h2 {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-bold);
+            margin: 0.5em 0;
+        }
+
+        h3 {
+            font-size: var(--font-size-md);
+            font-weight: var(--font-weight-bold);
+            margin: 0.5em 0;
+        }
+
+        h4,
+        h5,
+        h6 {
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-bold);
+            margin: 0.5em 0;
+        }
+
+        blockquote {
+            margin: 0.5em 0 0.5em 1em;
+            padding: 0.25em 0.75em;
+            border-left: 3px solid var(--primary);
+            color: var(--primary);
+            font-style: italic;
+        }
+
+        ul,
+        ol {
+            padding-left: 1.5em;
+            margin: 0.25em 0;
+        }
+
+        li {
+            margin: 0.125em 0;
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+        &:empty::before {
+            content: attr(placeholder);
+            color: var(--border-default);
+            pointer-events: none;
+        }
+    }
+
+    // Hidden textarea (carries value)
+    .dmb-wysiwyg__value {
+        display: none;
+        resize: vertical;
+        font-family: monospace;
+        font-size: var(--font-size-sm);
+        padding: 0.75em 1em;
+        border: none;
+        outline: none;
+        background: var(--surface-3);
+        color: var(--primary);
+        line-height: var(--line-height-base);
+
+        &.dmb-wysiwyg__value--visible {
+            display: block;
+            width: 100%;
+            min-height: 10em;
+        }
+    }
+
+    // ── Popups ────────────────────────────────────────────────────────────────
+
+    .dmb-wysiwyg__popup {
+        position: absolute;
+        top: 3em;
+        left: 0.5em;
+        z-index: 100;
+        background: var(--surface-1);
+        border: 1px solid var(--border-default);
+        border-radius: 0.5em;
+        padding: 0.5em;
+        box-shadow: 0 0.25em 0.75em rgba(0, 0, 0, 0.15);
+
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    .dmb-wysiwyg__popup--link {
+        display: flex;
+        align-items: center;
+        gap: 0.375em;
+        min-width: 20em;
+    }
+
+    .dmb-wysiwyg__popup-input {
+        flex: 1;
+        padding: 0.375em 0.625em;
+        border: 1px solid var(--border-default);
+        border-radius: 0.375em;
+        font-size: var(--font-size-sm);
+        background: var(--surface-2);
+        color: var(--primary);
+        outline: none;
+
+        &:focus {
+            border-color: var(--primary);
+        }
+    }
+
+    .dmb-wysiwyg__popup-ok {
+        padding: 0.375em 0.75em;
+        background: var(--primary);
+        color: var(--primary-contrast);
+        border: none;
+        border-radius: 0.375em;
+        font-size: var(--font-size-sm);
+        cursor: pointer;
+
+        &:hover {
+            opacity: 0.9;
+        }
+    }
+
+    .dmb-wysiwyg__popup-cancel {
+        padding: 0.375em 0.5em;
+        background: transparent;
+        color: var(--primary);
+        border: 1px solid var(--border-subtle);
+        border-radius: 0.375em;
+        font-size: var(--font-size-sm);
+        cursor: pointer;
+
+        &:hover {
+            background: var(--primary-hover);
+        }
+    }
+
+    // Color palette
+    .dmb-wysiwyg__popup--color {
+        left: auto;
+        right: 0.5em;
+    }
+
+    .dmb-wysiwyg__swatches {
+        display: grid;
+        grid-template-columns: repeat(8, 1.5em);
+        gap: 0.25em;
+    }
+
+    .dmb-wysiwyg__swatch {
+        width: 1.5em;
+        height: 1.5em;
+        border: 1px solid var(--border-subtle);
+        border-radius: 0.25em;
+        cursor: pointer;
+        padding: 0;
+
+        &:hover {
+            transform: scale(1.2);
+            border-color: var(--border-default);
+        }
+
+        // Palette — 24 fixed colors (matches COLOR_PALETTE in directive)
+        &--0 {
+            background-color: #000000;
+        }
+
+        &--1 {
+            background-color: #434343;
+        }
+
+        &--2 {
+            background-color: #666666;
+        }
+
+        &--3 {
+            background-color: #999999;
+        }
+
+        &--4 {
+            background-color: #b7b7b7;
+        }
+
+        &--5 {
+            background-color: #cccccc;
+        }
+
+        &--6 {
+            background-color: #d9d9d9;
+        }
+
+        &--7 {
+            background-color: #ffffff;
+            border-color: var(--border-default);
+        }
+
+        &--8 {
+            background-color: #ff0000;
+        }
+
+        &--9 {
+            background-color: #ff9900;
+        }
+
+        &--10 {
+            background-color: #ffff00;
+        }
+
+        &--11 {
+            background-color: #00ff00;
+        }
+
+        &--12 {
+            background-color: #00ffff;
+        }
+
+        &--13 {
+            background-color: #4a86e8;
+        }
+
+        &--14 {
+            background-color: #0000ff;
+        }
+
+        &--15 {
+            background-color: #9900ff;
+        }
+
+        &--16 {
+            background-color: #e06666;
+        }
+
+        &--17 {
+            background-color: #f6b26b;
+        }
+
+        &--18 {
+            background-color: #ffd966;
+        }
+
+        &--19 {
+            background-color: #93c47d;
+        }
+
+        &--20 {
+            background-color: #76d7ea;
+        }
+
+        &--21 {
+            background-color: #6fa8dc;
+        }
+
+        &--22 {
+            background-color: #8e7cc3;
+        }
+
+        &--23 {
+            background-color: #c27ba0;
+        }
+    }
+
+    // ── Error state ───────────────────────────────────────────────────────────
+
+    .dmb-wysiwyg__error {
+        display: block;
+        font-size: var(--font-size-xs);
+        color: var(--error);
+        padding: 0.25em 0.5em 0;
+        min-height: 1em;
+    }
+
+    &.wysiwyg--invalid .dmb-wysiwyg__root {
+        border-color: var(--error);
+    }
+}

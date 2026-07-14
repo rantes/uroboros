@@ -1,0 +1,132 @@
+dmb-card {
+    background-color: var(--surface-1);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    box-shadow: none;
+    color: var(--primary);
+    display: block;
+    float: left;
+    margin-bottom: 1em;
+    margin-right: 1em;
+    min-height: 12em;
+    padding: 1.25rem;
+    position: relative;
+    transition: border-color 0.15s ease;
+    width: 21em;
+    word-wrap: break-word;
+
+    &:hover {
+        border-color: var(--border-default);
+    }
+
+    &[behavior] {
+        cursor: pointer;
+    }
+
+    // Ícono en esquina superior derecha + variantes semánticas
+    &[icon] {
+        &::before {
+            color: var(--secondary);
+            font-size: 1.4rem;
+            opacity: 0.6;
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+        }
+
+        &.border-error::before       { color: var(--error);       opacity: 0.8; }
+        &.border-success::before     { color: var(--success);     opacity: 0.8; }
+        &.border-warning::before     { color: var(--warning);     opacity: 0.8; }
+        &.border-primary::before     { color: var(--primary);     opacity: 0.8; }
+        &.border-secondary::before   { color: var(--secondary);   opacity: 0.8; }
+        &.border-information::before { color: var(--information); opacity: 0.8; }
+    }
+
+    .head {
+        border-bottom: 1px solid var(--border-subtle);
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
+
+        .header {
+            color: var(--primary);
+            font-weight: bold;
+            margin: 0;
+            padding: 0.5em;
+        }
+
+        h2 { margin: 0; }
+
+        h4 {
+            color: var(--primary);
+            font-size: var(--font-size-md);
+            font-weight: 600;
+            margin: 0;
+        }
+
+        h5 {
+            color: var(--information);
+            font-size: var(--font-size-xs);
+            font-weight: 400;
+            margin: 0;
+        }
+    }
+
+    .body {
+        margin-top: 0.5em;
+
+        .item {
+            margin-bottom: 0.5em;
+        }
+
+        .content {
+            color: var(--primary);
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+            line-height: 1.2;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+
+        .label {
+            color: var(--information);
+            font-size: var(--font-size-xs);
+            margin-top: 0.25rem;
+        }
+    }
+
+    &.half-height {
+        min-height: 6em;
+    }
+
+    &.small {
+        height: auto;
+        min-height: 3em;
+        min-width: 9em;
+        position: relative;
+        width: auto;
+    }
+
+    &.medium {
+        align-items: baseline;
+        align-content: flex-start;
+        display: flex;
+        flex-direction: column;
+        flex-wrap: wrap;
+        height: auto;
+        justify-content: space-evenly;
+        padding: 2em;
+        width: 48.8%;
+    }
+
+    &.full {
+        align-items: baseline;
+        align-content: flex-start;
+        display: flex;
+        flex-direction: column;
+        flex-wrap: wrap;
+        height: auto;
+        justify-content: space-evenly;
+        padding: 2em;
+        width: 99%;
+    }
+}

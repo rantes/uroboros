@@ -1,0 +1,32 @@
+[dmb-tooltip] {
+    &::after {
+        background-color: #000;
+        border-top: 5px solid #000;
+        border-right: 5px solid #000;
+        border-left: 5px solid #000;
+        border-bottom: 5px solid #000;
+        border-radius: 3px;
+        bottom: 2.5em;
+        color: #fff;
+        content: attr(dmb-tooltip);
+        left: 50%;
+        margin-bottom: 0;
+        margin-left: 0;
+        min-width: 1em;
+        opacity: 0;
+        padding: 0;
+        pointer-events: none;
+        position: absolute;
+        transform: translateX(-50%);
+        visibility: hidden;
+        width: auto;
+        z-index: 999999;
+    }
+
+    &:hover {
+        &::after {
+            visibility: visible;
+            opacity: 1;
+        }
+    }
+}

@@ -1,4 +1,5 @@
 <?php
+// xhprof_enable(XHPROF_FLAGS_CPU | XHPROF_FLAGS_MEMORY);
 $dir = realpath('./../');
 defined('INST_PATH') || define('INST_PATH', dirname($dir).'/');
 set_include_path(
@@ -23,14 +24,27 @@ set_include_path(
 
 require_once 'dumbophp.php';
 require_once INST_PATH.'config/host.php';
-if (file_exists(INST_PATH.'vendor/autoload.php')) require_once INST_PATH.'vendor/autoload.php';
 
-if (!isset($_SESSION) or (session_status() === PHP_SESSION_NONE)):
-    // session_set_save_handler($session);
-    // empty($_COOKIE[COOKIE_ID]) or session_id($_COOKIE[COOKIE_ID]);
-    // register_shutdown_function('session_write_close');
+spl_autoload_register(function($className) {
+    $path = explode('\\', $className);
+    if ($path[0] === 'DumboPHP'):
+        require_once implode('/', array_slice($path, 1)).'.php';
+    else:
+
+        for ($i = 0; $i < sizeof($path); $i++):
+            $path[$i] = DumboPHP\unCamelize($path[$i]);
+        endfor;
+        $path = implode('/', $path);
+        require_once INST_PATH."{$path}.php";
+    endif;
+});
+
+if (session_status() === PHP_SESSION_NONE) {
     session_start();
-endif;
+}
 
-$index = new index();
+$index = new DumboPHP\index();
 $index->page->display();
+// $data = xhprof_disable();
+// $id = uniqid();
+// file_put_contents("/tmp/xhprof/{$id}.komodo.xhprof", serialize($data));

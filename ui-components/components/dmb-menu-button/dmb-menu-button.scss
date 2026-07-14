@@ -1,0 +1,17 @@
+dmb-menu-button {
+    display: block;
+    float: left;
+    height: 2em;
+    left: 0;
+    margin-right: 1em;
+    margin-top: 0.3em;
+    position: initial;
+    top: 0;
+    transform: translateX(50%);
+
+    .icon {
+        &:before {
+            font-size: 2em;
+        }
+    }
+}

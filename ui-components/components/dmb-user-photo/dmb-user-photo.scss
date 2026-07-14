@@ -1,0 +1,23 @@
+dmb-user-photo {
+    cursor: pointer;
+    max-width: 275px;
+    position: relative;
+    width: 100%;
+
+    img {
+        width: 100%;
+    }
+
+    &:before {
+        background-color: var(--primary-contrast);
+        bottom: 25px;
+        color: var(--primary);
+        content: attr(label);
+        left: 0;
+        padding: 5px;
+        position: absolute;
+        right: 0;
+        text-align: center;
+        width: 100%;
+    }
+}

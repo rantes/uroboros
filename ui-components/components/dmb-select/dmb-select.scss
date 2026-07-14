@@ -1,0 +1,77 @@
+dmb-select {
+    box-sizing: border-box;
+    display: block;
+    padding-bottom: 1em;
+    position: relative;
+
+    select {
+        background-color: var(--primary-contrast);
+        border: 0 none;
+        border-bottom: 1px solid var(--primary-hover);
+        box-sizing: border-box;
+        color: var(--primary);
+        display: block;
+        line-height: normal;
+        margin: 0;
+        outline: 0 none;
+        padding: 0.5em 0.5em 0.3em;
+        transition: all 0.3s cubic-bezier(0.64, 0.09, 0.08, 1);
+        width: 100%;
+
+        &:focus {
+            border-color: var(--primary);
+        }
+    }
+
+    label {
+        box-sizing: border-box;
+        display: inline-block;
+        margin-bottom: 5px;
+        padding-left: 6px;
+        text-align: left;
+        width: 99%;
+
+        ._error & {
+            color: var(--error);
+        }
+    }
+
+    input.dmb-select-search {
+        background-color: var(--primary-contrast);
+        border: 0 none;
+        border-bottom: 1px solid var(--primary-hover);
+        box-sizing: border-box;
+        color: var(--primary);
+        display: block;
+        line-height: normal;
+        margin: 0 0 0.25em;
+        outline: 0 none;
+        padding: 0.5em 0.5em 0.3em;
+        transition: all 0.3s cubic-bezier(0.64, 0.09, 0.08, 1);
+        width: 100%;
+
+        &:focus {
+            border-color: var(--primary);
+        }
+    }
+
+    &.required label:after {
+        content: "*";
+    }
+
+    .error-container {
+        color: var(--error);
+        display: none;
+        line-height: normal;
+    }
+
+    &._error {
+        select {
+            border-color: var(--error);
+        }
+
+        .error-container {
+            display: inline-block;
+        }
+    }
+}

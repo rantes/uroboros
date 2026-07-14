@@ -1,0 +1,35 @@
+dmb-more-options {
+    align-items: center;
+    color: var(--primary);
+    cursor: pointer;
+    display: inline-flex;
+    position: relative;
+    vertical-align: middle;
+
+    .wrapper {
+        background-color: var(--surface-1);
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px var(--border-subtle);
+        display: none;
+        padding: 0.4rem;
+        position: absolute;
+        right: 0;
+        top: calc(100% + 0.25rem);
+        z-index: 10;
+
+        &.active {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+
+        &::after {
+            display: none;
+        }
+
+        dmb-more-option {
+            color: var(--primary);
+        }
+    }
+}

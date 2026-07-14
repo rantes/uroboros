@@ -1,0 +1,30 @@
+dmb-button-action {
+    align-items: center;
+    background: var(--primary);
+    border: none;
+    border-radius: 8px;
+    color: var(--primary-contrast);
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    transition: opacity 0.15s ease;
+
+    &:hover { opacity: 0.85; }
+    &::before { color: inherit; }
+
+    &.primary   { background: var(--primary); }
+    &.secondary { background: var(--secondary); }
+    &.danger    { background: var(--error); }
+
+    &.icon {
+        background-color: var(--primary-contrast);
+        width: auto;
+        &::before { align-items: center; color: var(--primary); font-size: 1.2em; }
+    }
+
+    &.main-add {
+        align-items: center;
+        font-size: 1.2em;
+        &::before { font-size: 1.2em; margin: 0 0.5em; }
+    }
+}

@@ -1,0 +1,21 @@
+dmb-search-popup {
+    display: inline-block;
+    width: 100%;
+
+    dmb-input {
+        display: inline-block;
+        width: 50%;
+
+        &.required label::after {
+            content: "";
+        }
+    }
+
+    dmb-button {
+        &[type="submit"] {
+            display: inline-block;
+            margin-left: 1em;
+            width: 4em;
+        }
+    }
+}
