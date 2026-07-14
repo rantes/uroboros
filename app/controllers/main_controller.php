@@ -25,7 +25,7 @@ abstract class MainController extends Controller {
             'actions' => 'login,logout,pusher,signin',
             'controllers' => 'index'
         ];
-        $this->helper     = ['Sessions', 'Menu'];
+        $this->helper     = ['Sessions'];
         $this->noTemplate = ['logout'];
         $this->layout     = 'layout';
         $this->uid        = $_SERVER['UNIQUE_ID'] ?? strGenerate();

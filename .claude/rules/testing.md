@@ -324,6 +324,17 @@ Nunca crear archivos de test específicos para helpers.
 - `coverage.xml` — reporte de cobertura Clover (requiere XDebug)
 - `tmp/logs/unit_testing.log` — log detallado de cada aserción
 
+## Cobertura mínima obligatoria
+
+La cobertura de código del proyecto nunca puede estar por debajo del
+98% (regla no negociable, ver CLAUDE.md).
+
+dumboTest solo genera coverage.xml (reporte Clover, requiere
+XDebug) — no valida ni bloquea nada por sí mismo. El umbral se aplica
+en SonarQube, que consume ese reporte como quality gate. Correr
+dumboTest en local no certifica cumplir la regla: el gate real está
+en SonarQube, no en el resultado de consola.
+
 ## Entorno de test
 
 - El entorno se fuerza a `test` automáticamente
