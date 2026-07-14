@@ -75,6 +75,16 @@ y **DumboJS** (Web Components nativos). MySQL vía PDO..
   (cola en BD + controlador de background + cron) resuelve la
   ejecución asíncrona sin abstraer nada nuevo. Ver
   .claude/specs/nucleo-oem/design.md, Decisión 7.
+- Cobertura de código nunca por debajo del 98%. Ningún cambio —
+  feature nueva, fix, refactor — se considera completo si hace bajar
+  la cobertura general del proyecto de ese umbral. No es una meta
+  aspiracional, es un criterio de aceptación como cualquier otro.
+  Mecanismo: dumboTest solo genera coverage.xml (reporte Clover,
+  requiere XDebug — ver testing.md) — no bloquea nada por sí mismo.
+  El umbral del 98% se aplica y se hace cumplir en SonarQube, que
+  consume ese reporte como quality gate. Es decir: correr los tests en
+  local no es garantía de cumplir la regla — el gate real está en
+  SonarQube, no en la máquina de cada desarrollador.
 
 ## Reglas PHP — imports y use
 
@@ -138,6 +148,7 @@ $code = http_response_code();
 - Modelos y Active Record: @.claude/rules/dumbophp-models.md
 - CLI completo: @.claude/rules/cli.md
 - Convenciones y anti-patrones: @.claude/rules/code-conventions.md
+- Núcleo OEM (Commands/Events/Reactions): @.claude/specs/nucleo-oem/design.md
 
 <!-- Las siguientes reglas cargan automáticamente por paths:
      - Vistas (.phtml)      → .claude/rules/views.md
