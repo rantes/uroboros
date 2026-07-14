@@ -13,7 +13,8 @@ class testTables extends dumboTests {
     public function beforeEach(): void {
         /** before each test the table should be reset */
         $this->_migrateTables([
-            'app_users'
+            'app_users',
+            'events'
         ]);
     }
 
@@ -24,9 +25,11 @@ class testTables extends dumboTests {
     public function migrationsTest(): void {
         $this->describe('Verifying Fields');
         $this->assertHasFields($this->AppUser);
+        $this->assertHasFields($this->Event);
 
         $this->describe('Verifying Field types');
         $this->assertHasFieldTypes($this->AppUser);
+        $this->assertHasFieldTypes($this->Event);
     }
 
     /**

@@ -17,6 +17,7 @@ node_modules/
 package-lock.json
 specRunner.html
 .env
+.env.secrets
 app/webroot/js/specs.min.js
 app/webroot/test.html
 coverage.xml

@@ -11,6 +11,19 @@
 | Helpers | `App\Helpers` | `app/helpers/` | `Nombre_Helper.php` |
 | Migraciones | `Migrations` | `migrations/` | `create_nombre_tabla.php` |
 | Tests | `tests` | `tests/` | `testNombreClase.php` |
+| Commands | `App\Commands` | `app/commands/` | `nombre_command.php` |
+| Command Handlers | `App\CommandHandlers` | `app/command_handlers/` | `nombre_command_handler.php` |
+| Reactions | `App\Reactions` | `app/reactions/` | `nombre_reaction.php` |
+| Buses | `App\Buses` | `app/buses/` | `nombre_bus.php` |
+| Configuración runtime | (ninguno — archivo plano, retorna array) | `config/` | `nombre_config.php` (ej. reactions_map.php, junto a host.php, db_settings.php) |
+| Fixtures de test | `tests\fixtures` (minúscula, como tests\) | `tests/fixtures/` | `NombreClase.php` — PascalCase idéntico a la clase, igual que el resto de tests/, no snake_case como app/ |
+
+Nota aparte para dejar explícita en el documento, porque no es obvia
+para quien lea la tabla por primera vez: config/ es la única
+carpeta de esta lista que no participa del autoload por namespace.
+Sus archivos se cargan con include/require explícito desde donde
+se necesiten (ver App\Buses\EventBus::Dispatch()), no por
+resolución automática de clase.
 
 ### Clases
 
@@ -26,6 +39,20 @@ class CreateUserProperties extends Migrations { }
 
 // Test
 class testUserPropertyModel extends dumboTests { }
+
+// Command — DTO plano, sin lógica, nunca persiste
+class PingCommand { }
+
+// Command Handler — único autorizado a crear Events
+class PingCommandHandler extends \DumboPHP\Controller { }
+
+// Reaction — nunca crea Events, solo despacha Commands
+class OnPingStartedReaction extends \DumboPHP\Controller { }
+
+// Bus — clase concreta, se instancia con `new` en cada punto de uso,
+// sin loader mágico ni interfaz
+class CommandBus { }
+class EventBus { }
 ```
 
 ### Métodos
