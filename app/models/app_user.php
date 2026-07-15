@@ -8,7 +8,7 @@ use DumboPHP\ActiveRecord;
  *
  * @author Javier Serrano <rantes.javier@gmail.com>
  * @version  1.0
- * @package Komodo
+ * @package Uroboros
  * @subpackage Models
  */
 class AppUser extends ActiveRecord {

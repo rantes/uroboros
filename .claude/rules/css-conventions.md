@@ -5,7 +5,7 @@ paths:
   - "ui-components/libs/main.css"
 ---
 
-# Komodo — Convenciones CSS y SCSS
+# Uroboros — Convenciones CSS y SCSS
 
 ## Estructura de archivos
 

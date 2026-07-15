@@ -96,7 +96,7 @@ El layout usa Web Components de DumboJS. Estructura base:
 <body>
 <dmb-view class="dmb-view" id="page">
     <header>
-        <h1 class="site-logotype">KOMODO - <?=$this->sectionTitle;?></h1>
+        <h1 class="site-logotype">Uroboros - <?=$this->sectionTitle;?></h1>
     </header>
     <dmb-content id="page-content">
         <?=$this->yield;?>

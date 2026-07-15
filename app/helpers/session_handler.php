@@ -4,7 +4,7 @@ namespace App\Helpers;
 use App\Models\StorageSession;
 use \SessionHandlerInterface;
 
-class KomodoSessionHandler implements SessionHandlerInterface {
+class UroborosSessionHandler implements SessionHandlerInterface {
     private $_session = null;
 
     public function __construct() {

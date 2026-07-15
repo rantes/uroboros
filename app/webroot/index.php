@@ -1,5 +1,5 @@
 <?php
-xhprof_enable(XHPROF_FLAGS_CPU | XHPROF_FLAGS_MEMORY);
+// xhprof_enable(XHPROF_FLAGS_CPU | XHPROF_FLAGS_MEMORY);
 $dir = realpath('./../');
 defined('INST_PATH') || define('INST_PATH', dirname($dir).'/');
 set_include_path(
@@ -45,7 +45,6 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $index = new DumboPHP\index();
 $index->page->display();
-$data = xhprof_disable();
-$id = uniqid();
-file_put_contents("/tmp/xhprof/{$id}.uroboros.xhprof", serialize($data));
-echo "XHProf data saved to /tmp/xhprof/{$id}.uroboros.xhprof\n";
+// $data = xhprof_disable();
+// $id = uniqid();
+// file_put_contents("/tmp/xhprof/{$id}.uroboros.xhprof", serialize($data));

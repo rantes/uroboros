@@ -79,16 +79,6 @@ abstract class MainController extends Controller {
             switch ($controller):
                 case 'admin':
                     empty($this->params[0]) and ($this->params[0] = 'list');
-                    $this->menuLinks = adminMenu();
-                    break;
-                case 'contabilidad':
-                    $this->menuLinks = contabilidadMenu();
-                    break;
-                case 'council':
-                    $this->menuLinks = councilMenu();
-                    break;
-                default:
-                    $this->menuLinks = generalMenu($controller);
                     break;
             endswitch;
             $this->_additional_before_filter();
@@ -161,11 +151,11 @@ abstract class MainController extends Controller {
         $actions = ['login', 'signin', 'logout'];
         $canGo   = true;
 
-        if (empty($_SESSION['user']) and !in_array($this->_getAction_(), $actions)):
-            $canGo    = false;
-            $_SESSION = []; // limpia las variables de sesión cruzadas antes de redirigir
-            $this->redirect(INST_URI . $this->_getController_() . '/login');
-        endif;
+        // if (empty($_SESSION['user']) and !in_array($this->_getAction_(), $actions)):
+        //     $canGo    = false;
+        //     $_SESSION = []; // limpia las variables de sesión cruzadas antes de redirigir
+        //     $this->redirect(INST_URI . $this->_getController_() . '/login');
+        // endif;
 
         return $canGo;
     }
