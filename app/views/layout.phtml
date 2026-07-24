@@ -7,15 +7,32 @@
     <noscript>
         <h1>Your browser does not support JS</h1>
     </noscript>
-    <dmb-view id="page">
+    <? if ($this->operationalShell ?? false): ?>
+        <? require_once(INST_PATH.'app/views/_sidebar-operational.phtml'); ?>
+    <? endif; ?>
+    <dmb-view id="page" class="<?= ($this->operationalShell ?? false) ? 'operational' : ''; ?>">
 	    <dmb-header class="section group">
             <div class="col col2"></div>
             <div class="col col8">Uroboros CI/CD</div>
             <div class="col col2"><a href="/index/logout">Cerrar sesi&oacute;n</a></div>
         </dmb-header>
+        <? if ($this->operationalShell ?? false): ?>
+            <dmb-operational-topbar data-user-initials="<?= currentUserInitials(); ?>"></dmb-operational-topbar>
+        <? endif; ?>
         <dmb-content>
         <?=$this->yield;?>
         </dmb-content>
+        <? if ($this->operationalShell ?? false): ?>
+            <? $__oemFooterMetrics = footerMetrics(); ?>
+            <dmb-oem-metrics-footer
+                data-events="<?= $__oemFooterMetrics['events']; ?>"
+                data-commands-dispatched="<?= $__oemFooterMetrics['command_dispatched']; ?>"
+                data-commands-failed="<?= $__oemFooterMetrics['command_failed']; ?>"
+                data-reactions-executed="<?= $__oemFooterMetrics['reaction_executed']; ?>"
+                data-reactions-failed="<?= $__oemFooterMetrics['reaction_failed']; ?>"
+                data-oem-status="<?= oemStatus(); ?>">
+            </dmb-oem-metrics-footer>
+        <? endif; ?>
     </dmb-view>
     <? require_once(INST_PATH.'app/views/_footer-contents.phtml'); ?>
 </body>

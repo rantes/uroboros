@@ -23,6 +23,8 @@ import { DmbBookingCalendar } from '../components/dmb-booking-calendar/dmb-booki
 import { DmbCombobox } from '../components/dmb-combobox/dmb-combobox.directive.js';
 import { DmbPageLoader } from '../components/dmb-page-loader/dmb-page-loader.directive.js';
 import { DmbBarChart } from '../components/dmb-bar-chart/dmb-bar-chart.directive.js';
+import { DmbOperationalTopbar } from '../components/dmb-operational-topbar/dmb-operational-topbar.directive.js';
+import { DmbOemMetricsFooter } from '../components/dmb-oem-metrics-footer/dmb-oem-metrics-footer.directive.js';
 
 class App extends DumboApp {
 
@@ -50,7 +52,9 @@ class App extends DumboApp {
             DmbTable,
             DmbTextArea,
             DmbView,
-            DmbHelpIcon
+            DmbHelpIcon,
+            DmbOperationalTopbar,
+            DmbOemMetricsFooter
         ];
     }
 }
@@ -60,7 +64,3 @@ app.buildComponents();
 
 export const AppDialogs = new DmbDialogService();
 
-// KMD-WEBPUSH — El registro del service worker es único y vive en
-// /libs/service-worker.js, cargado por _footer-contents.phtml en todas las
-// páginas. Este archivo (app.js) no lo carga ningún controlador, por lo que su
-// antiguo registro aquí era código muerto y se eliminó para no duplicarlo.

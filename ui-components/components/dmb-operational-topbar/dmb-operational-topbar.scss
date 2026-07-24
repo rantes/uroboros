@@ -1,0 +1,101 @@
+dmb-operational-topbar {
+    align-items: center;
+    background: var(--surface-1);
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    padding: 0.75em 1.25em;
+    width: 100%;
+
+    .topbar-inner {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .topbar-search {
+        align-items: center;
+        background: var(--surface-2);
+        border: 1px solid var(--border-subtle);
+        border-radius: 0.75em;
+        display: flex;
+        gap: 0.5em;
+        padding: 0.5em 1em;
+        width: 24em;
+
+        [icon]::before {
+            font-size: var(--font-size-base);
+        }
+    }
+
+    .command-palette-input {
+        background: transparent;
+        border: 0;
+        color: var(--primary);
+        flex: 1;
+        font-size: var(--font-size-sm);
+        outline: none;
+
+        &::placeholder {
+            color: var(--information);
+        }
+    }
+
+    .topbar-actions {
+        align-items: center;
+        display: flex;
+        gap: 1em;
+
+        dmb-help-icon [icon]::before {
+            font-size: var(--font-size-md);
+        }
+    }
+
+    .topbar-avatar {
+        align-items: center;
+        background: var(--primary);
+        border-radius: 50%;
+        color: var(--primary-contrast);
+        display: flex;
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-bold);
+        height: 2em;
+        justify-content: center;
+        width: 2em;
+    }
+}
+
+// Override de dmb-panel/dmb-menu para el sidebar operativo persistente
+// (#operational-sidebar) — decisión de design.md: el sidebar reutiliza
+// dmb-panel.dmb-menu existente en vez de un componente nuevo, así que
+// su override vive junto al resto del "chrome" del shell aquí, no en
+// _base.*.scss (prohibido por css-conventions.md para estilos de
+// sección/componente).
+//
+// El componente base es un drawer de overlay a pantalla completa
+// (position:fixed; width:100vw; con telón oscuro ::before). Para que
+// se comporte como sidebar persistente en vez de modal, se acota su
+// ancho al del propio sidebar (así no captura clicks sobre el resto
+// de la página) y se quita el telón.
+dmb-panel#operational-sidebar {
+    transition: none;
+    width: 14em;
+
+    &::before {
+        content: none;
+    }
+
+    .wrapper {
+        box-shadow: none;
+        transition: none;
+        width: 14em;
+    }
+}
+
+// El área principal de la página necesita dejar espacio al sidebar
+// fijo cuando el shell operativo está activo. Vive aquí por la misma
+// razón que el override de arriba: es "chrome" del shell, no un
+// componente propio.
+#page.operational {
+    margin-left: 14em;
+}

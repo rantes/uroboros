@@ -1,0 +1,26 @@
+<dmb-panel id="operational-sidebar" class="dmb-panel dmb-menu left" open>
+    <nav>
+        <div class="nav-group">
+            <span class="nav-group-title">Explorar</span>
+            <a href="/admin/projects" class="<?= activeNavItem($this) === 'admin' ? 'active' : ''; ?>">
+                Proyectos
+            </a>
+            <span class="nav-item disabled" title="Requiere Workflow Execution">Operaciones</span>
+            <span class="nav-item disabled" title="Requiere Workflow Execution">Eventos</span>
+            <span class="nav-item disabled" title="Requiere Health Management">Recomendaciones</span>
+        </div>
+        <div class="nav-group">
+            <span class="nav-group-title">Analizar</span>
+            <span class="nav-item disabled" title="Requiere Health Management">Salud</span>
+            <span class="nav-item disabled" title="Requiere Dependency Management">Riesgos</span>
+            <span class="nav-item disabled" title="Requiere Health Management">Métricas</span>
+            <span class="nav-item disabled" title="Requiere Event Management">Trazabilidad</span>
+        </div>
+        <div class="nav-group">
+            <span class="nav-group-title">Configurar</span>
+            <span class="nav-item disabled" title="Próximamente">Integraciones</span>
+            <span class="nav-item disabled" title="Próximamente">Políticas</span>
+            <span class="nav-item disabled" title="Próximamente">Ajustes</span>
+        </div>
+    </nav>
+</dmb-panel>

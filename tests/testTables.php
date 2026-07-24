@@ -14,7 +14,8 @@ class testTables extends dumboTests {
         /** before each test the table should be reset */
         $this->_migrateTables([
             'app_users',
-            'events'
+            'events',
+            'oem_metrics'
         ]);
     }
 
@@ -26,10 +27,12 @@ class testTables extends dumboTests {
         $this->describe('Verifying Fields');
         $this->assertHasFields($this->AppUser);
         $this->assertHasFields($this->Event);
+        $this->assertHasFields($this->OemMetric);
 
         $this->describe('Verifying Field types');
         $this->assertHasFieldTypes($this->AppUser);
         $this->assertHasFieldTypes($this->Event);
+        $this->assertHasFieldTypes($this->OemMetric);
     }
 
     /**
