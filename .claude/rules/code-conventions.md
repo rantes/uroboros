@@ -203,11 +203,11 @@ public function miAccionAction(): void {
 ```php
 // Siempre en hooks before_save del modelo
 public function sanitizarCampo(): void {
-    $this->campo = htmlentities($this->campo ?? '', ENT_QUOTES, 'UTF-8', false);
+    $this->campo = htmlentities(trim($this->campo) ?? '', ENT_QUOTES, 'UTF-8', false);
 }
 
-// En controladores al recibir datos de formulario
-$nombre = htmlentities(trim($data[0]), ENT_QUOTES, 'ISO-8859-15', false);
+// En controladores al recibir datos de formulario, esto sólo aplica si el campo no es un modelo (ej. login, search, etc.)
+$nombre = htmlentities(trim($data[0]), ENT_QUOTES, 'UTF-8', false);
 ```
 
 ### Casting explícito
@@ -468,3 +468,125 @@ public function someAction(): void {
 - Controladores (acciones, métodos privados)
 - Traits, helpers y servicios
 - Todo el proyecto sin excepción
+
+## Bloque de definiciones al tope del scope
+
+### Regla
+
+Todas las variables (y constantes locales) de un método,
+función o closure se declaran juntas en un bloque al
+inicio del scope — nunca intercaladas entre líneas de
+lógica, condicionales o llamadas a otros métodos.
+
+Esto aplica incluso cuando se sigue el principio de
+"fail fast" (throw temprano) — el fail fast define
+CUÁNDO se interrumpe la ejecución, no dónde se declaran
+las variables. Ambas reglas conviven: primero el bloque
+de definiciones, luego la lógica (que puede incluir
+throws tempranos).
+
+### Anti-patrón — nunca hacer esto
+
+```php
+public function ejemploAction(): void {
+    $a = $this->algo();
+    if ($a <= 0):
+        throw new ControllerException('...', HTTP_400);
+    endif;
+
+    $b = $this->otraCosa(); // ← declarada a mitad
+                             //   de la lógica
+    if (empty($b)):
+        throw new ControllerException('...', HTTP_404);
+    endif;
+
+    $c = $b->calculo(); // ← más variables intercaladas
+    // ...
+}
+```
+
+### Correcto
+
+```php
+public function ejemploAction(): void {
+    // Bloque de definiciones — todo al inicio
+    $a = $this->algo();
+    $b = $this->otraCosa();
+    $c = null; // si depende de validación previa,
+               // se inicializa aquí y se asigna
+               // después en la lógica
+
+    // Lógica — después del bloque de definiciones
+    if ($a <= 0):
+        throw new ControllerException('...', HTTP_400);
+    endif;
+    if (empty($b)):
+        throw new ControllerException('...', HTTP_404);
+    endif;
+
+    $c = $b->calculo();
+    // ...
+}
+```
+
+### Casos límite
+
+- Si una variable solo tiene sentido DESPUÉS de un
+  early-throw (ej: depende de que otra variable ya
+  esté validada como no-vacía), se declara con un
+  valor inicial neutro (null, 0, '', []) en el bloque
+  de definiciones, y se le asigna el valor real en
+  la lógica posterior
+- Las variables de un foreach/while (el iterador en
+  sí) no están sujetas a esta regla — son parte del
+  control de flujo del bucle, no declaraciones sueltas
+- Aplica a PHP (controladores, modelos, traits) y a
+  JS de componentes DumboJS por igual
+
+## Valores mágicos — constantes globales
+
+### Regla
+
+Cualquier valor numérico o string usado como umbral,
+límite, o comparación que se repita en más de un lugar
+del código, o que tenga un significado no evidente por
+sí mismo, debe definirse como constante en
+`config/host.php` — nunca como literal hardcodeado
+repetido en múltiples archivos.
+
+### Ejemplos de valores que SÍ requieren constante
+
+```php
+// MAL — literal repetido sin nombre, significado
+// no evidente
+if ($discount > 0.009): ...
+if (abs($amount - $expected) < 0.009): ...
+
+// BIEN — constante nombrada en config/host.php
+define('MONEY_EPSILON', 0.009);
+if ($discount > MONEY_EPSILON): ...
+if (abs($amount - $expected) < MONEY_EPSILON): ...
+```
+
+### Cuándo aplica
+
+- Umbrales de comparación (epsilon, tolerancias)
+- Límites de negocio (días de gracia, montos mínimos,
+  cantidad máxima de reintentos)
+- Cualquier "número mágico" que aparezca 2+ veces
+  en el código
+
+### Cuándo NO aplica
+
+- Valores que ya están en params/settings del proyecto
+  (esos van en `seeds.php`, no en `host.php` — son
+  configurables por proyecto, no globales del sistema)
+- Valores usados una sola vez con significado evidente
+  en su contexto inmediato (ej: `array_slice($arr, 0, 5)`
+  para "primeros 5 elementos" en un contexto claro)
+
+### Ubicación
+
+Todas las constantes globales del sistema (no
+configurables por proyecto) van en `config/host.php`,
+agrupadas con comentario explicando su propósito.
