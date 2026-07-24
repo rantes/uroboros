@@ -18,7 +18,9 @@ class AdminController extends MainController {
 
     public function __construct() {
         parent::__construct();
-        $this->_actions = [
+        $this->operationalShell = true;
+        $this->helper[]  = 'OperationalShell';
+        $this->_actions  = [
             'projects',
             'groups'
         ];

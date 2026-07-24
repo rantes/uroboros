@@ -1,0 +1,52 @@
+dmb-oem-metrics-footer {
+    align-items: center;
+    background: var(--surface-1);
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    font-size: var(--font-size-xs);
+    padding: 0.5em 1.25em;
+    width: 100%;
+
+    .footer-inner {
+        align-items: center;
+        display: flex;
+        gap: 1.5em;
+        width: 100%;
+    }
+
+    .metric {
+        color: var(--information);
+    }
+
+    .value,
+    .value-ok {
+        color: var(--success);
+        font-weight: var(--font-weight-medium);
+    }
+
+    .value-fail {
+        color: var(--error);
+        font-weight: var(--font-weight-medium);
+    }
+
+    .oem-status {
+        border-radius: 0.6em;
+        margin-left: auto;
+        padding: 0.15em 0.6em;
+
+        &.tone-healthy {
+            background: var(--success-hover);
+            color: var(--success);
+        }
+
+        &.tone-stale {
+            background: var(--warning-hover);
+            color: var(--warning);
+        }
+
+        &.tone-unknown {
+            background: var(--information-hover);
+            color: var(--information);
+        }
+    }
+}
