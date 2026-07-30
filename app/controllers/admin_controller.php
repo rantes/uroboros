@@ -20,9 +20,11 @@ class AdminController extends MainController {
         parent::__construct();
         $this->operationalShell = true;
         $this->helper[]  = 'OperationalShell';
+        $this->_readOnlyModels = ['event'];
         $this->_actions  = [
             'projects',
-            'groups'
+            'groups',
+            'events'
         ];
         $this->noyes = ['no', 'si'];
         $this->statuses = ['Inactivo', 'Activo'];

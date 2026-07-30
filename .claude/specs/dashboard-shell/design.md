@@ -72,32 +72,36 @@ app/helpers/
 └── OperationalShell_Helper.php  # arma los datos que layout.phtml necesita
 ```
 
-## `OperationalShell_Helper`
+## `OperationalShell_Helper` — funciones globales, no clase con métodos
 
-Se carga solo en controladores que activan el shell
-(`$this->helper = ['OperationalShell'];`). Responsabilidades:
+> **Corregido tras verificación contra el framework real:** los
+> helpers de `DumboPHP\Controller` son **funciones globales sin
+> namespace**, cargadas con `require_once` — no una clase instanciada
+> con métodos llamables vía `$this->`. `Controller` hereda `__call()`
+> de `Core_General_Class` (resolución mágica de relaciones
+> ActiveRecord); si el diseño original (`$this->footerMetrics()`)
+> hubiera sido incorrecto, habría devuelto `null` en silencio en vez
+> de fallar con un error claro. Confirmado empíricamente contra
+> `Menu_Helper.php`/`Tools_Helper.php` reales.
+
+Responsabilidades (mismas de antes, ahora como funciones globales
+dentro de `app/helpers/OperationalShell_Helper.php`):
 
 ```php
 // Sidebar: qué item está activo según el controlador actual
-public function activeNavItem(): string { /* ... */ }
+function activeNavItem(): string { /* ... */ }
 
-// Footer: métricas agregadas de metricas-oem (ver ese spec)
-public function footerMetrics(int $hoursWindow = 6): array {
-    // SUM(count) GROUP BY metric_type vía OemMetric, más
-    // COUNT(id) directo sobre Event para "Events (Nh)"
+// Footer: métricas agregadas de metricas-oem
+function footerMetrics(int $hoursWindow = 6): array {
+    // Siempre retorna las 5 claves, con 0 si OemMetric no tiene filas
+    // — nunca ausentes, para que el componente no reciba undefined.
 }
 
 // Footer: ¿la última escritura a events fue reciente?
-public function oemStatus(): string {
-    // MAX(created_at) de Event vs. umbral — 'healthy' | 'stale' | 'unknown'
+function oemStatus(): string {
+    // 'healthy' | 'stale' | 'unknown'
 }
 ```
-
-> Nota: `footerMetrics()` depende de que `.claude/specs/metricas-oem/`
-> esté implementado. Si no lo está aún, debe degradar con gracia —
-> mostrar `Events (Nh)` (sí disponible hoy vía `Event` directo) y
-> ocultar o poner "—" en Commands/Reactions, nunca un error o un cero
-> falso que parezca dato real.
 
 ## Sidebar — `_sidebar-operational.phtml`
 
@@ -106,11 +110,15 @@ public function oemStatus(): string {
     <nav>
         <div class="nav-group">
             <span class="nav-group-title">Explorar</span>
-            <a href="/admin/proyectos" class="<?= $this->activeNavItem() === 'proyectos' ? 'active' : ''; ?>">
+            <a href="/admin/projects" class="<?= activeNavItem() === 'admin' ? 'active' : ''; ?>">
                 Proyectos
             </a>
             <span class="nav-item disabled" title="Requiere Workflow Execution">Operaciones</span>
-            <span class="nav-item disabled" title="Requiere Workflow Execution">Eventos</span>
+            <a href="/admin/events" class="<?= activeNavItem() === 'events' ? 'active' : ''; ?>">
+                Eventos
+            </a>
+            <!-- Ruta ilustrativa — ajustar a la real del explorador
+                 de eventos, ver .claude/specs/explorador-eventos/ -->
             <span class="nav-item disabled" title="Requiere Health Management">Recomendaciones</span>
         </div>
         <div class="nav-group">
@@ -158,12 +166,12 @@ atributos `data-*` (mismo patrón que `dmb-donut-chart` con
 
 ```php
 <dmb-oem-metrics-footer
-    data-events="<?= $this->footerMetrics()['events']; ?>"
-    data-commands-dispatched="<?= $this->footerMetrics()['command_dispatched'] ?? '—'; ?>"
-    data-commands-failed="<?= $this->footerMetrics()['command_failed'] ?? '—'; ?>"
-    data-reactions-executed="<?= $this->footerMetrics()['reaction_executed'] ?? '—'; ?>"
-    data-reactions-failed="<?= $this->footerMetrics()['reaction_failed'] ?? '—'; ?>"
-    data-oem-status="<?= $this->oemStatus(); ?>">
+    data-events="<?= footerMetrics()['events']; ?>"
+    data-commands-dispatched="<?= footerMetrics()['command_dispatched'] ?? '—'; ?>"
+    data-commands-failed="<?= footerMetrics()['command_failed'] ?? '—'; ?>"
+    data-reactions-executed="<?= footerMetrics()['reaction_executed'] ?? '—'; ?>"
+    data-reactions-failed="<?= footerMetrics()['reaction_failed'] ?? '—'; ?>"
+    data-oem-status="<?= oemStatus(); ?>">
 </dmb-oem-metrics-footer>
 ```
 

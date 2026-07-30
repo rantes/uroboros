@@ -52,9 +52,13 @@
 
 ## Cierre
 
-- [ ] 14. Confirmar con el usuario si "Eventos" (nota en `design.md`)
-       se promueve a link real ahora que existe el Event Store, o
-       queda "próximamente" como el resto
-- [ ] 15. Decidir si el Workspace switcher descartado (Requisito 2.3)
-       necesita revisarse en algún punto, o queda cerrado
-       definitivamente junto con la decisión de no-ACL
+- [x] 14. **Confirmado: sí se promueve.** "Eventos" pasa a link real
+       en el sidebar — nuevo spec chico `.claude/specs/explorador-eventos/`
+       para el listado de solo lectura sobre `Event` (ya existe el
+       modelo, es el núcleo OEM el que le da datos).
+- [x] 15. **Confirmado: no cerrado del todo.** El Workspace switcher
+       descartado queda fuera por ahora, pero es revisitable si
+       aparece una razón real de multi-tenant — no una reactivación
+       silenciosa, sí un spec nuevo explícito cuando/si llegue ese
+       momento. Sin cambios al `Requisito 2.3` de `requirements.md`,
+       que ya estaba redactado en ese sentido.

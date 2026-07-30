@@ -43,12 +43,14 @@ que no funciona.
 
 1. DADO el sidebar, CUANDO se renderiza, ENTONCES **Proyectos** es un
    link funcional (dominio con spec propio).
-2. DADO el resto de secciones de la maqueta (Operaciones, Eventos,
-   Salud, Riesgos, Métricas, Recomendaciones, Trazabilidad), CUANDO se
+2. DADO el resto de secciones de la maqueta (Operaciones, Salud,
+   Riesgos, Métricas, Recomendaciones, Trazabilidad), CUANDO se
    renderizan, ENTONCES aparecen visualmente pero marcadas como
    "Próximamente" — sin comportamiento de click, o con un tooltip
    explicando que el dominio no existe aún. Nunca simulan
-   funcionalidad con datos falsos.
+   funcionalidad con datos falsos. **"Eventos" se excluye de esta
+   lista — promovido a link real, ver
+   `.claude/specs/explorador-eventos/`.**
 3. DADO el selector "Workspace / All Workspaces" y el switcher de
    equipo de la maqueta, CUANDO se construye el shell, ENTONCES **no
    se incluyen** — implican multi-tenant/ACL, explícitamente

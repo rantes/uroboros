@@ -7,22 +7,22 @@
     <noscript>
         <h1>Your browser does not support JS</h1>
     </noscript>
-    <? if ($this->operationalShell ?? false): ?>
-        <? require_once(INST_PATH.'app/views/_sidebar-operational.phtml'); ?>
-    <? endif; ?>
     <dmb-view id="page" class="<?= ($this->operationalShell ?? false) ? 'operational' : ''; ?>">
 	    <dmb-header class="section group">
-            <div class="col col2"></div>
-            <div class="col col8">Uroboros CI/CD</div>
-            <div class="col col2"><a href="/index/logout">Cerrar sesi&oacute;n</a></div>
+            <header>
+                <div class="col col2"></div>
+                <div class="col col8">Uroboros CI/CD</div>
+                <div class="col col2"><a href="/index/logout">Cerrar sesi&oacute;n</a></div>
+                <? if ($this->operationalShell ?? false): ?>
+                    <dmb-operational-topbar data-user-initials="<?= currentUserInitials(); ?>"></dmb-operational-topbar>
+                <? endif; ?>
+            </header>
         </dmb-header>
-        <? if ($this->operationalShell ?? false): ?>
-            <dmb-operational-topbar data-user-initials="<?= currentUserInitials(); ?>"></dmb-operational-topbar>
-        <? endif; ?>
         <dmb-content>
         <?=$this->yield;?>
         </dmb-content>
-        <? if ($this->operationalShell ?? false): ?>
+        <dmb-footer class="section group">
+            <? if ($this->operationalShell ?? false): ?>
             <? $__oemFooterMetrics = footerMetrics(); ?>
             <dmb-oem-metrics-footer
                 data-events="<?= $__oemFooterMetrics['events']; ?>"
@@ -33,6 +33,14 @@
                 data-oem-status="<?= oemStatus(); ?>">
             </dmb-oem-metrics-footer>
         <? endif; ?>
+            <div class="col col12">
+                <span>Uroboros CI/CD</span>
+                <span class="footer-version">v1.0.0</span>
+            </div>
+        </dmb-footer>
+    <? if ($this->operationalShell ?? false): ?>
+        <? require_once(INST_PATH.'app/views/_sidebar-operational.phtml'); ?>
+    <? endif; ?>
     </dmb-view>
     <? require_once(INST_PATH.'app/views/_footer-contents.phtml'); ?>
 </body>

@@ -26,6 +26,11 @@ set_include_path(
 
 require_once 'dumbophp.php';
 
+require_once '/etc/dumboChromeDriver/src/DevToolsException.php';
+require_once '/etc/dumboChromeDriver/src/ChromeProcess.php';
+require_once '/etc/dumboChromeDriver/src/DevToolsSession.php';
+require_once '/etc/dumboChromeDriver/src/DevToolsClient.php';
+
 spl_autoload_register(function ($class) {
     $path = explode('\\', $class);
     require_once implode('/', array_slice($path, 1)).'.php';
@@ -55,6 +60,14 @@ DUMBO;
     }
 
     public function component($name) {
+        if (!preg_match('/^[a-z0-9-]+$/', $name)):
+            throw new generatorException(
+                "Nombre de componente inválido: '{$name}'. " .
+                "Solo minúsculas, números y guiones " .
+                "(ej: dmb-mi-componente)."
+            );
+        endif;
+
         $componentsPath = "{$this->_path}components/{$name}";
         $sourceJS = "{$name}.directive.js";
         $testJS = "{$name}.directive.spec.js";
@@ -452,66 +465,66 @@ DUMBO;
 
     public function testUIAction() {
         $this->buildUIAction();
+
+        // Servidor PHP embebido — sin cambios
         $descriptorsserver = [
-            ['pipe', 'r'],
-            ['pipe', 'w'],
-            ['file', '/tmp/error-output.txt', 'a'],
+            ['pipe', 'r'], ['pipe', 'w'],
+            ['file', sys_get_temp_dir() . '/error-output.txt', 'a'],
         ];
         $cwd = './app/webroot/';
-        $env = [];
+        $processServer = proc_open(
+            'php -S localhost:3456', $descriptorsserver,
+            $pipeserver, $cwd, []
+        );
 
-        $processServer = proc_open('php -S localhost:3456', $descriptorsserver, $pipeserver, $cwd, $env);
+        $client = new \DumboChromeDriver\DevToolsClient();
 
-        $descriptorspec = [
-            ['pipe', 'r'],
-            ['pipe', 'w'],
-            ['file', '/tmp/error-output.txt', 'a'],
-        ];
-        $pathToComponents = 'file://' .INST_PATH. 'app/webroot/';
-        $command =<<<DUMBO
-        /home/rantes/chromium/chrome \\
-        --headless \\
-        --disable-gpu \\
-        --repl \\
-        --run-all-compositor-stages-before-draw \\
-        --virtual-time-budget=10000 \\
-        http://localhost:3456/test.html
-DUMBO;
+        try {
+            $client->start('http://localhost:3456/test.html');
 
-        $process = proc_open($command, $descriptorspec, $pipes, $cwd, $env);
-        if(is_resource($process)):
-            $script = <<<DUMBO
-let results = document.querySelector('.jasmine_html-reporter'), duration = results.querySelector('.jasmine-duration'), overall = results.querySelector('.jasmine-overall-result'), data = `\${duration.innerHTML} - \${overall.innerText}`; data;
-DUMBO;
+            // Da tiempo a que Jasmine termine de correr —
+            // considera un mecanismo de polling en vez de
+            // sleep fijo si el tiempo de ejecución varía mucho
+            sleep(2);
 
-            fwrite($pipes[0], $script);
-            fclose($pipes[0]);
-            $output = stream_get_contents($pipes[1]);
-            fclose($pipes[1]);
-            $rvalue = proc_close($process);
-            if(is_resource($processServer)):
+            $result = $client->evaluate(<<<JS
+            (() => {
+                const results = document.querySelector(
+                    '.jasmine_html-reporter'
+                );
+                const duration = results.querySelector(
+                    '.jasmine-duration'
+                );
+                const overall = results.querySelector(
+                    '.jasmine-overall-result'
+                );
+                return `\${duration.innerHTML} - \${overall.innerText}`;
+            })()
+            JS);
+
+            $this->_logger('dumbo_ui_unit_testing', (string)$result);
+
+            preg_match('@((?:\d)+)\sfailures@', (string)$result, $matches);
+            if (!empty($matches)):
+                fwrite(STDERR, "{$matches[0]}\n");
+            endif;
+        } catch (\DumboChromeDriver\DevToolsException $e) {
+            $this->showError("Error ejecutando tests: " . $e->getMessage());
+        } finally {
+            $client->stop();
+            if (is_resource($processServer)):
                 fclose($pipeserver[0]);
                 fclose($pipeserver[1]);
                 proc_terminate($processServer);
+                proc_close($processServer);
             endif;
-
-            if ($rvalue === 0):
-                preg_match('@(exceptionDetails)@i', $output, $matches);
-                if (empty($matches)):
-                    $output = str_replace('>>>', '', $output);
-                    $output = trim($output);
-                    $result = json_decode($output)->result;
-                    preg_match('@((?:\d)+)\sfailures@', $result->value, $matches);
-                    $errors = !empty($matches);
-                    $this->_logger('dumbo_ui_unit_testing', $result->value);
-                    (bool)$errors and fwrite(STDERR, "{$matches[0]}\n");
-                else:
-                    $this->showError("Exception happened: {$output}");
-                endif;
-            else:
-                $this->showError('Oops! something happened!');
-            endif;
-        endif;
+            // proc_terminate() solo alcanza al proceso directo de
+            // proc_open() (el shell "sh -c"); "php -S" corre como un
+            // fork real por debajo y queda huérfano (confirmado
+            // empíricamente, mismo caso que ChromeProcess::stop() en
+            // DumboChromeDriver). Se complementa matando por firma.
+            shell_exec("pkill -f 'php -S localhost:3456' 2>/dev/null");
+        }
     }
 
     private function help() {
@@ -585,6 +598,7 @@ DUMBO;
                     break;
                 endif;
             endforeach;
+            usleep(500000);
         endwhile;
     }
 

@@ -13,12 +13,18 @@ reservado para dominios de ejecución/operación (Workflow Execution,
 Health Management), no para gestión de datos de referencia. Esto es
 intencional, no una omisión: ver "Fuera de alcance".
 
-**Enfoque de implementación:** *(sección retirada — el supuesto de
-`dumbo generate scaffold` + Modelo/Controlador/Vistas por entidad ya
-no aplica. El proyecto cuenta con un mecanismo genérico propio que
-resuelve Modelo+Controlador+Vistas sin clase por entidad. Pendiente
-de definir qué necesita documentarse aquí una vez se entienda ese
-mecanismo — ver conversación.)*
+**Enfoque de implementación — corregido tras hallazgo de
+`explorador-eventos`:** el mecanismo genérico del usuario
+(`AdminBaseTrait`) resuelve **Controlador y Vistas** por convención de
+nombre de acción — no el Modelo. `$this->{$this->_model_camelized}`
+sigue siendo el lazy-load estándar de DumboPHP, que exige un archivo
+de modelo ActiveRecord real por entidad
+(`app/models/project.php`/`group.php`). Sin ese archivo, cualquier
+acción sobre la entidad falla con `Call to a member function ... on
+null` — confirmado en producción. `Project`/`Group` sí necesitan su
+modelo ActiveRecord estándar, igual que cualquier otra entidad del
+proyecto; lo único que este mecanismo evita es escribir
+`ProjectController`/`GroupController` y las vistas `.phtml` a mano.
 
 ## Campos confirmados
 
