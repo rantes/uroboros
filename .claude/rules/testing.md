@@ -327,13 +327,34 @@ Nunca crear archivos de test específicos para helpers.
 ## Cobertura mínima obligatoria
 
 La cobertura de código del proyecto nunca puede estar por debajo del
-98% (regla no negociable, ver CLAUDE.md).
+**98%** (regla no negociable, ver `CLAUDE.md`).
 
-dumboTest solo genera coverage.xml (reporte Clover, requiere
+`dumboTest` solo **genera** `coverage.xml` (reporte Clover, requiere
 XDebug) — no valida ni bloquea nada por sí mismo. El umbral se aplica
-en SonarQube, que consume ese reporte como quality gate. Correr
-dumboTest en local no certifica cumplir la regla: el gate real está
+en **SonarQube**, que consume ese reporte como quality gate. Correr
+`dumboTest` en local no certifica cumplir la regla: el gate real está
 en SonarQube, no en el resultado de consola.
+
+## Punto ciego conocido — SQLite en tests vs. MySQL en producción
+
+El entorno de test usa SQLite (`PRAGMA table_info()` para
+introspección de columnas), mientras que producción usa MySQL
+(`SHOW COLUMNS`). Cualquier diferencia de dialecto SQL entre ambos
+motores —palabras reservadas, sintaxis específica, funciones que no
+existen en los dos— puede pasar `dumboTest` en verde y romper en
+producción sin ninguna señal previa. Caso real: `groups` como nombre
+de tabla rompía en MySQL (palabra reservada) por una consulta del
+driver sin backticks, invisible para toda la suite de tests porque
+SQLite nunca ejecuta esa consulta. Ver
+`.claude/specs/gestion-proyectos/tasks.md` para el caso completo.
+
+**Implicación práctica:** un `dumboTest all` en verde no es garantía
+de que algo funcione contra MySQL real, específicamente para
+cualquier cosa que dependa de sintaxis SQL cruda o nombres que
+puedan chocar con palabras reservadas. Cuando algo falla en
+producción pero no en tests, esta es una hipótesis a revisar temprano,
+no la última.
+
 
 ## Entorno de test
 

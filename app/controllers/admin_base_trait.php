@@ -11,6 +11,7 @@ trait AdminBaseTrait {
     protected string $_model_camelized = '';
     protected bool $_is_routed = false;
     protected array $_actions = [];
+    protected array $_readOnlyModels = [];
     protected string $_listConditions = '';
     protected string $_prevAction = '';
     public array $noyes = [];
@@ -19,6 +20,19 @@ trait AdminBaseTrait {
     public string $loginTitle      = 'UROBOROS';
     public $searchFields = [];
     public $sectionTitle = '';
+
+    /**
+     * Bloquea activamente escritura sobre modelos marcados como solo
+     * lectura en $_readOnlyModels. No basta con "no implementar" un
+     * método — _create_reg()/_update_reg()/_delete_reg() son
+     * compartidos por todas las entidades del trait, así que sin este
+     * guard cualquier modelo (ej. Event) quedaría editable/eliminable
+     * por defecto.
+     */
+    private function _guardReadOnly(): void {
+        in_array($this->_model, $this->_readOnlyModels)
+            and throw new ControllerException('Este recurso es de solo lectura', HTTP_405);
+    }
 
     /**
      * Detecta si la acción actual está en $_actions y redirige internamente
@@ -40,6 +54,7 @@ trait AdminBaseTrait {
      * @throws ControllerException
      */
     private function _edit_reg(): void {
+        $this->_guardReadOnly();
         $this->layout = false;
         $this->title = 'Editar Registro';
 
@@ -66,6 +81,7 @@ trait AdminBaseTrait {
      * @return void
      */
     private function _add_reg(): void {
+        $this->_guardReadOnly();
         $this->layout = false;
         $this->render = ['file'=>"admin/{$this->_model}_addedit.phtml"];
         $this->data = $this->{$this->_model_camelized}->Niu();
@@ -83,6 +99,7 @@ trait AdminBaseTrait {
         $this->adminCRUDAction = 'list';
         $conditions = '';
         $this->searchterm = '';
+        $sort = '';
 
         if(!empty($_POST['search']) and !empty($_POST['search']['term']) and !empty($_POST['search']['fields'])):
             $term = str_replace("'", "''", (string) ($_POST['search']['term'] ?? ''));
@@ -104,8 +121,6 @@ trait AdminBaseTrait {
             and ($conditions = "{$this->_listConditions} AND {$conditions}");
         empty($conditions) and !empty($this->_listConditions) and ($conditions = $this->_listConditions);
 
-        $this->data = $this->{$this->_model_camelized}->Paginate($this->fullUrl(), ['conditions'=>$conditions]);
-
         switch ($this->_model):
             case 'project':
                 $this->sectionTitle = 'Proyectos';
@@ -113,13 +128,22 @@ trait AdminBaseTrait {
             case 'group':
                 $this->sectionTitle = 'Grupos';
             break;
+            case 'event':
+                $sort = '`id` DESC';
+            break;
         endswitch;
+
+        $paginateParams = ['conditions'=>$conditions];
+        empty($sort) or ($paginateParams['sort'] = $sort);
+
+        $this->data = $this->{$this->_model_camelized}->Paginate($this->fullUrl(), $paginateParams);
     }
 
     /**
      * @return void
      */
     private function _delete_reg(): void {
+        $this->_guardReadOnly();
         $code = HTTP_422;
 
         $id = $this->params['id'] ?? $this->params[1];
@@ -152,6 +176,7 @@ trait AdminBaseTrait {
     }
 
     public function _update_reg(?array $putfp = null): void {
+        $this->_guardReadOnly();
         $code = HTTP_404;
         $this->layout = null;
 
@@ -182,6 +207,7 @@ trait AdminBaseTrait {
      * @return void
      */
     private function _create_reg(): void {
+        $this->_guardReadOnly();
         $code = HTTP_422;
 
         if(!empty($this->_model) and !empty($_POST[$this->_model])):
@@ -240,8 +266,7 @@ trait AdminBaseTrait {
                         endif;
                         break;
                     default:
-                        $this->setResponseCode(HTTP_404);
-                        $this->respondToAJAX(json_encode($this->_response));
+                        throw new ControllerException('Unsupported HTTP method', HTTP_405);
                         break;
                 endswitch;
             endif;

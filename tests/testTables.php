@@ -2,6 +2,9 @@
 namespace Tests;
 
 use DumboPHP\lib\Timothy\dumboTests;
+use Migrations\CreateProjects;
+use Migrations\CreateGroups;
+use Migrations\CreateProjectGroups;
 
 class testTables extends dumboTests {
 
@@ -15,8 +18,44 @@ class testTables extends dumboTests {
         $this->_migrateTables([
             'app_users',
             'events',
-            'oem_metrics'
+            'oem_metrics',
+            'projects',
+            'groups',
+            'project_groups'
         ]);
+    }
+
+    /**
+     * Equivalente a assertHasFields()/assertHasFieldTypes(), pero sin
+     * modelo — projects/groups/project_groups (gestion-proyectos) no
+     * tienen ActiveRecord propio: los resuelve el mecanismo genérico
+     * del usuario, fuera de alcance de ese spec. assertHasFieldTypes()
+     * exige un ActiveRecord porque solo usa $model->_TableName(); el
+     * resto de su comparación (getDefinitions() de la migración vs.
+     * DB->getColumnFields(DB->driver->getColumns($table)) real) no
+     * depende del modelo en absoluto, así que se replica aquí
+     * pasando el nombre de tabla directo.
+     *
+     * @return void
+     */
+    private function _assertMigrationMatchesDb(string $table, string $migrationClass): void {
+        $migration    = new $migrationClass();
+        $expectedDefs = $migration->getDefinitions();
+        $actualDefs   = DB->getColumnFields(DB->driver->getColumns($table));
+
+        $this->assertEquals(
+            sizeof($expectedDefs),
+            sizeof($actualDefs),
+            "La tabla `{$table}` debe tener la misma cantidad de columnas que {$migrationClass}"
+        );
+
+        foreach ($expectedDefs as $i => $field):
+            $expectedType = explode(' ', $field['type'])[0];
+            $actualType   = preg_replace('/\(\d+\)/', '', $actualDefs[$i]['Type']);
+
+            $this->assertEquals($field['field'], $actualDefs[$i]['Field'], "Campo #{$i} de `{$table}` debe ser `{$field['field']}`");
+            $this->assertEquals($expectedType, $actualType, "Campo `{$field['field']}` de `{$table}` debe ser tipo {$expectedType}");
+        endforeach;
     }
 
     /**
@@ -33,6 +72,11 @@ class testTables extends dumboTests {
         $this->assertHasFieldTypes($this->AppUser);
         $this->assertHasFieldTypes($this->Event);
         $this->assertHasFieldTypes($this->OemMetric);
+
+        $this->describe('Verifying gestion-proyectos migrations (sin modelo — mecanismo genérico)');
+        $this->_assertMigrationMatchesDb('projects', CreateProjects::class);
+        $this->_assertMigrationMatchesDb('groups', CreateGroups::class);
+        $this->_assertMigrationMatchesDb('project_groups', CreateProjectGroups::class);
     }
 
     /**
