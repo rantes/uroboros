@@ -9,6 +9,16 @@ import { DmbEvents, DumboDirective } from "../../libs/dumbojs/dumbo.min.js";
  * Un <select> nativo oculto actúa como carrier del valor para el FormData
  * y la validación (mismo sistema que dmb-select). CSP-safe.
  *
+ * `src` activa modo remoto: hace fetch a `{src}?q={término}` (mínimo 3
+ * caracteres) y espera un arreglo plano `[{value,label}]` — nunca envuelto
+ * en `{d,message}` (ver AdminController::searchuserAction() como
+ * referencia del contrato real ya en producción).
+ *
+ * `mirror-text-to` (opcional) — selector CSS de OTRO elemento (ej: un
+ * <input hidden> del mismo form) cuyo `.value` se mantiene sincronizado con
+ * el texto visible seleccionado. Útil para persistir un snapshot del label
+ * (ej: nombre de un tercero) junto al id, sin JS inline en la vista.
+ *
  * @example
 <dmb-combobox
     label="Cuenta PUC"
@@ -19,6 +29,17 @@ import { DmbEvents, DumboDirective } from "../../libs/dumbojs/dumbo.min.js";
     <option value="">Sin asignar</option>
     <option value="42">101005 - CUENTAS CORRIENTES</option>
 </dmb-combobox>
+
+ * @example — modo remoto con snapshot de texto
+<dmb-combobox
+    label="Proveedor"
+    dmb-name="manual_movement[provider_id]"
+    src="/contabilidad/providersearch"
+    mirror-text-to="#provider-name-snapshot"
+    placeholder="Escriba al menos 3 caracteres...">
+    <option value="">Sin proveedor asociado</option>
+</dmb-combobox>
+<input type="hidden" id="provider-name-snapshot" name="manual_movement[provider_name]">
  */
 export class DmbCombobox extends DumboDirective {
     static selector = 'dmb-combobox';
@@ -159,6 +180,7 @@ export class DmbCombobox extends DumboDirective {
             select.value = '';
             input.value = '';
         }
+        this._mirrorText(input.value);
     }
 
     _open() {
@@ -311,6 +333,7 @@ export class DmbCombobox extends DumboDirective {
 
         select.value = value;
         input.value = (option && value !== '') ? option.text : '';
+        this._mirrorText(input.value);
 
         this._close();
         this.setValidation();
@@ -323,6 +346,17 @@ export class DmbCombobox extends DumboDirective {
         const input = this.querySelector('input.dmb-combobox-input');
         const option = [...select.querySelectorAll('option')].find(o => o.value == select.value);
         input.value = (option && select.value !== '') ? option.text : '';
+        this._mirrorText(input.value);
+    }
+
+    // Copia el texto visible seleccionado a otro campo del form (ej: un
+    // <input hidden> que guarda el nombre como snapshot histórico junto al
+    // id). Opcional — solo actúa si el atributo `mirror-text-to` está
+    // presente, con un selector CSS del elemento destino.
+    _mirrorText(text) {
+        const selector = this.getAttribute('mirror-text-to');
+        const target = selector ? document.querySelector(selector) : null;
+        target && (target.value = text || '');
     }
 
     set value(val) {

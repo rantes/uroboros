@@ -21,7 +21,11 @@ class testTables extends dumboTests {
             'oem_metrics',
             'projects',
             'groups',
-            'project_groups'
+            'project_groups',
+            'workflow_definitions',
+            'workflow_step_definitions',
+            'workflow_executions',
+            'step_executions',
         ]);
     }
 
@@ -67,11 +71,19 @@ class testTables extends dumboTests {
         $this->assertHasFields($this->AppUser);
         $this->assertHasFields($this->Event);
         $this->assertHasFields($this->OemMetric);
+        $this->assertHasFields($this->WorkflowDefinition);
+        $this->assertHasFields($this->WorkflowStepDefinition);
+        $this->assertHasFields($this->WorkflowExecution);
+        $this->assertHasFields($this->StepExecution);
 
         $this->describe('Verifying Field types');
         $this->assertHasFieldTypes($this->AppUser);
         $this->assertHasFieldTypes($this->Event);
         $this->assertHasFieldTypes($this->OemMetric);
+        $this->assertHasFieldTypes($this->WorkflowDefinition);
+        $this->assertHasFieldTypes($this->WorkflowStepDefinition);
+        $this->assertHasFieldTypes($this->WorkflowExecution);
+        $this->assertHasFieldTypes($this->StepExecution);
 
         $this->describe('Verifying gestion-proyectos migrations (sin modelo — mecanismo genérico)');
         $this->_assertMigrationMatchesDb('projects', CreateProjects::class);

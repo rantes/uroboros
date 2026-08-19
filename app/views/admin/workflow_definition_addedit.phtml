@@ -1,0 +1,65 @@
+<dmb-simple-form <?= !empty($this->data->id) ? 'update' : ''; ?> redirect="/admin/workflow_definitions" close-panel="#panel-form-add-edit-reg">
+    <dmb-form
+        id="form-workflow-definition"
+        name="workflow_definition"
+        action="/admin/workflow_definitions"
+        method="post"
+        async>
+        <header>
+            <dmb-close-panel orientation="right"></dmb-close-panel>
+            <h3><?= $this->title; ?></h3>
+        </header>
+        <dmb-content>
+            <div class="section group">
+                <? if (!empty($this->data->id)): ?>
+                <dmb-input type="hidden" dmb-name="workflow_definition[id]" dmb-value="<?= $this->data->id; ?>"></dmb-input>
+                <? endif; ?>
+                <div class="col col12">
+                    <dmb-input
+                        label="Nombre"
+                        dmb-name="workflow_definition[name]"
+                        dmb-value="<?= $this->data->name; ?>"
+                        validate="required">
+                    </dmb-input>
+                </div>
+                <div class="col col12">
+                    <dmb-textarea
+                        label="Descripción"
+                        dmb-name="workflow_definition[description]">
+                    </dmb-textarea>
+                </div>
+                <div class="col col6 col6-md col6-sm">
+                    <dmb-select label="Proyecto" dmb-name="workflow_definition[project_id]" dmb-value="<?= $this->data->project_id; ?>" validate="required">
+                        <option value="">Seleccione...</option>
+                        <? foreach ($this->projects as $project): ?>
+                        <option value="<?= $project->id; ?>"><?= $project->name; ?></option>
+                        <? endforeach; ?>
+                    </dmb-select>
+                </div>
+                <div class="col col6 col6-md col6-sm">
+                    <dmb-select label="Estado" dmb-name="workflow_definition[status]" dmb-value="<?= $this->data->status; ?>" validate="required">
+                        <? foreach ($this->statuses as $value => $label): ?>
+                        <option value="<?= $value; ?>"><?= $label; ?></option>
+                        <? endforeach; ?>
+                    </dmb-select>
+                </div>
+                <div class="col col12">
+                    <dmb-input
+                        label="Webhook Token"
+                        dmb-name="workflow_definition[webhook_token]"
+                        dmb-value="<?= $this->data->webhook_token; ?>"
+                        validate="required">
+                    </dmb-input>
+                </div>
+            </div>
+        </dmb-content>
+        <dmb-footer class="section group">
+            <div class="col col6">
+                <dmb-button type="reset">Cancelar</dmb-button>
+            </div>
+            <div class="col col6">
+                <dmb-button type="submit">Guardar</dmb-button>
+            </div>
+        </dmb-footer>
+    </dmb-form>
+</dmb-simple-form>

@@ -227,6 +227,40 @@ persistente lo requiere — en el `.scss` de esos componentes, nunca en
 `_base.*.scss`). Usar variables de `main.css` para toda paleta y
 tipografía, unidades `em` para dimensiones (ver `css-conventions.md`).
 
+## ⚠️ Hallazgos confirmados con DumboChromeDriver (recorrido post-implementación)
+
+- [ ] 16. **Sidebar sin CSS propio** — `.nav-group`/`.nav-item` no
+      existen en ningún stylesheet cargado (confirmado revisando el
+      CSS real servido). Los ítems del sidebar se amontonan sin
+      distinguir clicable de deshabilitado. `design.md` nunca
+      especificó explícitamente dónde debía vivir el CSS de estas
+      clases concretas (solo cubrió el override de `dmb-panel` para
+      el ancho/telón) — vacío real de diseño, no solo de
+      implementación. Falta crear el `.scss` correspondiente
+      (¿dentro de `dmb-operational-topbar.scss`? ¿un componente nuevo
+      para el sidebar, ya que hasta ahora reutilizaba `dmb-panel` sin
+      wrapper propio? — decidir antes de implementar).
+- [ ] 17. **Contenido renderiza detrás del sidebar fijo** —
+      `#page.operational` computa `display: inline` porque
+      `dmb-view` no tiene `display: block` base, así que el
+      `margin-left` pensado para correr el contenido no aplica como
+      se esperaba. Confirmado visualmente (columna real de una tabla
+      pintada debajo del sidebar). Corregir con `display: block`
+      explícito en el selector, no depender del comportamiento por
+      defecto de `dmb-view`.
+- [ ] 18. Ruta absoluta del servidor expuesta en warnings de PHP —
+      solo relevante en dev, anotar como recordatorio pre-despliegue,
+      no bloqueante ahora.
+
+**Corrección de una nota anterior:** el supuesto "colgado" de
+`/admin/workflow_definitions` (mencionado como conocido en prompts
+anteriores) **no es un bug de la aplicación** — era una condición de
+carrera del propio `DumboChromeDriver` al verificar "listo" contra
+`about:blank`, ya diagnosticada y con workaround conocido
+(`start('about:blank')` + `navigate(url)` en vez de `start(url)`
+directo). La página funciona correctamente — verificado con 7 clicks
+reales creando 7 `WorkflowExecution` reales.
+
 ## Fuera de alcance de este documento
 
 Ver "Fuera de alcance" en `requirements.md`.

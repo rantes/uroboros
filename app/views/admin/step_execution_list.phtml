@@ -1,0 +1,31 @@
+<dmb-table>
+    <table>
+        <thead>
+            <tr>
+                <th>Ejecución</th>
+                <th>Paso</th>
+                <th>Estado</th>
+                <th>Exit Code</th>
+                <th>Iniciado</th>
+                <th>Completado</th>
+            </tr>
+        </thead>
+        <tbody>
+            <? foreach ($this->data as $row): ?>
+            <tr>
+                <td>#<?= $row->workflow_execution_id; ?></td>
+                <td><?= $row->workflow_step_definition()->name; ?></td>
+                <td><?= $row->status; ?></td>
+                <td><?= $row->exit_code ?? '—'; ?></td>
+                <td><?= !empty($row->started_at) ? date('Y-m-d H:i:s', $row->started_at) : '—'; ?></td>
+                <td><?= !empty($row->completed_at) ? date('Y-m-d H:i:s', $row->completed_at) : '—'; ?></td>
+            </tr>
+            <? endforeach; ?>
+        </tbody>
+    </table>
+</dmb-table>
+
+<dmb-pagination>
+    Página: <?= $this->data->WillPaginate($this->fullUrl()); ?>
+    de <?= $this->data->PaginateTotalPages; ?>
+</dmb-pagination>

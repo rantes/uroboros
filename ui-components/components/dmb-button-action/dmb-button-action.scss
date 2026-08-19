@@ -27,4 +27,11 @@ dmb-button-action {
         font-size: 1.2em;
         &::before { font-size: 1.2em; margin: 0 0.5em; }
     }
+
+    // Dentro de un .flow-group — distribución automática
+    .flow-group & {
+        flex: 1 1 auto;
+        min-width: 8em;
+        max-width: 14em;
+    }
 }

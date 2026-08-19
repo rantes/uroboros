@@ -1,0 +1,29 @@
+<dmb-table>
+    <table>
+        <thead>
+            <tr>
+                <th>Workflow</th>
+                <th>Estado</th>
+                <th>Disparo</th>
+                <th>Iniciado</th>
+                <th>Completado</th>
+            </tr>
+        </thead>
+        <tbody>
+            <? foreach ($this->data as $row): ?>
+            <tr>
+                <td><?= $row->workflow_definition()->name; ?></td>
+                <td><?= $row->status; ?></td>
+                <td><?= $row->trigger_type; ?></td>
+                <td><?= !empty($row->started_at) ? date('Y-m-d H:i:s', $row->started_at) : '—'; ?></td>
+                <td><?= !empty($row->completed_at) ? date('Y-m-d H:i:s', $row->completed_at) : '—'; ?></td>
+            </tr>
+            <? endforeach; ?>
+        </tbody>
+    </table>
+</dmb-table>
+
+<dmb-pagination>
+    Página: <?= $this->data->WillPaginate($this->fullUrl()); ?>
+    de <?= $this->data->PaginateTotalPages; ?>
+</dmb-pagination>

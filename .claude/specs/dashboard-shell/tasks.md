@@ -62,3 +62,32 @@
        silenciosa, sí un spec nuevo explícito cuando/si llegue ese
        momento. Sin cambios al `Requisito 2.3` de `requirements.md`,
        que ya estaba redactado en ese sentido.
+
+## Hallazgos del recorrido con DumboChromeDriver
+
+- [x] 16. **Resuelto.** CSS del sidebar agregado en
+       `dmb-operational-topbar.scss` (decisión: no un componente
+       nuevo — consistente con la Decisión 2 de `design.md` y con un
+       comentario precedente que ya estaba en el archivo). Usa
+       tokens reales de `main.css`. Encontrado de paso (sin corregir,
+       fuera de alcance): `dmb-menu.scss` referencia variables CSS
+       que no existen en `main.css` (`--primary-contrast`,
+       `--secondary`, `--information`).
+- [x] 17. **Resuelto — necesitó 3 propiedades, no 1**, descubiertas
+       iterando con verificación real, no anticipadas:
+       `display: block` (lo pedido) + `position: relative` (sin esto,
+       `dmb-content` con `position:absolute; left:0` ignoraba el
+       `margin-left` por completo) + `min-height: 100vh` (al volverse
+       `#page` contenedor de posicionamiento, también se volvió el
+       ancla del `dmb-footer` con `position:absolute; bottom:0`, que
+       colapsaba a la altura del topbar sin esto). Verificado con
+       `getComputedStyle()` real, no solo visualmente — la celda que
+       exponía el bug original pasó de `left:13` (detrás del sidebar)
+       a `left:203` (correctamente después). Confirmado que
+       `/index/login` (página sin `operationalShell`) sigue sin
+       afectarse.
+- [ ] 18. Ruta absoluta del servidor expuesta en warnings de PHP —
+       recordatorio pre-despliegue, no bloqueante ahora.
+
+**`dumboTest all`:** 34 tests, 148 assertions — sin cambios, confirma
+que fue un cambio puramente de CSS.

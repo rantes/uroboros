@@ -45,7 +45,7 @@ export class DmbToggle extends DumboDirective {
      * Attach a method to run when event click is fired.
      * @param {function} method
      */
-    click(method) {
+    onClick(method) {
         if (typeof method === 'function') {
             this.addEventListener('click', method);
         }
