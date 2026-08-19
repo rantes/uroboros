@@ -146,6 +146,30 @@ documentado, no solo los de este spec.
 
 ## Cierre
 
-- [ ] 30. Confirmar con el usuario si "Active Operations"/"Event
-       Timeline" del dashboard ya pueden conectarse a estas tablas de
-       proyección, o si eso es un spec de UI aparte
+- [x] 30. **Resuelto.** El login aterriza en `AdminController::indexAction()`
+       (`/admin/index`), con el shell real y el widget "Active
+       Operations" conectado a `WorkflowExecution`/`StepExecution`
+       reales — estado vacío distinto de "Próximamente" cuando no hay
+       ejecuciones activas. Verificado con `DumboChromeDriver`, 3
+       escenarios reales (sin datos, con datos, ciclo completo).
+
+## ⚠️ Hallazgo pendiente de decisión — no cosmético
+
+`WorkflowExecution.status` **nunca transiciona a `'running'`** — el
+diseño original va `pending` → `completed`/`failed` directo, sin que
+ningún Handler marque el paso intermedio ni popule `started_at`.
+`running` es un valor válido de la lista cerrada y el dashboard ya lo
+usa para filtrar "Active Operations", pero en la práctica un workflow
+genuinamente en ejecución sigue reportándose como `pending`.
+
+- [x] 31. **Resuelto.** Transición `pending → running` agregada en
+      `RunStepCommandHandler`, con Event `WorkflowRunning` nuevo.
+- [x] 32. **Verificado.** Widget "Active Operations" capturado en pleno
+      vuelo mostrando `running` real con `started_at` poblado (antes:
+      siempre "pendiente de iniciar").
+- [x] 33. **Verificado.** Secuencia cronológica real confirmada:
+      `WorkflowStarted` → `StepQueued` → `WorkflowRunning` →
+      `StepCompleted` → `WorkflowCompleted`, con timestamps reales
+      coincidiendo exactamente con la duración del `sleep` de prueba.
+- [x] 34. **`dumboTest all`:** 43 tests, 165 assertions — mismo
+      conteo exacto que antes del fix, cero regresión confirmada.

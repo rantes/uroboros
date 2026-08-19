@@ -1,0 +1,47 @@
+<div class="section group">
+    <div class="col col12">
+        <dmb-card class="full" icon="bolt">
+            <div class="head">
+                <h4>Active Operations</h4>
+            </div>
+            <div class="body">
+                <? if ($this->activeExecutions->counter() === 0): ?>
+                <p class="label">Sin operaciones activas ahora mismo</p>
+                <? else: ?>
+                <? foreach ($this->activeExecutions as $execution): ?>
+                <div class="item">
+                    <span class="content"><?= $execution->workflow_definition()->name; ?></span>
+                    <p class="label">
+                        <?= $execution->workflow_definition()->project()->name; ?>
+                        · <?= $execution->status; ?>
+                        · <?= !empty($execution->started_at) ? date('Y-m-d H:i:s', $execution->started_at) : 'pendiente de iniciar'; ?>
+                    </p>
+                </div>
+                <? endforeach; ?>
+                <? endif; ?>
+            </div>
+        </dmb-card>
+    </div>
+</div>
+
+<div class="section group">
+    <div class="col col6 col6-md col6-sm">
+        <? $widgetTitle = 'Operational Health'; $widgetReason = 'Requiere Health Management'; ?>
+        <? include(INST_PATH.'app/views/_widget-empty-state.phtml'); ?>
+    </div>
+    <div class="col col6 col6-md col6-sm">
+        <? $widgetTitle = 'Risk Indicators'; $widgetReason = 'Requiere Dependency Management'; ?>
+        <? include(INST_PATH.'app/views/_widget-empty-state.phtml'); ?>
+    </div>
+</div>
+
+<div class="section group">
+    <div class="col col6 col6-md col6-sm">
+        <? $widgetTitle = 'Dependency Graph'; $widgetReason = 'Requiere Dependency Management'; ?>
+        <? include(INST_PATH.'app/views/_widget-empty-state.phtml'); ?>
+    </div>
+    <div class="col col6 col6-md col6-sm">
+        <? $widgetTitle = 'Recomendaciones'; $widgetReason = 'Requiere Health Management'; ?>
+        <? include(INST_PATH.'app/views/_widget-empty-state.phtml'); ?>
+    </div>
+</div>

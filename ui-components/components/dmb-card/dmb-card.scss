@@ -1,5 +1,5 @@
 dmb-card {
-    background-color: var(--surface-1);
+    background-color: transparent;
     border: 1px solid var(--border-subtle);
     border-radius: 12px;
     box-shadow: none;
@@ -128,5 +128,33 @@ dmb-card {
         justify-content: space-evenly;
         padding: 2em;
         width: 99%;
+    }
+
+    // Estado vacío del grid de widgets (dashboard-shell) — dominio
+    // sin implementar todavía. Usado vía _widget-empty-state.phtml,
+    // nunca con datos simulados (ver dashboard-shell/requirements.md,
+    // Requisito 5.2). Modificador de dmb-card, no un componente
+    // nuevo — no hay comportamiento propio, solo presentación.
+    &.widget-empty {
+        align-items: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 8em;
+        opacity: 0.6;
+        text-align: center;
+        width: 100%;
+
+        h3 {
+            color: var(--primary);
+            font-size: var(--font-size-md);
+            margin: 0 0 0.5em;
+        }
+
+        .widget-empty-reason {
+            color: var(--information);
+            font-size: var(--font-size-xs);
+            margin: 0;
+        }
     }
 }

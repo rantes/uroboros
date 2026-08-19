@@ -270,6 +270,10 @@ El proyecto usa un sistema de grid propio basado en clases `col`:
 
 ````php
 <!-- admin/entidad_addedit.phtml -->
+<dmb-header>
+    <dmb-close-panel orientation="right"></dmb-close-panel>
+    <h3><?= $this->title; ?></h3>
+</dmb-header>
 <dmb-simple-form>
     <dmb-form
         id="form-entidad"
@@ -277,10 +281,6 @@ El proyecto usa un sistema de grid propio basado en clases `col`:
         action="/admin/entidades"
         method="post"
         async>
-        <header>
-            <dmb-close-panel orientation="right"></dmb-close-panel>
-            <h3><?= $this->title; ?></h3>
-        </header>
         <dmb-content>
             <div class="section group">
                 <div class="col col12">

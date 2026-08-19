@@ -69,11 +69,8 @@ trait AdminBaseTrait {
             $this->render = ['file'=>"admin/{$this->_model}_addedit.phtml"];
             $this->data = $this->{$this->_model_camelized}->Find($this->params[1]);
 
-            // switch ($this->_model):
-            //     case 'property':
-            //         $this->_addeditproperty();
-            //     break;
-            // endswitch;
+            switch ($this->_model):
+            endswitch;
         endif;
     }
 
@@ -248,7 +245,14 @@ trait AdminBaseTrait {
         $code = HTTP_200;
         try {
             if($this->_is_routed):
-                empty($this->params[0]) and ($this->params[0] = 'list');
+                // Mismo guard que en MainController::before_filter() —
+                // el default a 'list' solo aplica a GET. Sin esto, un
+                // POST de creación sin segmento (ej. /admin/groups)
+                // entraba al case 'POST' con params[0]='list' ya
+                // forzado y ejecutaba _list_regs() en vez de
+                // _create_reg(), sin ningún error — el registro
+                // simplemente nunca se guardaba.
+                $_SERVER['REQUEST_METHOD'] === 'GET' and empty($this->params[0]) and ($this->params[0] = 'list');
                 switch ($_SERVER['REQUEST_METHOD']):
                     case 'GET':
                         switch ($this->params[0]):
@@ -274,7 +278,7 @@ trait AdminBaseTrait {
                         $this->_update_reg();
                         break;
                     case 'POST':
-                        if ($this->params[0] === 'list'):
+                        if (($this->params[0] ?? null) === 'list'):
                             $this->_list_regs();
                         else:
                             $this->_create_reg();

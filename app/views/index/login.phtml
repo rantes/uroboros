@@ -2,20 +2,46 @@
 <html lang="en">
 <head>
     <? require_once(INST_PATH.'app/views/_header-contents.phtml'); ?>
+    <script src="/ui-components/actions/app-login.js" type="module" nonce="<?=$this->nonce;?>"></script>
 </head>
-<body style="background: url(/images/logo.svg) no-repeat; background-size: contain;background-position: center;height: 100vh;width: 100vw;overflow: hidden;">
+<body>
     <noscript>
         <h1>Your browser does not support JS</h1>
     </noscript>
     <dmb-dialog open>
         <dmb-login
-            target="/index/"
+            action="<?= $this->loginAction; ?>"
             user-label="Usuario"
             pass-label="Password"
             button-label="Ingresar"
-            redirect="/index/"
+            redirect="<?= $this->loginRedirect; ?>"
         >
             <? readfile(INST_PATH.'app/webroot/images/logo.svg'); ?>
+            <dmb-form id="form-login" method="post" async>
+                <div class="section group">
+                    <div class="col col12">
+                        <dmb-input
+                            label="Usuario"
+                            dmb-name="e"
+                            type="email"
+                            validate="required,email">
+                        </dmb-input>
+                    </div>
+                    <div class="col col12">
+                        <dmb-input
+                            label="Password"
+                            dmb-name="p"
+                            type="password"
+                            validate="required">
+                        </dmb-input>
+                    </div>
+                </div>
+                <dmb-footer class="section group">
+                    <div class="col col12">
+                        <dmb-button type="submit">Ingresar</dmb-button>
+                    </div>
+                </dmb-footer>
+            </dmb-form>
         </dmb-login>
     </dmb-dialog>
     <? require_once(INST_PATH.'app/views/_footer-contents.phtml'); ?>

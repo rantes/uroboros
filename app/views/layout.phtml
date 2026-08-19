@@ -40,6 +40,7 @@
         </dmb-footer>
     <? if ($this->operationalShell ?? false): ?>
         <? require_once(INST_PATH.'app/views/_sidebar-operational.phtml'); ?>
+        <dmb-panel id="panel-form-add-edit-reg" class="dmb-panel right small"></dmb-panel>
     <? endif; ?>
     </dmb-view>
     <? require_once(INST_PATH.'app/views/_footer-contents.phtml'); ?>

@@ -3,7 +3,7 @@ dmb-button-action {
     background: var(--primary);
     border: none;
     border-radius: 8px;
-    color: var(--primary-contrast);
+    color: var(--primary-surface);
     cursor: pointer;
     display: flex;
     justify-content: center;
@@ -17,7 +17,7 @@ dmb-button-action {
     &.danger    { background: var(--error); }
 
     &.icon {
-        background-color: var(--primary-contrast);
+        background-color: transparent;
         width: auto;
         &::before { align-items: center; color: var(--primary); font-size: 1.2em; }
     }

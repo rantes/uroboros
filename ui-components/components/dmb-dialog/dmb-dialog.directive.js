@@ -5,6 +5,16 @@ import {
 
 export class DmbDialog extends DumboDirective {
     static selector = 'dmb-dialog';
+    // El archivo vivía como dmbDialog.html (camelCase, sin guiones) —
+    // no coincidía con la convención kebab-case del proyecto ni con
+    // ningún templateUrl declarado aquí (no existía ninguno). Sin
+    // esto, el elemento nunca recibía su plantilla (.wrapper nunca se
+    // creaba), y cualquier uso de DmbDialogService (loader/error/
+    // info/drawer, usados por appModel.login/createData/updateData)
+    // fallaba con "Cannot set properties of null (setting
+    // 'innerHTML')" — confirmado con DumboChromeDriver mientras se
+    // corregía el formulario de login.
+    static templateUrl = 'dmb-dialog.html';
     static get observedAttributes() { return ['open']; }
     returnValue = null;
 

@@ -5,7 +5,7 @@ export class DmbSearch extends DumboDirective {
     static template = '<dmb-form dmb-name="search" method="post" action="#" class="search" enctype="multipart/form-data">' +
                         '<dmb-input class="dmb-input" dmb-name="search[term]"></dmb-input>' +
                         '<dmb-button type="submit" class="primary icon icon-filter"></dmb-button>' +
-                        '<dmb-button type="reset" class="error icon icon-cancel-circle" onclick="location.assign(location.href);"></dmb-button>' +
+                        '<dmb-button type="reset" class="error icon icon-cancel-circle"></dmb-button>' +
                     '</dmb-form>';
 
     init() {
@@ -44,5 +44,14 @@ export class DmbSearch extends DumboDirective {
             i++;
         }
 
+        // Antes vivía como onclick="location.assign(location.href);"
+        // inline en el template — violación de CSP (mismo criterio que
+        // <script>/onclick prohibidos en CLAUDE.md). El botón "reset"
+        // ya limpia los campos vía dmb-button (_submitter -> form.reset()),
+        // esto además recarga la página para descartar cualquier filtro
+        // aplicado por query string.
+        this.querySelector('dmb-button[type="reset"]').addEventListener('click', () => {
+            location.assign(location.href);
+        });
     }
 }

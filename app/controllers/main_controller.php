@@ -78,7 +78,18 @@ abstract class MainController extends Controller {
             $controller = $this->_getController_();
             switch ($controller):
                 case 'admin':
-                    empty($this->params[0]) and ($this->params[0] = 'list');
+                    // Solo para GET — un POST sin segmento (creación
+                    // vía AdminBaseTrait::_create_reg()) necesita que
+                    // params[0] quede vacío para no caer en
+                    // _list_regs(). Forzarlo aquí incondicionalmente
+                    // (antes de que landingAction() sepa el verbo)
+                    // hacía que TODO POST/PUT/DELETE de creación
+                    // genérica sin segmento silenciosamente
+                    // renderizara la lista en vez de crear — sin
+                    // error visible, solo el registro nunca se
+                    // guardaba. Ver .claude/rules/dumbochromedriver.md
+                    // para el patrón de verificación que lo destapó.
+                    $_method === 'GET' and empty($this->params[0]) and ($this->params[0] = 'list');
                     break;
             endswitch;
             $this->_additional_before_filter();
@@ -97,10 +108,15 @@ abstract class MainController extends Controller {
 
         $ctrl = $this->_getController_();
         $this->loginAction   = "/{$ctrl}/signin";
-        $this->loginRedirect = "/{$ctrl}/index";
+        // Antes "/{$ctrl}/index" — para /index/login eso apuntaba a
+        // IndexController::indexAction(), un noop sin shell operativo
+        // (operationalShell nunca se activa ahí). El destino real
+        // post-login es el shell operativo, no el controlador que
+        // sirvió el formulario.
+        $this->loginRedirect = '/admin/index';
 
         if (!empty($_SESSION['user'])):
-            $this->redirect("/{$ctrl}/index");
+            $this->redirect('/admin/index');
         endif;
     }
 

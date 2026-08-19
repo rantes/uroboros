@@ -25,6 +25,9 @@ import { DmbPageLoader } from '../components/dmb-page-loader/dmb-page-loader.dir
 import { DmbBarChart } from '../components/dmb-bar-chart/dmb-bar-chart.directive.js';
 import { DmbOperationalTopbar } from '../components/dmb-operational-topbar/dmb-operational-topbar.directive.js';
 import { DmbOemMetricsFooter } from '../components/dmb-oem-metrics-footer/dmb-oem-metrics-footer.directive.js';
+import { DmbMoreOptions } from '../components/dmb-more-options/dmb-more-options.directive.js';
+import { DmbMoreOption } from '../components/dmb-more-option/dmb-more-option.directive.js';
+import { DmbDock } from '../components/dmb-dock/dmb-dock.directive.js';
 
 class App extends DumboApp {
 
@@ -54,7 +57,10 @@ class App extends DumboApp {
             DmbView,
             DmbHelpIcon,
             DmbOperationalTopbar,
-            DmbOemMetricsFooter
+            DmbOemMetricsFooter,
+            DmbMoreOptions,
+            DmbMoreOption,
+            DmbDock
         ];
     }
 }
