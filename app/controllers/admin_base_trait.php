@@ -131,6 +131,21 @@ trait AdminBaseTrait {
             case 'event':
                 $sort = '`id` DESC';
             break;
+            case 'workflow_definition':
+                $this->sectionTitle = 'Workflows';
+            break;
+            case 'workflow_step_definition':
+                $this->sectionTitle = 'Pasos de Workflow';
+                $sort = '`step_order` ASC';
+            break;
+            case 'workflow_execution':
+                $this->sectionTitle = 'Ejecuciones de Workflow';
+                $sort = '`id` DESC';
+            break;
+            case 'step_execution':
+                $this->sectionTitle = 'Ejecuciones de Pasos';
+                $sort = '`id` DESC';
+            break;
         endswitch;
 
         $paginateParams = ['conditions'=>$conditions];

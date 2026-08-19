@@ -1,0 +1,27 @@
+dmb-table-sort {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25em;
+    cursor: pointer;
+    user-select: none;
+
+    &::after {
+        content: '\2195'; // ↕ neutro
+        font-size: 0.8em;
+        opacity: 0.4;
+    }
+    &[active] {
+        &::after {
+            opacity: 1;
+            color: var(--primary);
+        }
+    }
+
+    &[current-dir="asc"]::after {
+        content: '\2191'; // ↑
+    }
+
+    &[current-dir="desc"]::after {
+        content: '\2193'; // ↓
+    }
+}

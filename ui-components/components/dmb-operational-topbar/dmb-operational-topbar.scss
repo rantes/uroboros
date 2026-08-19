@@ -96,6 +96,105 @@ dmb-panel#operational-sidebar {
 // fijo cuando el shell operativo está activo. Vive aquí por la misma
 // razón que el override de arriba: es "chrome" del shell, no un
 // componente propio.
+//
+// display:block explícito — confirmado con DumboChromeDriver que
+// dmb-view (el elemento base de #page) no define ningún display
+// propio y computa "inline" por defecto del navegador. margin-left
+// se calculaba correctamente pero no tenía efecto visual real en ese
+// contexto: el contenido de página (ver ejemplo real en
+// admin/events, columna "Aggregate Type") quedaba pintado detrás del
+// sidebar fijo en vez de correrse a la derecha.
+//
+// position:relative — necesario además de display:block. dmb-content
+// (dmb-content.scss) se posiciona con position:absolute; left:0,
+// así que necesita que #page sea su contenedor de posicionamiento;
+// sin esto, "left:0" ignora el margin-left de #page por completo y
+// se posiciona relativo al ancestro posicionado más cercano (o al
+// body), reproduciendo el mismo solapamiento con el sidebar aunque
+// #page ya tenga el margin-left correcto. Confirmado con
+// DumboChromeDriver: sin este cambio dmb-content seguía en left:0
+// pese a que #page ya medía left:190px.
+//
+// min-height:100vh — dmb-view (el elemento base) tampoco define
+// ninguna altura propia (no existe dmb-view.scss). Al agregar
+// position:relative, #page se vuelve el contenedor de posicionamiento
+// de dmb-content Y de dmb-footer (dmb-footer.scss también usa
+// position:absolute; bottom:0) — sin una altura propia, la caja de
+// #page colapsa a la altura de su único contenido en flujo normal (el
+// topbar), y dmb-footer con bottom:0 termina anclado justo debajo del
+// topbar en vez del fondo real de la página. Confirmado con
+// DumboChromeDriver — sin esto, el footer aparecía arriba y el
+// contenido de dmb-content quedaba oculto detrás de él.
 #page.operational {
+    display: block;
+    position: relative;
+    min-height: 100vh;
     margin-left: 14em;
+}
+
+// Estructura de navegación de _sidebar-operational.phtml
+// (.nav-group/.nav-group-title/.nav-item) — sin estilo propio hasta
+// ahora: los ítems se amontonaban en una sola línea, sin distinguir
+// visualmente un enlace clicable (Proyectos, Eventos) de un ítem
+// "Próximamente" deshabilitado (hallazgo confirmado con
+// DumboChromeDriver). Vive aquí por la misma razón que los overrides
+// de arriba — "chrome" del shell dentro del sidebar reutilizado
+// (dmb-panel.dmb-menu), no un componente propio.
+//
+// Nota: dmb-menu.scss (que también estiliza este mismo panel, con su
+// propio vocabulario de clases .item/.item-main) referencia
+// --primary-contrast/--secondary/--information, que no están
+// definidas en ui-components/libs/main.css — no se repite ese
+// problema aquí, solo se usan tokens confirmados como reales.
+.nav-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1.5em;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.nav-group-title {
+    color: var(--main-font-color);
+    display: block;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5em;
+    opacity: 0.6;
+    text-transform: uppercase;
+}
+
+.nav-group a,
+.nav-item {
+    border-radius: 0.5em;
+    color: var(--main-font-color);
+    display: block;
+    font-size: var(--font-size-sm);
+    padding: 0.6em 0.75em;
+    text-decoration: none;
+}
+
+.nav-group a {
+    cursor: pointer;
+    opacity: 0.85;
+    transition: background 0.15s ease, opacity 0.15s ease;
+
+    &:hover {
+        background: var(--secondary-surface);
+        opacity: 1;
+    }
+
+    &.active {
+        background: var(--secondary-surface);
+        font-weight: var(--font-weight-bold);
+        opacity: 1;
+    }
+}
+
+.nav-item.disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
 }

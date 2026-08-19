@@ -192,11 +192,24 @@ public function miAccionAction(): void {
         $this->_code = HTTP_500;
         $this->_response['message'] = $e->getMessage();
     } finally {
-        http_response_code($this->_code);
+        $this->setResponseCode($this->_code);
         $this->respondToAJAX(json_encode($this->_response));
     }
 }
 ```
+
+**Nunca `http_response_code($this->_code)` directo.** El pipeline del
+framework (`Controller::parseContent()`) emite el código HTTP real al
+cliente al final, vía `http_response_code($this->_http_response_code)`
+— `$this->_http_response_code` es una propiedad **privada** que solo
+`setResponseCode()` actualiza. Una llamada directa a
+`http_response_code()` dentro de la acción se pisa silenciosamente
+después: el cliente real sigue recibiendo `200` aunque `$this->_code`
+diga `202`/`401`/lo que sea. `_runAction()` en tests **no detecta
+esto** — lee `$result->_code` (la propiedad pública del controlador),
+no el código HTTP realmente emitido. Confirmado con `curl` real contra
+el servidor, no solo con tests — ver auditoría en
+`.claude/specs/ejecucion-workflows/` (Parte 3).
 
 ### Sanitización de datos
 

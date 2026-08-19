@@ -1,4 +1,4 @@
-import { DumboDirective } from '/../../libs/dumbojs/dumbo.min.js';
+import {DumboDirective } from "../../libs/dumbojs/dumbo.min.js";
 
 const TONES = ['warning', 'error', 'success', 'information', 'default'];
 

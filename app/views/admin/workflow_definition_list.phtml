@@ -1,0 +1,47 @@
+<dmb-table>
+    <table>
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Proyecto</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <? foreach ($this->data as $row): ?>
+            <tr>
+                <td><?= $row->name; ?></td>
+                <td><?= $row->project()->name; ?></td>
+                <td><?= $this->statuses[$row->status]; ?></td>
+                <td>
+                    <dmb-button-action
+                        action="execute"
+                        url="/admin/executeworkflow/<?= $row->id; ?>"
+                        behavior="ajax">
+                        Ejecutar
+                    </dmb-button-action>
+                    <dmb-more-options>
+                        <dmb-more-option
+                            behavior="open-panel"
+                            url="/admin/workflow_definitions/edit/<?= $row->id; ?>"
+                            panel="#panel-form-add-edit-reg">
+                            Editar
+                        </dmb-more-option>
+                        <dmb-more-option
+                            behavior="ajax"
+                            url="/admin/workflow_definitions/<?= $row->id; ?>">
+                            Eliminar
+                        </dmb-more-option>
+                    </dmb-more-options>
+                </td>
+            </tr>
+            <? endforeach; ?>
+        </tbody>
+    </table>
+</dmb-table>
+
+<dmb-pagination>
+    Página: <?= $this->data->WillPaginate($this->fullUrl()); ?>
+    de <?= $this->data->PaginateTotalPages; ?>
+</dmb-pagination>
