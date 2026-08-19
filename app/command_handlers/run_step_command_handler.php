@@ -15,10 +15,36 @@ class RunStepCommandHandler extends Controller {
      * real del script externo".
      */
     public function Handle(RunStepCommand $command): void {
-        $stepExecution  = $this->StepExecution->Find($command->stepExecutionId);
-        $stepDefinition = $stepExecution->workflow_step_definition();
-        $outputLines    = [];
-        $exitCode       = 0;
+        $stepExecution     = $this->StepExecution->Find($command->stepExecutionId);
+        $stepDefinition    = $stepExecution->workflow_step_definition();
+        $workflowExecution = $this->WorkflowExecution->Find((int) $stepExecution->workflow_execution_id);
+        $outputLines       = [];
+        $exitCode          = 0;
+
+        // Corrección — el diseño original nunca marcaba la transición
+        // pending -> running a nivel de WorkflowExecution (iba directo
+        // a completed/failed). Solo la primera vez que cualquier step
+        // de esta ejecución realmente arranca (no al encolar — un
+        // step puede esperar minutos al próximo ciclo de cron). Ver
+        // design.md, "Corrección — transición de WorkflowExecution a
+        // running".
+        if ($workflowExecution->status === 'pending'):
+            $workflowExecution->status     = 'running';
+            $workflowExecution->started_at = time();
+            $workflowExecution->Save()
+                or throw new \Exception((string) $workflowExecution->_error);
+
+            $runningEvent = $this->Event->Niu([
+                'aggregate_type' => 'WorkflowExecution',
+                'aggregate_id'   => $workflowExecution->id,
+                'event_type'     => 'WorkflowRunning',
+                'payload'        => json_encode(['workflow_definition_id' => $workflowExecution->workflow_definition_id]),
+            ]);
+            $runningEvent->Save()
+                or throw new \Exception((string) $runningEvent->_error);
+
+            (new EventBus())->Dispatch($runningEvent);
+        endif;
 
         $stepExecution->status     = 'running';
         $stepExecution->started_at = time();

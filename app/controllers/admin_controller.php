@@ -42,8 +42,20 @@ class AdminController extends MainController {
     public function _additional_before_filter(): void {
         $this->_prepare_data();
         switch ($this->_prevAction):
+            case 'projects':
+                if (in_array($this->params[0] ?? null, ['edit', 'add'])):
+                    $this->groups = $this->Group->Find();
+                    $this->selectedGroupIds = [];
+                    if ($this->params[0] === 'edit' and !empty($this->params[1])):
+                        $assigned = $this->ProjectGroup->Find(['conditions' => [['project_id', (int) $this->params[1]]]]);
+                        foreach ($assigned as $projectGroup):
+                            $this->selectedGroupIds[] = (int) $projectGroup->group_id;
+                        endforeach;
+                    endif;
+                endif;
+            break;
             case 'workflow_definitions':
-                if (in_array($this->params[0], ['edit', 'add'])):
+                if (in_array($this->params[0] ?? null, ['edit', 'add'])):
                     $this->projects = $this->Project->Find();
                 endif;
             break;
@@ -101,6 +113,19 @@ class AdminController extends MainController {
         $this->sectionTitle = 'Inicio';
         $this->adminCRUDAction = '';
         $this->paginate = false;
+
+        // Active Operations — único widget con dominio real hoy
+        // (ejecucion-workflows). El resto del grid (Operational
+        // Health, Risk Indicators, Dependency Graph, Recomendaciones)
+        // sigue en _widget-empty-state.phtml hasta que exista el
+        // dominio correspondiente — ver dashboard-shell/design.md.
+        $this->activeExecutions = $this->WorkflowExecution->Find([
+            'conditions' => [
+                ['status', 'IN', ['pending', 'running']],
+            ],
+            'sort'  => '`id` DESC',
+            'limit' => 10,
+        ]);
     }
 
     /**
@@ -133,6 +158,70 @@ class AdminController extends MainController {
             $this->_response['message'] = $e->getMessage();
         } finally {
             $this->setResponseCode($this->_code);
+            $this->respondToAJAX(json_encode($this->_response));
+        }
+    }
+
+    /**
+     * Acción dedicada para Proyecto — el CRUD genérico de
+     * AdminBaseTrait no puede sincronizar el pivote project_groups
+     * desde un dmb-select multiple (Find()/Save() no conocen esa
+     * columna). 'saveproject' NO está en $this->_actions
+     * deliberadamente: _prepare_data() nunca debe interceptarla. Ver
+     * design.md, "Asignación de Grupos — acción dedicada".
+     *
+     * Confirmado contra AdminBaseTrait::_create_reg()/_update_reg()
+     * (código real, no el snippet ilustrativo de design.md): ambos
+     * simplemente llaman Niu($array) con el array completo del POST
+     * (incluyendo 'id' cuando existe) y dejan que Save() detecte
+     * INSERT/UPDATE según la presencia de $this->id. No hay ningún
+     * Find()+asignación campo a campo — por eso aquí tampoco hace
+     * falta.
+     */
+    public function saveprojectAction(): void {
+        $this->layout = null;
+        $code = HTTP_200;
+
+        try {
+            $data = $_POST['project'] ?? [];
+            empty($data) and throw new ControllerException('Datos de proyecto requeridos', HTTP_422);
+
+            $groupIds = $data['groups'] ?? [];
+            unset($data['groups']);
+            !empty($data['id']) and ($data['id'] = (int) $data['id']);
+
+            $project = $this->Project->Niu($data);
+            $project->Save()
+                or throw new ControllerException((string) $project->_error, HTTP_422);
+
+            // Sync simple del pivote: borra todas las filas existentes
+            // de este proyecto y recrea desde la selección actual.
+            // Más simple que diffear altas/bajas — la escala (pocos
+            // grupos por proyecto) no justifica un diff real.
+            $existing = $this->ProjectGroup->Find(['conditions' => [['project_id', $project->id]]]);
+            foreach ($existing as $projectGroup):
+                $projectGroup->Delete();
+            endforeach;
+
+            foreach ($groupIds as $groupId):
+                $newProjectGroup = $this->ProjectGroup->Niu([
+                    'project_id' => $project->id,
+                    'group_id'   => (int) $groupId,
+                ]);
+                $newProjectGroup->Save()
+                    or throw new ControllerException((string) $newProjectGroup->_error, HTTP_422);
+            endforeach;
+
+            $this->_response['d'] = $project;
+            $this->_response['message'] = 'Proyecto guardado satisfactoriamente';
+        } catch (ControllerException $e) {
+            $code = $e->getCode();
+            $this->_response['message'] = $e->getMessage();
+        } catch (Exception $e) {
+            $code = HTTP_500;
+            $this->_response['message'] = $e->getMessage();
+        } finally {
+            $this->setResponseCode($code);
             $this->respondToAJAX(json_encode($this->_response));
         }
     }

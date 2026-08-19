@@ -40,10 +40,10 @@ class AppModelClass extends BaseModelClass {
             });
     }
 
-    updateData(data, redirect) {
+    updateData(data, redirect, params = {}) {
         let dialog = this.#_dialog.loader();
 
-        this.updateToServer(data, undefined, {'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded'})
+        this.updateToServer(data, params, {'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded'})
             .then(() => {
                 dialog.close();
                 dialog = this.#_dialog.info('Registro actualizado correctamente');

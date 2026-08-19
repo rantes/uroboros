@@ -162,7 +162,7 @@ public function miAccionAction(): void {
         $this->_code = HTTP_500;
         $this->_response['message'] = $e->getMessage();
     } finally {
-        http_response_code($this->_code);
+        $this->setResponseCode($this->_code);
         $this->respondToAJAX(json_encode($this->_response));
     }
 }

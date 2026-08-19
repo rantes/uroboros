@@ -21,11 +21,22 @@ export class DmbSimpleForm extends DumboDirective {
         this.#_dialog = new DmbDialogService();
 
         const send = (formSubmitted) => {
+            const formData = formSubmitted.getFormData();
+
             appModel.url(target);
             if (isUpdate) {
-                appModel.updateData(formSubmitted.getFormData(), redirect);
+                // AdminBaseTrait::_update_reg() exige
+                // $this->params['id'] tomado de la URL — sin esto el
+                // PUT siempre llegaba a "{action}?" (sin id) y
+                // devolvía 404. El campo oculto {modelo}[id] siempre
+                // está presente en un addedit de edición (convención
+                // del proyecto); se toma de ahí y se manda como query
+                // param.
+                const idKey = [...formData.keys()].find(key => key.endsWith('[id]'));
+                const id = idKey ? formData.get(idKey) : null;
+                appModel.updateData(formData, redirect, id ? {id} : {});
             } else {
-                appModel.createData(formSubmitted.getFormData(), redirect);
+                appModel.createData(formData, redirect);
             }
             if (closePanel) {
                 panel = document.querySelector(closePanel);

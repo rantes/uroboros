@@ -18,9 +18,9 @@ dmb-table {
         thead {
             tr {
                 th {
-                    background: var(--surface-2);
-                    border-bottom: 2px solid var(--border-subtle);
-                    color: var(--information);
+                    background: var(--secondary-surface);
+                    border-bottom: 2px solid var(--border-outline);
+                    color: var(--main-font-color);
                     font-size: var(--font-size-xs);
                     font-weight: 600;
                     letter-spacing: 0.05em;

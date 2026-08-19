@@ -62,7 +62,13 @@ export class DmbMoreOption extends DumboDirective {
             break;
         case 'ajax':
             if(this.pageLoader) this.pageLoader.open();
-            fetch(new Request(this.url))
+            // Todo uso real de dmb-more-option[behavior=ajax] en el
+            // proyecto es "Eliminar" (confirmado por grep en
+            // app/views/admin/*.phtml) — sin method:'delete' esto
+            // hacía un GET, y AdminBaseTrait solo borra en verbo
+            // DELETE. El botón "Eliminar" del menú de tres puntos
+            // nunca eliminó nada realmente.
+            fetch(new Request(this.url, {method: 'delete'}))
                 .then(response => {
                     if(this.pageLoader) this.pageLoader.close();
                     return response.json();

@@ -35,7 +35,7 @@ html, body {
 }
 
 body {
-    background-color: var(--secondary-surface);
+    background-color: var(--primary-surface);
     color: var(--main-font-color);
     line-height: var(--line-height-base);
 
@@ -117,5 +117,5 @@ a {
 }
 
 #page-content {
-  background-color: var(--dark-surface);
+  background-color: var(--primary-surface);
 }

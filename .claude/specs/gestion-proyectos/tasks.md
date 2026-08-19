@@ -125,11 +125,103 @@ genérico de vistas del usuario, no de este spec.
 assertions, 0 failures, 0 errors. Cero regresión sobre el resto del
 proyecto.
 
-## Fuera de alcance de tasks.md (responsabilidad del usuario)
+## Vistas — bloqueador de "mínimo utilizable"
 
-- Configuración del mecanismo genérico para exponer CRUD de `Project`
-  y `Group`.
-- Configuración de la relación muchos-a-muchos en ese mecanismo.
-- Validaciones (`presence_of`, `unique`, lista cerrada de `type`).
-- Formulario con `dmb-select multiple` para asignar grupos a un
-  proyecto (Requisito 6.1).
+- [x] 35-38. Las 4 vistas creadas (`project_list`/`project_addedit`/
+      `group_list`/`group_addedit`), patrón estándar.
+- [x] 39. `AdminController::saveprojectAction()` implementado —
+      simplificado tras verificar el código real (`Niu($data)` sola,
+      sin rama `Find()`/`Niu()` separada).
+- [x] 40. `$this->dependents = 'destroy';` agregado a `Project` —
+      cascada nativa confirmada empíricamente (eliminar proyecto deja
+      `project_groups` en 0 filas para ese proyecto).
+- [x] 41. Verificado con `DumboChromeDriver`: crear/editar/listar/
+      eliminar con clicks reales, sincronización de pivote confirmada
+      por SQL directo en cada paso (Alpha+Beta → Beta+Gamma, exacto).
+- [x] 42. **`dumboTest all`:** 43 tests, 165 assertions — mismo
+      conteo que la línea base, cero regresión.
+
+## ⚠️ Hallazgo mayor — el CRUD admin completo nunca funcionó por navegador
+
+La verificación del Paso 41 destapó **8 bugs reales**, previamente
+indetectables porque todo el CRUD admin (de cualquier entidad, no
+solo `Project`) solo se había probado por `curl`/`_runAction()`, nunca
+con clicks reales de "Agregar"/"Editar"/"Eliminar". Todos bloqueaban
+la verificación misma, así que se corrigieron como parte de esta
+tarea:
+
+1. `dmb-table thead` con texto blanco sobre blanco (variables CSS
+   `--surface-2`/`--information`/`--border-subtle` indefinidas) —
+   headers invisibles en **todas** las vistas admin.
+2. `<dmb-panel id="panel-form-add-edit-reg">` nunca existía en
+   `layout.phtml` — **ningún** botón "Agregar"/"Editar" de
+   **ningún** CRUD admin abría panel jamás, en ningún spec.
+3. Labels del formulario invisibles (mismo patrón de variable CSS sin
+   override que el punto 1).
+4. Condición de carrera en `DmbDialogService` (`.wrapper` accedido
+   antes de que `connectedCallback()` async termine) — **el mismo
+   Hallazgo 2 ya documentado en `dumbochromedriver.md`**, no un bug
+   nuevo redescubierto desde cero.
+5. `dmb-close-panel` con plantilla en camelCase nunca vinculada —
+   mismo patrón que el bug ya corregido una vez en `dmb-dialog`.
+6. `dmb-more-options`/`dmb-more-option`/`dmb-dock` nunca importados en
+   `app.js` — el menú "⋮" (Editar/Eliminar) no existía como
+   componente en ningún admin.
+7. `dmb-more-option[behavior=ajax]` enviaba `GET` en vez de `DELETE`
+   para "Eliminar".
+8. `dmb-simple-form[update]` nunca incluía el `id` en la URL del
+   `PUT` — `_update_reg()` siempre recibía 404. **Afecta a todas las
+   entidades con CRUD genérico** (`workflow_definitions`,
+   `workflow_step_definitions`, `groups`), no solo `Project`.
+
+Los 8 se corrigieron y verificaron empíricamente (capturas + consultas
+SQL tras cada paso). Dado que esto afecta CRUD ya "cerrado" en otros
+specs, vale la pena una pasada de confirmación en `explorador-eventos`
+y `ejecucion-workflows` con clicks reales, no solo re-confiar en la
+verificación anterior por `curl`.
+
+## Pasada de confirmación — 2 hallazgos más
+
+- [x] Hallazgo 9 (resuelto): `dmb-button-action.scss` usaba
+      `--primary-contrast` (variable indefinida) — botón "Ejecutar"
+      invisible en `workflow_definitions`. Mismo patrón que los
+      hallazgos 1/3 (variables CSS indefinidas). Corregido, una línea.
+- [x] Hallazgo 10 (✅ resuelto): eran **dos bugs encadenados**, no
+      uno — el diagnóstico preliminar era correcto pero incompleto.
+      **Bug A**: el dispatcher del framework evaluaba
+      `method_exists($this->page, "{$action}Action")` sin mirar
+      `PreventLoad()` primero, así que el preflight de CSRF (que ya
+      había armado su propia respuesta `204` vía `before_filter()`)
+      caía en el fallback `404 Missing Action`, pisando esa respuesta
+      — esto explica el cuerpo concatenado `Missing Action{"d":[]...}`
+      visto en el recorrido de confirmación anterior. **Bug B**
+      (recién descubierto, enmascarado por el A): `before_filter()`
+      forzaba `params[0] = 'list'` para cualquier request de admin sin
+      segmento de URL, sin mirar el verbo HTTP — un `POST` de creación
+      genérica entraba a `landingAction()` ya forzado a `'list'`, así
+      que ejecutaba `_list_regs()` en vez de `_create_reg()`, sin
+      error visible (mismo comportamiento ya anotado de pasada en el
+      hallazgo de `explorador-eventos` sobre `POST /admin/events`).
+      Corregido en el framework (`PreventLoad()` envolviendo todo el
+      bloque, no solo la ejecución) y en el proyecto (`'list'` por
+      defecto solo en `GET`, accesos a `params[0]` con `??  null`).
+      Verificado con clicks reales en `Group` y `WorkflowStepDefinition`,
+      y con `curl` en `WorkflowDefinition` (sin botón "Agregar" en su
+      vista — hallazgo aparte, ver nota abajo). Cero regresión sobre
+      `Project`/Eventos/Ejecutar/Eliminar ya confirmados. `dumboTest
+      all`: 43/165, igual a la línea base.
+
+**Pendiente, no bloqueante:** `workflow_definitions` sigue sin botón
+"Agregar" en su vista de listado (categoría distinta — vista
+incompleta, no bug de mecanismo — ya anotado antes).
+
+**Pendiente de tu decisión:** el fix del framework en
+`~/web/DumboPHP` quedó sin commitear (mismo estado en que ya estaba
+antes de este cambio) — confirma si lo commiteas tú o le pides al
+agente que lo haga (ya estableciste que ese repo commitea directo a
+`master`).
+
+**Nota aparte, no bloqueante:** `workflow_definitions` nunca tuvo
+botón "Agregar" en su vista de listado — vista incompleta, categoría
+distinta a los bugs de mecanismo de arriba, pendiente cuando se
+retome ese spec.

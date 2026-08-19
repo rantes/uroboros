@@ -296,7 +296,51 @@ haga falta". Si la UX resulta insuficiente en el uso real, la opción 2
 (componente DumboJS de edición anidada) queda como extensión futura,
 no como algo que este spec deba resolver ahora.
 
-## Patrón — proyecto encadenado (fire-and-forget)
+## Corrección — transición de `WorkflowExecution` a `running`
+
+**Hallazgo confirmado tras conectar el dashboard a datos reales:** el
+diseño original nunca marcaba la transición `pending` → `running` a
+nivel de `WorkflowExecution` — iba directo a `completed`/`failed`.
+
+**Dónde vive la corrección:** dentro de `RunStepCommandHandler`,
+antes de ejecutar el script externo, y solo si todavía está
+`pending` (la primera vez que cualquier step de esa ejecución
+realmente arranca):
+
+```php
+if ($workflowExecution->status === 'pending'):
+    $workflowExecution->status     = 'running';
+    $workflowExecution->started_at = time();
+    $workflowExecution->Save();
+
+    $event = $this->Event->Niu([
+        'aggregate_type' => 'WorkflowExecution',
+        'aggregate_id'   => $workflowExecution->id,
+        'event_type'     => 'WorkflowRunning',
+        'payload'        => json_encode(['workflow_definition_id' => $workflowExecution->workflow_definition_id]),
+    ]);
+    $event->Save()
+        or throw new \Exception((string) $event->_error);
+    (new EventBus())->Dispatch($event);
+endif;
+```
+
+**Por qué un Event nuevo (`WorkflowRunning`) y no solo actualizar la
+proyección directo:** consistencia con el resto del diseño — cada
+transición de estado real ya es un Event (`WorkflowStarted`,
+`WorkflowCompleted`, `WorkflowFailed`); dejar esta transición sin
+Event rompería la trazabilidad completa (alguien revisando el Event
+Store de una ejecución no vería cuándo pasó de encolada a realmente
+ejecutándose — información operativa real, no solo cosmética). No
+necesita Reaction propia por ahora — nada más se dispara desde ella
+todavía, mismo criterio que `StepQueued`.
+
+**Por qué en `RunStepCommandHandler` y no en `QueueStepCommandHandler`:**
+encolar (`QueueStepCommand`) no es lo mismo que ejecutar — un step
+puede estar encolado minutos esperando al próximo ciclo de `cron`
+(Requisito 4.3/Decisión de "disparo síncrono en background"). Marcar
+`running` recién cuando el script realmente arranca es lo que hace
+honesto el estado para el dashboard.
 
 No es un tipo de step nuevo ni un mecanismo especial — es un
 `WorkflowStepDefinition` normal (`type = 'custom'`) cuyo `command` es

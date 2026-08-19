@@ -194,3 +194,80 @@ nada. La navegación real es `$project->project_groups()` (vía
 `has_many`) y desde ahí `->project()`/`->group()` (vía `belongs_to`
 en la pivote) — por eso `ProjectGroup` sí necesita existir como
 archivo real, contradiciendo la nota original de `tasks.md`.
+
+## Asignación de Grupos — acción dedicada, no el CRUD genérico
+
+**Decisión (corrige el Requisito 6 original de `requirements.md`):**
+el mecanismo genérico (`_create_reg()`/`_update_reg()` de
+`AdminBaseTrait`) solo sabe guardar el modelo principal — no
+sincronizar una tabla pivote a partir de una selección múltiple. En
+vez de tocar el trait compartido (alto impacto, afecta
+`groups`/`events`/`workflow_*` también), se usa una acción dedicada,
+mismo patrón ya usado para el disparo manual de `ejecucion-workflows`
+(`executeworkflowAction()`, fuera del CRUD mágico):
+
+```php
+public function saveprojectAction(): void {
+    $data = $_POST['project'] ?? [];
+    $groupIds = $data['groups'] ?? [];
+    unset($data['groups']); // no es una columna de projects
+
+    $project = empty($data['id'])
+        ? $this->Project->Niu($data)
+        : $this->Project->Find((int) $data['id']);
+
+    if (!empty($data['id'])):
+        foreach ($data as $field => $value):
+            $project->$field = $value;
+        endforeach;
+    endif;
+
+    $project->Save()
+        or throw new ControllerException((string) $project->_error, HTTP_422);
+
+    // Sync simple: borrar todas las filas pivote existentes de este
+    // proyecto y recrearlas desde la selección actual — más simple
+    // que diffear altas/bajas, y la escala (pocos grupos por
+    // proyecto) no justifica la complejidad de un diff real.
+    $existing = $this->ProjectGroup->Find(['conditions' => [['project_id', $project->id]]]);
+    foreach ($existing as $pg):
+        $pg->Delete();
+    endforeach;
+
+    foreach ($groupIds as $groupId):
+        $this->ProjectGroup->Niu([
+            'project_id' => $project->id,
+            'group_id'   => (int) $groupId,
+        ])->Save();
+    endforeach;
+
+    $this->_response['message'] = 'Proyecto guardado satisfactoriamente';
+    $this->setResponseCode(HTTP_200);
+    $this->respondToAJAX(json_encode($this->_response));
+}
+```
+
+> **Corregido tras verificación contra el código real:**
+> `_create_reg()`/`_update_reg()` de `AdminBaseTrait` no usan
+> `Find()`+asignación campo a campo como proponía el snippet
+> original — ambos llaman `Niu($array)` con el array completo
+> (incluyendo `id` cuando existe), dejando que `Save()` detecte
+> INSERT vs. UPDATE por la presencia de `id`. Esto simplifica
+> `saveprojectAction()`: no hace falta la rama
+> `empty($data['id']) ? Niu() : Find()` — `Niu($data)` sola resuelve
+> ambos casos, igual que el resto del CRUD genérico del proyecto.
+
+El formulario (`admin/project_addedit.phtml`) apunta su `dmb-form` a
+esta acción (`action="/admin/saveproject"`), no a la ruta genérica del
+CRUD. `'saveproject'` **no** se agrega a `$this->_actions` — así
+`_prepare_data()` nunca la intercepta, corre como una acción normal de
+controlador, con el `before_filter()` estándar (sesión + CSRF reales,
+a diferencia del webhook público de `ejecucion-workflows`).
+
+**Listar y eliminar Proyectos siguen usando el mecanismo genérico sin
+cambios** — solo crear/editar necesita el bypass. Para que eliminar un
+proyecto limpie su pivote automáticamente, confirmar si
+`$this->dependents = 'destroy';` en el modelo `Project` (con
+`has_many = ['project_groups']` ya declarado) cascada la eliminación
+de forma nativa — `dumbophp-models.md` documenta esa opción, no
+confirmado que aplique aquí sin probarlo.

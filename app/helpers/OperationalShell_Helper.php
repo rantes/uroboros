@@ -95,9 +95,15 @@ function currentUserInitials(): string {
 
     if (!empty($_SESSION['user'])):
         $user  = (new AppUser())->Find((int) $_SESSION['user']);
+        // substr(), no mb_substr() — la extensión mbstring no está
+        // instalada en este servidor (confirmado con
+        // function_exists('mb_substr') === false). Solo se toma la
+        // primera letra de cada nombre para un avatar de iniciales;
+        // substr() nativo cubre el caso real sin depender de una
+        // extensión adicional.
         $built = strtoupper(
-            (!empty($user->firstname) ? mb_substr($user->firstname, 0, 1) : '')
-            . (!empty($user->lastname) ? mb_substr($user->lastname, 0, 1) : '')
+            (!empty($user->firstname) ? substr($user->firstname, 0, 1) : '')
+            . (!empty($user->lastname) ? substr($user->lastname, 0, 1) : '')
         );
         !empty($built) and ($initials = $built);
     endif;

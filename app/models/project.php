@@ -12,7 +12,13 @@ class Project extends ActiveRecord {
     public ?int    $status         = null;
 
     public function _init_(): void {
-        $this->has_many = ['project_groups'];
+        $this->has_many  = ['project_groups'];
+        // Confirmado en ActiveRecord::_delete_or_nullify_dependents()
+        // (DumboPHP/bin/dumbophp.php): recorre $has_many, resuelve
+        // App\Models\ProjectGroup (existe como modelo real) y borra
+        // cada fila hija cuando dependents='destroy'. Sin esto el
+        // pivote queda huérfano al eliminar un Project.
+        $this->dependents = 'destroy';
 
         $this->validate = [
             'presence_of' => [

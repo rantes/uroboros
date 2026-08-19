@@ -12,9 +12,9 @@ return [
         OnPingStartedReaction::class,
     ],
 
-    // Ejecución de Workflows — StepQueued y WorkflowCompleted/
-    // WorkflowFailed no tienen Reaction todavía: nada más se dispara
-    // desde ellos en esta parte del spec. Ver
+    // Ejecución de Workflows — StepQueued, WorkflowRunning y
+    // WorkflowCompleted/WorkflowFailed no tienen Reaction todavía:
+    // nada más se dispara desde ellos en esta parte del spec. Ver
     // .claude/specs/ejecucion-workflows/design.md.
     'WorkflowStarted' => [
         OnWorkflowStartedReaction::class,

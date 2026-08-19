@@ -1,0 +1,36 @@
+<dmb-simple-form <?= !empty($this->data->id) ? 'update' : ''; ?> redirect="/admin/groups" close-panel="#panel-form-add-edit-reg">
+    <dmb-form
+        id="form-group"
+        name="group"
+        action="/admin/groups"
+        method="post"
+        async>
+        <header>
+            <dmb-close-panel orientation="right"></dmb-close-panel>
+            <h3><?= $this->title; ?></h3>
+        </header>
+        <dmb-content>
+            <div class="section group">
+                <? if (!empty($this->data->id)): ?>
+                <dmb-input type="hidden" dmb-name="group[id]" dmb-value="<?= $this->data->id; ?>"></dmb-input>
+                <? endif; ?>
+                <div class="col col12">
+                    <dmb-input
+                        label="Nombre"
+                        dmb-name="group[name]"
+                        dmb-value="<?= $this->data->name; ?>"
+                        validate="required">
+                    </dmb-input>
+                </div>
+            </div>
+        </dmb-content>
+        <dmb-footer class="section group">
+            <div class="col col6">
+                <dmb-button type="reset">Cancelar</dmb-button>
+            </div>
+            <div class="col col6">
+                <dmb-button type="submit">Guardar</dmb-button>
+            </div>
+        </dmb-footer>
+    </dmb-form>
+</dmb-simple-form>
