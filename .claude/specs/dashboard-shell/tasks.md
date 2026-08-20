@@ -88,16 +88,23 @@
        afectarse.
 - [ ] 18. Ruta absoluta del servidor expuesta en warnings de PHP —
        recordatorio pre-despliegue, no bloqueante ahora.
-- [ ] 19. **Nuevo, confirmado por el usuario.** El sidebar nunca se
-       actualizó cuando `ejecucion-workflows` se cerró — "Operaciones"
-       seguía marcado "Próximamente" y no existía ningún link a
-       `workflow_executions`/`step_executions`. Corregir: "Operaciones"
-       → link real a `/admin/workflow_definitions`; agregar
-       "Ejecuciones" → `/admin/workflow_executions`.
-       `step_executions` queda deliberadamente sin link propio en el
-       nivel superior por ahora (vista de detalle, no de primer nivel)
-       — decisión, no descuido; revisar si hace falta un drill-down
-       desde `workflow_executions` más adelante.
+- [x] 19. **Resuelto.** "Operaciones" → `/admin/workflow_definitions`,
+       "Ejecuciones" → `/admin/workflow_executions`, ambos como links
+       reales. `step_executions` sin link propio, según lo decidido.
+       Verificado con clicks reales — llegan a las páginas correctas,
+       botón "Agregar" visible en Operaciones, ausente en Ejecuciones
+       (solo lectura, coherente con el guard). Sin regresión (50/182).
+
+## ✅ Hallazgo resuelto — `activeNavItem()` ya distingue entre páginas
+
+Confirmado empíricamente que `$controller->_model` fallaba igual que
+`params` (propiedad `protected` declarada, inaccesible desde función
+externa). Resuelto con `AdminBaseTrait::GetActiveModel()` (getter
+público nuevo) — `activeNavItem()` ahora recibe `AdminController`
+tipado explícitamente y devuelve `GetActiveModel()`. Las 4
+comparaciones del sidebar actualizadas. Verificado con
+`getComputedStyle()` real en las 4 páginas + `/admin/index` (correctamente
+sin ninguna activa). Sin regresión (50/182).
 
 **`dumboTest all`:** 34 tests, 148 assertions — sin cambios, confirma
 que fue un cambio puramente de CSS.

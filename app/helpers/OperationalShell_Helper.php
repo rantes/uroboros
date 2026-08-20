@@ -22,16 +22,26 @@
  * en el namespace actual.
  */
 
+use App\Controllers\AdminController;
 use App\Models\AppUser;
 use App\Models\Event;
 use App\Models\OemMetric;
-use DumboPHP\Controller;
 
 /**
- * Sidebar: qué item del nav está activo según el controlador actual.
+ * Sidebar: qué item del nav está activo según la página actual.
+ *
+ * Corregido — devolvía $controller->_getController_() ('admin' para
+ * TODAS las rutas de AdminController), así que todos los links del
+ * sidebar se marcaban "activos" simultáneamente, siempre (ver
+ * dashboard-shell/tasks.md, hallazgo). Ahora devuelve el modelo
+ * activo real ('project', 'event', 'workflow_definition',
+ * 'workflow_execution') vía AdminBaseTrait::GetActiveModel() — el
+ * accessor público, no $controller->_model directo: _model es
+ * `protected`, inaccesible desde esta función externa a la clase
+ * (confirmado empíricamente, mismo caso que Controller::$params).
  */
-function activeNavItem(Controller $controller): string {
-    return $controller->_getController_();
+function activeNavItem(AdminController $controller): string {
+    return $controller->GetActiveModel();
 }
 
 /**

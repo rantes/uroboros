@@ -23,6 +23,11 @@
                     </dmb-button-action>
                     <dmb-more-options>
                         <dmb-more-option
+                            behavior="launch-url"
+                            url="/admin/workflow_step_definitions?workflow_definition_id=<?= $row->id; ?>">
+                            Ver pasos
+                        </dmb-more-option>
+                        <dmb-more-option
                             behavior="open-panel"
                             url="/admin/workflow_definitions/edit/<?= $row->id; ?>"
                             panel="#panel-form-add-edit-reg">

@@ -120,6 +120,21 @@ documentado, no solo los de este spec.
 - [x] 23. Vista de gestión de pasos, filtrada por parámetro — nunca
        lista global mezclando steps de distintos workflows.
 
+## ⚠️ Hallazgo — sin navegación de `workflow_definitions` a sus pasos
+
+Confirmado por el usuario: en `/admin/workflow_definitions` no hay
+ningún botón/link hacia `/admin/workflow_step_definitions` para un
+workflow específico. La tarea 23 asumía que "filtrado por
+`workflow_definition_id` vía parámetro" bastaba, pero nunca se agregó
+el punto de entrada real desde la lista de Workflows — la única forma
+de llegar hoy es escribiendo la URL con el parámetro a mano.
+
+- [x] 23b. **Resuelto.** Opción "Ver pasos" agregada al
+       `dmb-more-options` de cada fila, `behavior="launch-url"` hacia
+       el listado filtrado. Verificado con 2 `WorkflowDefinition`
+       reales, cada uno con pasos propios — confirmado sin mezcla en
+       ninguna dirección.
+
 ## Solo lectura de ejecuciones (Requisito 5)
 
 - [x] 24. `WorkflowExecution`/`StepExecution` agregadas a
