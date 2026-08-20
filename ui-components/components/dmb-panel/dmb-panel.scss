@@ -27,14 +27,6 @@ dmb-panel {
         top: 0;
         transition: left 0.5s ease-in-out, right 0.5s ease-in-out;
         z-index: 1000;
-
-        // styles.scss fuerza label/small/caption a --main-font-color
-        // (blanco) globalmente, asumiendo fondo oscuro. .wrapper es
-        // fondo blanco a propósito — sin este override el texto queda
-        // blanco sobre blanco, invisible.
-        label, small, caption {
-            color: var(--primary-surface);
-        }
     }
 
     &.right {

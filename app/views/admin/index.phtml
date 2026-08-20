@@ -26,8 +26,34 @@
 
 <div class="section group">
     <div class="col col6 col6-md col6-sm">
-        <? $widgetTitle = 'Operational Health'; $widgetReason = 'Requiere Health Management'; ?>
-        <? include(INST_PATH.'app/views/_widget-empty-state.phtml'); ?>
+        <dmb-card class="full" icon="favorite">
+            <div class="head">
+                <h4>Operational Health</h4>
+            </div>
+            <div class="body">
+                <dmb-health-widget>
+                    <div class="item" data-metric="success-rate">
+                        <? if ($this->deploymentSuccessRate === null): ?>
+                        <p class="widget-empty-reason">Sin datos en este período</p>
+                        <? else: ?>
+                        <dmb-donut-chart data-percent="<?= $this->deploymentSuccessRate; ?>"></dmb-donut-chart>
+                        <? endif; ?>
+                        <p class="label">Deployment Success Rate</p>
+                    </div>
+                    <div class="item" data-metric="lead-time">
+                        <span class="content"><?= $this->leadTime; ?></span>
+                        <p class="label">Lead Time</p>
+                    </div>
+                    <div class="item">
+                        <dmb-select label="Ventana" dmb-name="window" dmb-value="<?= $this->healthWindowDays; ?>">
+                            <option value="7">7 días</option>
+                            <option value="30">30 días</option>
+                            <option value="90">90 días</option>
+                        </dmb-select>
+                    </div>
+                </dmb-health-widget>
+            </div>
+        </dmb-card>
     </div>
     <div class="col col6 col6-md col6-sm">
         <? $widgetTitle = 'Risk Indicators'; $widgetReason = 'Requiere Dependency Management'; ?>

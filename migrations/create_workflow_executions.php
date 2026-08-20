@@ -20,6 +20,8 @@ class CreateWorkflowExecutions extends Migrations {
 
     public function up(): void {
         $this->Create_Table();
+        $this->Add_Single_Index('status');
+        $this->Add_Single_Index('created_at');
     }
 
     public function down(): void {

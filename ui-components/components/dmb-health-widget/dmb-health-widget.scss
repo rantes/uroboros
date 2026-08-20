@@ -1,0 +1,6 @@
+// display: block explícito — los custom elements son `inline` por
+// defecto; sin esto el layout de .item dentro rompe (mismo hallazgo
+// ya documentado en dashboard-shell/design.md con dmb-view).
+dmb-health-widget {
+    display: block;
+}
