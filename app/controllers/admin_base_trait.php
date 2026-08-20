@@ -35,6 +35,18 @@ trait AdminBaseTrait {
     }
 
     /**
+     * Accessor público de $_model — necesario porque $_model es
+     * `protected`, inaccesible desde una función global externa a la
+     * clase (cae en __get() mágico sin el valor real, confirmado
+     * empíricamente — mismo caso ya visto con Controller::$params,
+     * distinto de un modelo lazy-loaded no declarado). Usado por
+     * activeNavItem() en OperationalShell_Helper.php.
+     */
+    public function GetActiveModel(): string {
+        return $this->_model;
+    }
+
+    /**
      * Detecta si la acción actual está en $_actions y redirige internamente
      * hacia landingAction(), guardando la acción original en $_prevAction.
      * Llamar desde _additional_before_filter() en cada controlador que use el trait.

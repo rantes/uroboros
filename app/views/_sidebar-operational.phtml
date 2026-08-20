@@ -2,11 +2,16 @@
     <nav>
         <div class="nav-group">
             <span class="nav-group-title">Explorar</span>
-            <a href="/admin/projects" class="<?= activeNavItem($this) === 'admin' ? 'active' : ''; ?>">
+            <a href="/admin/projects" class="<?= activeNavItem($this) === 'project' ? 'active' : ''; ?>">
                 Proyectos
             </a>
-            <span class="nav-item disabled" title="Requiere Workflow Execution">Operaciones</span>
-            <a href="/admin/events" class="<?= activeNavItem($this) === 'admin' ? 'active' : ''; ?>">
+            <a href="/admin/workflow_definitions" class="<?= activeNavItem($this) === 'workflow_definition' ? 'active' : ''; ?>">
+                Operaciones
+            </a>
+            <a href="/admin/workflow_executions" class="<?= activeNavItem($this) === 'workflow_execution' ? 'active' : ''; ?>">
+                Ejecuciones
+            </a>
+            <a href="/admin/events" class="<?= activeNavItem($this) === 'event' ? 'active' : ''; ?>">
                 Eventos
             </a>
             <span class="nav-item disabled" title="Requiere Health Management">Recomendaciones</span>
