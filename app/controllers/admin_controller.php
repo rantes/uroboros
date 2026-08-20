@@ -23,6 +23,7 @@ class AdminController extends MainController {
         parent::__construct();
         $this->operationalShell = true;
         $this->helper[]  = 'OperationalShell';
+        $this->helper[]  = 'HealthMetrics';
         $this->_readOnlyModels = ['event', 'workflow_execution', 'step_execution'];
         $this->_actions  = [
             'projects',
@@ -68,44 +69,6 @@ class AdminController extends MainController {
                 $this->_listConditions = "`workflow_definition_id`='{$this->workflowDefinitionId}'";
             break;
         endswitch;
-        // switch ($this->_prevAction):
-        //     case 'announcements':
-        //         $this->_model_camelized = 'Content';
-        //         if (in_array($this->params[0], ['edit', 'add'])):
-        //             // $this->documentKinds = $this->Param->Find_by_name('document_kind');
-        //         endif;
-        //     break;
-        //     case 'guards':
-        //         $this->_model_camelized = 'AppUser';
-        //         if (in_array($this->params[0], ['edit', 'add'])):
-        //             $this->documentKinds = $this->Param->Find_by_name('document_kind');
-        //         endif;
-        //     break;
-        //     case 'users':
-        //         $this->_model_camelized = 'User';
-        //         // $this->_listConditions = '`level`=2';
-        //         if (in_array($this->params[0], ['edit', 'add'])):
-        //             $this->documentKinds = $this->Param->Find_by_name('document_kind');
-        //             $this->parentProperties = $this->Property->Find_by_property_id(0);
-        //             $this->uProperties = empty($this->params[1]) ?
-        //                 $this->UserProperty->Niu() :
-        //                 $this->UserProperty->Find_by_user_id($this->params[1]);
-        //         endif;
-        //         if ($this->params[0] === 'save'):
-        //             if (!empty($_POST['user_property']) and is_array($_POST['user_property'])):
-        //                 foreach ($_POST['user_property'] as $p):
-        //                     $up = $this->UserProperty->Niu($p);
-        //                     if (!$up->Save()):
-        //                         throw new ControllerException((string)$up->_error, HTTP_500);
-        //                     endif;
-        //                     // Al registrar al propietario principal se crea su
-        //                     // cuenta de portal automáticamente (KMD-ROLES M3).
-        //                     $up->is_owner and $this->_ensureOwnerAppUser((int) $up->user_id);
-        //                 endforeach;
-        //             endif;
-        //         endif;
-        //     break;
-        // endswitch;
     }
 
 
@@ -126,6 +89,33 @@ class AdminController extends MainController {
             'sort'  => '`id` DESC',
             'limit' => 10,
         ]);
+
+        // Render inicial server-side con el default (o el window de
+        // un link/bookmark directo) — el cambio posterior de ventana
+        // ya no recarga la página, ver healthmetricsAction().
+        $this->healthWindowDays = (int) ($this->params['window'] ?? 7);
+        in_array($this->healthWindowDays, [7, 30, 90], true) or ($this->healthWindowDays = 7);
+
+        $this->deploymentSuccessRate = $this->WorkflowExecution->DeploymentSuccessRate($this->healthWindowDays);
+        $this->leadTime               = formatLeadTime($this->WorkflowExecution->LeadTime($this->healthWindowDays));
+    }
+
+    /**
+     * Endpoint AJAX (Requisito 3.3) — recalcula ambas métricas para
+     * la ventana elegida sin recargar la página completa. Sin layout,
+     * responde JSON — mismo patrón que executeworkflowAction().
+     */
+    public function healthmetricsAction(): void {
+        $this->layout = null;
+        $windowDays = (int) ($this->params['window'] ?? 7);
+        in_array($windowDays, [7, 30, 90], true) or ($windowDays = 7);
+
+        $this->_response['d'] = [
+            'success_rate' => $this->WorkflowExecution->DeploymentSuccessRate($windowDays),
+            'lead_time'    => formatLeadTime($this->WorkflowExecution->LeadTime($windowDays)),
+        ];
+        $this->setResponseCode(HTTP_200);
+        $this->respondToAJAX(json_encode($this->_response));
     }
 
     /**

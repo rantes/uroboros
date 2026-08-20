@@ -41,6 +41,17 @@
     </table>
 </dmb-table>
 
+<dmb-dock id="admin-dock-options">
+    <div class="item" data-title="Agregar">
+        <dmb-button-action
+            action="new"
+            panel="#panel-form-add-edit-reg"
+            url="/admin/workflow_definitions/add"
+            behavior="open-panel">
+        </dmb-button-action>
+    </div>
+</dmb-dock>
+
 <dmb-pagination>
     Página: <?= $this->data->WillPaginate($this->fullUrl()); ?>
     de <?= $this->data->PaginateTotalPages; ?>

@@ -113,12 +113,17 @@ function oemStatus(): string {
             <a href="/admin/projects" class="<?= activeNavItem() === 'admin' ? 'active' : ''; ?>">
                 Proyectos
             </a>
-            <span class="nav-item disabled" title="Requiere Workflow Execution">Operaciones</span>
+            <a href="/admin/workflow_definitions" class="<?= activeNavItem() === 'workflow_definitions' ? 'active' : ''; ?>">
+                Operaciones
+            </a>
+            <a href="/admin/workflow_executions" class="<?= activeNavItem() === 'workflow_executions' ? 'active' : ''; ?>">
+                Ejecuciones
+            </a>
             <a href="/admin/events" class="<?= activeNavItem() === 'events' ? 'active' : ''; ?>">
                 Eventos
             </a>
-            <!-- Ruta ilustrativa — ajustar a la real del explorador
-                 de eventos, ver .claude/specs/explorador-eventos/ -->
+            <!-- Rutas ilustrativas — ajustar a las reales, ver
+                 .claude/specs/ejecucion-workflows/ y explorador-eventos/ -->
             <span class="nav-item disabled" title="Requiere Health Management">Recomendaciones</span>
         </div>
         <div class="nav-group">

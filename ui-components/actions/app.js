@@ -28,6 +28,8 @@ import { DmbOemMetricsFooter } from '../components/dmb-oem-metrics-footer/dmb-oe
 import { DmbMoreOptions } from '../components/dmb-more-options/dmb-more-options.directive.js';
 import { DmbMoreOption } from '../components/dmb-more-option/dmb-more-option.directive.js';
 import { DmbDock } from '../components/dmb-dock/dmb-dock.directive.js';
+import { DmbDonutChart } from '../components/dmb-donut-chart/dmb-donut-chart.directive.js';
+import { DmbHealthWidget } from '../components/dmb-health-widget/dmb-health-widget.directive.js';
 
 class App extends DumboApp {
 
@@ -60,7 +62,9 @@ class App extends DumboApp {
             DmbOemMetricsFooter,
             DmbMoreOptions,
             DmbMoreOption,
-            DmbDock
+            DmbDock,
+            DmbDonutChart,
+            DmbHealthWidget
         ];
     }
 }

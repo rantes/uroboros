@@ -88,6 +88,16 @@
        afectarse.
 - [ ] 18. Ruta absoluta del servidor expuesta en warnings de PHP —
        recordatorio pre-despliegue, no bloqueante ahora.
+- [ ] 19. **Nuevo, confirmado por el usuario.** El sidebar nunca se
+       actualizó cuando `ejecucion-workflows` se cerró — "Operaciones"
+       seguía marcado "Próximamente" y no existía ningún link a
+       `workflow_executions`/`step_executions`. Corregir: "Operaciones"
+       → link real a `/admin/workflow_definitions`; agregar
+       "Ejecuciones" → `/admin/workflow_executions`.
+       `step_executions` queda deliberadamente sin link propio en el
+       nivel superior por ahora (vista de detalle, no de primer nivel)
+       — decisión, no descuido; revisar si hace falta un drill-down
+       desde `workflow_executions` más adelante.
 
 **`dumboTest all`:** 34 tests, 148 assertions — sin cambios, confirma
 que fue un cambio puramente de CSS.
