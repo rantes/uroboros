@@ -33,6 +33,7 @@ class AdminController extends MainController {
             'workflow_step_definitions',
             'workflow_executions',
             'step_executions',
+            'project_config_files',
         ];
         $this->noyes = ['no', 'si'];
         $this->statuses = ['Inactivo', 'Activo'];
@@ -67,6 +68,13 @@ class AdminController extends MainController {
                 // "Gestión de pasos anidados").
                 $this->workflowDefinitionId = (int) ($this->params['workflow_definition_id'] ?? 0);
                 $this->_listConditions = "`workflow_definition_id`='{$this->workflowDefinitionId}'";
+            break;
+            case 'project_config_files':
+                // Colección anidada, mismo patrón que
+                // workflow_step_definitions — cada pantalla referencia
+                // un único Project por parámetro.
+                $this->projectId = (int) ($this->params['project_id'] ?? 0);
+                $this->_listConditions = "`project_id`='{$this->projectId}'";
             break;
         endswitch;
     }
@@ -212,6 +220,116 @@ class AdminController extends MainController {
             $this->_response['message'] = $e->getMessage();
         } finally {
             $this->setResponseCode($code);
+            $this->respondToAJAX(json_encode($this->_response));
+        }
+    }
+
+    /**
+     * Botón "Sincronizar al disco" — escribe los archivos de
+     * configuración descifrados de un Proyecto en su
+     * working_directory real. 'syncconfigfiles' NO está en
+     * $this->_actions deliberadamente, mismo criterio que
+     * executeworkflowAction()/saveprojectAction(). Ver design.md,
+     * "Acción de sincronización al disco".
+     */
+    public function syncconfigfilesAction(): void {
+        $this->layout = null;
+        $this->_code = HTTP_200;
+
+        try {
+            $projectId = (int) ($this->params['id'] ?? 0);
+            $project   = $this->Project->Find($projectId);
+
+            empty($project->working_directory)
+                and throw new ControllerException('El proyecto no tiene working_directory configurado.', HTTP_422);
+
+            is_dir($project->working_directory) or @mkdir($project->working_directory, 0755, true);
+            is_dir($project->working_directory)
+                or throw new ControllerException("No se pudo crear el directorio de trabajo: {$project->working_directory}", HTTP_500);
+
+            $files = $this->ProjectConfigFile->Find(['conditions' => [['project_id', $projectId]]]);
+
+            foreach ($files as $file):
+                $this->_writeConfigFile($project->working_directory, $file);
+            endforeach;
+
+            $this->_response['message'] = 'Archivos sincronizados correctamente.';
+        } catch (ControllerException $e) {
+            $this->_code = $e->getCode();
+            $this->_response['message'] = $e->getMessage();
+        } catch (Exception $e) {
+            $this->_code = HTTP_500;
+            $this->_response['message'] = $e->getMessage();
+        } finally {
+            $this->setResponseCode($this->_code);
+            $this->respondToAJAX(json_encode($this->_response));
+        }
+    }
+
+    /**
+     * Requisito 4.3 — nunca escribir fuera de working_directory.
+     * Validación por segmentos, no realpath()+str_starts_with()
+     * (el snippet ilustrativo de design.md tiene un fallo real: la
+     * comparación de prefijos de string sin separador de directorio
+     * deja pasar un directorio hermano cuyo nombre empieza igual,
+     * ej. working_directory=/home/proj1 vs. resultado
+     * /home/proj1-evil/file). Rechazar cualquier segmento '..' o '.'
+     * y cualquier ruta absoluta garantiza por construcción que el
+     * resultado nunca sale de $baseDir, sin depender de que la ruta
+     * ya exista en disco. Verificado con casos reales en Fase 5.
+     */
+    private function _isSafeRelativePath(string $filename): bool {
+        if ($filename === '' or str_contains($filename, "\0")):
+            return false;
+        endif;
+        if (str_starts_with($filename, '/') or preg_match('#^[A-Za-z]:[\\\\/]#', $filename)):
+            return false;
+        endif;
+
+        $isSafe = true;
+        foreach (explode('/', str_replace('\\', '/', $filename)) as $segment):
+            in_array($segment, ['', '.', '..'], true) and ($isSafe = false);
+        endforeach;
+
+        return $isSafe;
+    }
+
+    private function _writeConfigFile(string $baseDir, $file): void {
+        $this->_isSafeRelativePath($file->filename)
+            or throw new Exception("Nombre de archivo inválido: {$file->filename}");
+
+        $target = rtrim($baseDir, '/') . '/' . $file->filename;
+
+        is_dir(dirname($target)) or mkdir(dirname($target), 0755, true);
+
+        file_put_contents($target, $file->DecryptedContent()) !== false
+            or throw new Exception("No se pudo escribir {$file->filename}");
+    }
+
+    /**
+     * Fetch de "Mostrar" (dmb-reveal-secret) para archivos is_secret —
+     * el contenido descifrado nunca va en el HTML inicial del listado.
+     */
+    public function showconfigfilecontentAction(): void {
+        $this->layout = null;
+        $this->_code = HTTP_200;
+
+        try {
+            $id   = (int) ($this->params['id'] ?? 0);
+            $file = $this->ProjectConfigFile->Find($id);
+
+            empty($file->id)
+                and throw new ControllerException('Archivo no encontrado.', HTTP_404);
+
+            $this->_response['d'] = ['content' => $file->DecryptedContent()];
+        } catch (ControllerException $e) {
+            $this->_code = $e->getCode();
+            $this->_response['message'] = $e->getMessage();
+        } catch (Exception $e) {
+            $this->_code = HTTP_500;
+            $this->_response['message'] = $e->getMessage();
+        } finally {
+            $this->setResponseCode($this->_code);
             $this->respondToAJAX(json_encode($this->_response));
         }
     }

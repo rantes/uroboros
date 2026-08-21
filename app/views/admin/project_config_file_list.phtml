@@ -1,0 +1,66 @@
+<dmb-table>
+    <table>
+        <thead>
+            <tr>
+                <th>Archivo</th>
+                <th>Formato</th>
+                <th>Secreto</th>
+                <th>Contenido</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <? foreach ($this->data as $row): ?>
+            <tr>
+                <td><?= htmlspecialchars((string) $row->filename, ENT_QUOTES, 'UTF-8'); ?></td>
+                <td><?= strtoupper((string) $row->format); ?></td>
+                <td><?= $this->noyes[(int) $row->is_secret]; ?></td>
+                <td>
+                    <? if ((int) $row->is_secret === 1): ?>
+                    <dmb-reveal-secret url="/admin/showconfigfilecontent/<?= $row->id; ?>">
+                        ••••••••
+                    </dmb-reveal-secret>
+                    <? else: ?>
+                    <pre><code><?= htmlspecialchars($row->DecryptedContent(), ENT_QUOTES, 'UTF-8'); ?></code></pre>
+                    <? endif; ?>
+                </td>
+                <td>
+                    <dmb-more-options>
+                        <dmb-more-option
+                            behavior="open-panel"
+                            url="/admin/project_config_files/edit/<?= $row->id; ?>?project_id=<?= $this->projectId; ?>"
+                            panel="#panel-form-add-edit-reg">
+                            Editar
+                        </dmb-more-option>
+                        <dmb-more-option
+                            behavior="ajax"
+                            url="/admin/project_config_files/<?= $row->id; ?>">
+                            Eliminar
+                        </dmb-more-option>
+                    </dmb-more-options>
+                </td>
+            </tr>
+            <? endforeach; ?>
+        </tbody>
+    </table>
+</dmb-table>
+
+<dmb-button-action
+    action="new"
+    panel="#panel-form-add-edit-reg"
+    url="/admin/project_config_files/add?project_id=<?= $this->projectId; ?>"
+    behavior="open-panel">
+    Agregar archivo
+</dmb-button-action>
+
+<dmb-button-action
+    icon="sync"
+    url="/admin/syncconfigfiles/<?= $this->projectId; ?>"
+    behavior="ajax">
+    Sincronizar al disco
+</dmb-button-action>
+
+<dmb-pagination>
+    Página: <?= $this->data->WillPaginate($this->fullUrl()); ?>
+    de <?= $this->data->PaginateTotalPages; ?>
+</dmb-pagination>

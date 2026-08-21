@@ -155,6 +155,9 @@ trait AdminBaseTrait {
                 $this->sectionTitle = 'Ejecuciones de Pasos';
                 $sort = '`id` DESC';
             break;
+            case 'project_config_file':
+                $this->sectionTitle = 'Archivos de Configuración';
+            break;
         endswitch;
 
         $paginateParams = ['conditions'=>$conditions];

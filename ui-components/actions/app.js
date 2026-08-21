@@ -30,6 +30,7 @@ import { DmbMoreOption } from '../components/dmb-more-option/dmb-more-option.dir
 import { DmbDock } from '../components/dmb-dock/dmb-dock.directive.js';
 import { DmbDonutChart } from '../components/dmb-donut-chart/dmb-donut-chart.directive.js';
 import { DmbHealthWidget } from '../components/dmb-health-widget/dmb-health-widget.directive.js';
+import { DmbRevealSecret } from '../components/dmb-reveal-secret/dmb-reveal-secret.directive.js';
 
 class App extends DumboApp {
 
@@ -64,7 +65,8 @@ class App extends DumboApp {
             DmbMoreOption,
             DmbDock,
             DmbDonutChart,
-            DmbHealthWidget
+            DmbHealthWidget,
+            DmbRevealSecret
         ];
     }
 }
