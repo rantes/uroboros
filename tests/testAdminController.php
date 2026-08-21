@@ -13,6 +13,8 @@ class testAdminController extends dumboTests {
             'workflow_step_definitions',
             'workflow_executions',
             'step_executions',
+            'projects',
+            'project_config_files',
         ]);
         $_SERVER['HTTP_x-sf-token'] = 'token';
         $_SESSION['xsfr_token']     = 'token';
@@ -500,5 +502,191 @@ class testAdminController extends dumboTests {
         $this->_runAction("/admin/step_executions/{$stepExecution->id}");
 
         $this->assertEquals($before, $this->StepExecution->Find()->counter(), 'No debe haberse eliminado ninguna fila');
+    }
+
+    private function _createProjectFixture(array $overrides = []): object {
+        $project = $this->Project->Niu(array_merge([
+            'name' => 'Fixture Project ' . bin2hex(random_bytes(4)),
+            'type' => 'backend',
+        ], $overrides));
+        $project->Save() or trigger_error((string) $project->_error, E_USER_ERROR);
+
+        return $project;
+    }
+
+    public function projectConfigFilesListFiltersByProjectIdTest(): void {
+        $this->describe('GET /admin/project_config_files?project_id=X debe listar solo los archivos de ese proyecto, nunca los de otro');
+
+        $projectA = $this->_createProjectFixture();
+        $projectB = $this->_createProjectFixture();
+
+        $fileA = $this->ProjectConfigFile->Niu([
+            'project_id' => $projectA->id,
+            'filename'   => '.env',
+            'format'     => 'ini',
+            'content'    => 'KEY=A',
+        ]);
+        $fileA->Save() or trigger_error((string) $fileA->_error, E_USER_ERROR);
+
+        $fileB = $this->ProjectConfigFile->Niu([
+            'project_id' => $projectB->id,
+            'filename'   => '.env',
+            'format'     => 'ini',
+            'content'    => 'KEY=B',
+        ]);
+        $fileB->Save() or trigger_error((string) $fileB->_error, E_USER_ERROR);
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $result = $this->_runAction("/admin/project_config_files?project_id={$projectA->id}");
+
+        $this->assertEquals(HTTP_200, (int) $result->_code, 'Debe responder 200');
+        $this->assertEquals(1, $result->data->counter(), 'Debe listar solo el archivo del proyecto A, nunca el de B');
+    }
+
+    public function projectConfigFileCanBeCreatedTest(): void {
+        $this->describe('POST /admin/project_config_files/add debe crear un archivo — no es de solo lectura');
+
+        $project = $this->_createProjectFixture();
+
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_POST['project_config_file'] = [
+            'project_id' => $project->id,
+            'filename'   => 'config/app.json',
+            'format'     => 'json',
+            'content'    => '{"key":"value"}',
+        ];
+        $this->_runAction('/admin/project_config_files/add');
+
+        $created = $this->ProjectConfigFile->Find(['conditions' => [['project_id', $project->id]]]);
+        $this->assertEquals(1, $created->counter(), 'Debe haberse creado el archivo');
+    }
+
+    public function projectConfigFileCanBeDeletedTest(): void {
+        $this->describe('DELETE /admin/project_config_files/{id} debe eliminar el archivo — no es de solo lectura');
+
+        $project = $this->_createProjectFixture();
+        $file = $this->ProjectConfigFile->Niu([
+            'project_id' => $project->id,
+            'filename'   => '.env',
+            'format'     => 'ini',
+            'content'    => 'KEY=1',
+        ]);
+        $file->Save() or trigger_error((string) $file->_error, E_USER_ERROR);
+
+        $_SERVER['REQUEST_METHOD'] = 'DELETE';
+        $this->_runAction("/admin/project_config_files/{$file->id}");
+
+        $this->assertEquals(0, $this->ProjectConfigFile->Find()->counter(), 'Debe haberse eliminado el archivo');
+    }
+
+    public function showconfigfilecontentReturnsDecryptedContentTest(): void {
+        $this->describe('GET /admin/showconfigfilecontent/{id} debe devolver el contenido descifrado');
+
+        $project = $this->_createProjectFixture();
+        $file = $this->ProjectConfigFile->Niu([
+            'project_id' => $project->id,
+            'filename'   => '.env',
+            'format'     => 'ini',
+            'content'    => 'SECRET=abc123',
+            'is_secret'  => 1,
+        ]);
+        $file->Save() or trigger_error((string) $file->_error, E_USER_ERROR);
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $result = $this->_runAction("/admin/showconfigfilecontent/{$file->id}");
+
+        $this->assertEquals(HTTP_200, (int) $result->_code);
+        $this->assertEquals('SECRET=abc123', $result->_response['d']['content']);
+    }
+
+    public function syncconfigfilesWritesDecryptedFilesToDiskTest(): void {
+        $this->describe('GET /admin/syncconfigfiles/{project_id} debe escribir los archivos descifrados en working_directory, incluyendo rutas anidadas');
+
+        $workingDirectory = sys_get_temp_dir() . '/uroboros_test_sync_' . bin2hex(random_bytes(4));
+        $project = $this->_createProjectFixture(['working_directory' => $workingDirectory]);
+
+        $flat = $this->ProjectConfigFile->Niu([
+            'project_id' => $project->id,
+            'filename'   => '.env',
+            'format'     => 'ini',
+            'content'    => "KEY=value",
+        ]);
+        $flat->Save() or trigger_error((string) $flat->_error, E_USER_ERROR);
+
+        $nested = $this->ProjectConfigFile->Niu([
+            'project_id' => $project->id,
+            'filename'   => 'config/app.json',
+            'format'     => 'json',
+            'content'    => '{"host":"localhost"}',
+        ]);
+        $nested->Save() or trigger_error((string) $nested->_error, E_USER_ERROR);
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $result = $this->_runAction("/admin/syncconfigfiles/{$project->id}");
+
+        $this->assertEquals(HTTP_200, (int) $result->_code, 'Debe responder 200');
+        $this->assertTrue(is_file("{$workingDirectory}/.env"), 'Debe haber escrito .env en working_directory');
+        $this->assertEquals('KEY=value', file_get_contents("{$workingDirectory}/.env"));
+        $this->assertTrue(is_file("{$workingDirectory}/config/app.json"), 'Debe haber creado el subdirectorio config/ y escrito el archivo');
+        $this->assertEquals('{"host":"localhost"}', file_get_contents("{$workingDirectory}/config/app.json"));
+
+        exec('rm -rf ' . escapeshellarg($workingDirectory));
+    }
+
+    public function syncconfigfilesFailsCleanlyWithoutWorkingDirectoryTest(): void {
+        $this->describe('GET /admin/syncconfigfiles/{project_id} sin working_directory debe fallar limpio con 422');
+
+        $project = $this->_createProjectFixture();
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $result = $this->_runAction("/admin/syncconfigfiles/{$project->id}");
+
+        $this->assertEquals(HTTP_422, (int) $result->_code);
+    }
+
+    /**
+     * Tarea 23 — el caso de prueba de seguridad más importante del
+     * spec. Path traversal real contra el filesystem real (no solo
+     * revisión de código): un filename que intenta escapar de
+     * working_directory nunca debe escribir nada fuera de él.
+     */
+    public function syncconfigfilesRejectsPathTraversalTest(): void {
+        $this->describe('GET /admin/syncconfigfiles/{project_id} debe rechazar filenames que intentan escapar de working_directory');
+
+        $workingDirectory = sys_get_temp_dir() . '/uroboros_test_traversal_' . bin2hex(random_bytes(4));
+        $project = $this->_createProjectFixture(['working_directory' => $workingDirectory]);
+
+        $canary = sys_get_temp_dir() . '/uroboros_test_traversal_canary_' . bin2hex(random_bytes(4)) . '.txt';
+
+        $traversalRelative = $this->ProjectConfigFile->Niu([
+            'project_id' => $project->id,
+            'filename'   => '../' . basename($canary),
+            'format'     => 'ini',
+            'content'    => 'PWNED=1',
+        ]);
+        $traversalRelative->Save() or trigger_error((string) $traversalRelative->_error, E_USER_ERROR);
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $result = $this->_runAction("/admin/syncconfigfiles/{$project->id}");
+
+        $this->assertEquals(HTTP_500, (int) $result->_code, 'Debe rechazar el filename con ../ y responder error');
+        $this->assertFalse(is_file($canary), 'Nunca debe haber escrito fuera de working_directory (../)');
+        $this->assertFalse(is_dir($workingDirectory) && is_file("{$workingDirectory}/../" . basename($canary)), 'Doble verificación de que no escapó');
+
+        $this->_truncateTables(['project_config_files']);
+
+        $traversalAbsolute = $this->ProjectConfigFile->Niu([
+            'project_id' => $project->id,
+            'filename'   => '/etc/passwd',
+            'format'     => 'ini',
+            'content'    => 'PWNED=1',
+        ]);
+        $traversalAbsolute->Save() or trigger_error((string) $traversalAbsolute->_error, E_USER_ERROR);
+
+        $result = $this->_runAction("/admin/syncconfigfiles/{$project->id}");
+        $this->assertEquals(HTTP_500, (int) $result->_code, 'Debe rechazar una ruta absoluta y responder error');
+
+        exec('rm -rf ' . escapeshellarg($workingDirectory));
+        is_file($canary) and unlink($canary);
     }
 }

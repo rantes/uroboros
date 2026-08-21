@@ -17,6 +17,11 @@
                 <td>
                     <dmb-more-options>
                         <dmb-more-option
+                            behavior="launch-url"
+                            url="/admin/project_config_files?project_id=<?= $row->id; ?>">
+                            Ver archivos
+                        </dmb-more-option>
+                        <dmb-more-option
                             behavior="open-panel"
                             url="/admin/projects/edit/<?= $row->id; ?>"
                             panel="#panel-form-add-edit-reg">

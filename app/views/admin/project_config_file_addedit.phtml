@@ -1,0 +1,65 @@
+<dmb-simple-form <?= !empty($this->data->id) ? 'update' : ''; ?> redirect="/admin/project_config_files?project_id=<?= $this->data->project_id ?: $this->projectId; ?>" close-panel="#panel-form-add-edit-reg">
+    <dmb-form
+        id="form-project-config-file"
+        name="project_config_file"
+        action="/admin/project_config_files"
+        method="post"
+        async>
+        <header>
+            <dmb-close-panel orientation="right"></dmb-close-panel>
+            <h3><?= $this->title; ?></h3>
+        </header>
+        <dmb-content>
+            <div class="section group">
+                <? if (!empty($this->data->id)): ?>
+                <dmb-input type="hidden" dmb-name="project_config_file[id]" dmb-value="<?= $this->data->id; ?>"></dmb-input>
+                <? endif; ?>
+                <dmb-input
+                    type="hidden"
+                    dmb-name="project_config_file[project_id]"
+                    dmb-value="<?= $this->data->project_id ?: $this->projectId; ?>">
+                </dmb-input>
+                <div class="col col12">
+                    <dmb-input
+                        label="Nombre / ruta relativa"
+                        dmb-name="project_config_file[filename]"
+                        dmb-value="<?= htmlspecialchars((string) $this->data->filename, ENT_QUOTES, 'UTF-8'); ?>"
+                        placeholder=".env, config/database.yaml"
+                        validate="required">
+                    </dmb-input>
+                </div>
+                <div class="col col6 col6-md col6-sm">
+                    <dmb-select label="Formato" dmb-name="project_config_file[format]" dmb-value="<?= $this->data->format; ?>" validate="required">
+                        <option value="">Seleccione...</option>
+                        <option value="ini">INI</option>
+                        <option value="json">JSON</option>
+                        <option value="yaml">YAML</option>
+                    </dmb-select>
+                </div>
+                <div class="col col6 col6-md col6-sm">
+                    <dmb-input
+                        type="checkbox"
+                        label="Es secreto"
+                        dmb-name="project_config_file[is_secret]"
+                        dmb-value="1"
+                        <?= ((int) $this->data->is_secret === 1) ? 'checked' : ''; ?>>
+                    </dmb-input>
+                </div>
+                <div class="col col12">
+                    <dmb-textarea
+                        label="Contenido"
+                        dmb-name="project_config_file[content]"
+                        validate="required"><?= !empty($this->data->id) ? htmlspecialchars($this->data->DecryptedContent(), ENT_QUOTES, 'UTF-8') : ''; ?></dmb-textarea>
+                </div>
+            </div>
+        </dmb-content>
+        <dmb-footer class="section group">
+            <div class="col col6">
+                <dmb-button type="reset">Cancelar</dmb-button>
+            </div>
+            <div class="col col6">
+                <dmb-button type="submit">Guardar</dmb-button>
+            </div>
+        </dmb-footer>
+    </dmb-form>
+</dmb-simple-form>

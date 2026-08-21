@@ -26,6 +26,7 @@ class testTables extends dumboTests {
             'workflow_step_definitions',
             'workflow_executions',
             'step_executions',
+            'project_config_files',
         ]);
     }
 
@@ -75,6 +76,7 @@ class testTables extends dumboTests {
         $this->assertHasFields($this->WorkflowStepDefinition);
         $this->assertHasFields($this->WorkflowExecution);
         $this->assertHasFields($this->StepExecution);
+        $this->assertHasFields($this->ProjectConfigFile);
 
         $this->describe('Verifying Field types');
         $this->assertHasFieldTypes($this->AppUser);
@@ -84,6 +86,7 @@ class testTables extends dumboTests {
         $this->assertHasFieldTypes($this->WorkflowStepDefinition);
         $this->assertHasFieldTypes($this->WorkflowExecution);
         $this->assertHasFieldTypes($this->StepExecution);
+        $this->assertHasFieldTypes($this->ProjectConfigFile);
 
         $this->describe('Verifying gestion-proyectos migrations (sin modelo — mecanismo genérico)');
         $this->_assertMigrationMatchesDb('projects', CreateProjects::class);
@@ -97,5 +100,9 @@ class testTables extends dumboTests {
      */
     public function relationsTest(): void {
         $this->describe('Verifying object relations');
+        $this->assertTrue(
+            in_array('project', $this->ProjectConfigFile->belongs_to),
+            'Verify ProjectConfigFile belongs_to Project relation'
+        );
     }
 }
