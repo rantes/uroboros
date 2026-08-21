@@ -59,6 +59,15 @@ class AdminController extends MainController {
             case 'workflow_definitions':
                 if (in_array($this->params[0] ?? null, ['edit', 'add'])):
                     $this->projects = $this->Project->Find();
+
+                    // Candidatos de encadenamiento — nunca incluye al
+                    // propio registro en edición (Paso 9,
+                    // encadenamiento-workflows: ciclo trivial de un
+                    // nodo, la única prevención de ciclos de v1).
+                    $currentId = ($this->params[0] === 'edit') ? (int) ($this->params[1] ?? 0) : 0;
+                    $this->cascadeCandidates = $this->WorkflowDefinition->Find([
+                        'conditions' => empty($currentId) ? '' : "`id`<>'{$currentId}'",
+                    ]);
                 endif;
             break;
             case 'workflow_step_definitions':

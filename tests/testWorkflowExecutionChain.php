@@ -414,4 +414,126 @@ class testWorkflowExecutionChain extends dumboTests {
 
         rmdir($newDir);
     }
+
+    /**
+     * encadenamiento-workflows, Requisito 2 — completar A debe
+     * disparar B sin ninguna intervención manual, encadenado dentro
+     * de la misma cadena síncrona de Reactions ya verificada arriba
+     * (RunStepCommand -> StepCompleted -> CompleteWorkflowCommand ->
+     * WorkflowCompleted -> OnWorkflowCompletedReaction ->
+     * ExecuteWorkflowCommand(trigger_type=cascade)).
+     */
+    public function workflowCompletedTriggersConfiguredCascadeTest(): void {
+        $this->describe('Al completar A, B configurado con workflow_definition_id=A.id debe dispararse solo, con trigger_type=cascade');
+
+        $project = $this->_createProjectFixture();
+
+        $definitionA = $this->WorkflowDefinition->Niu([
+            'name'          => 'Origin Workflow A',
+            'project_id'    => $project->id,
+            'status'        => 1,
+            'webhook_token' => bin2hex(random_bytes(16)),
+        ]);
+        $definitionA->Save() or trigger_error((string) $definitionA->_error, E_USER_ERROR);
+
+        $stepA = $this->WorkflowStepDefinition->Niu([
+            'workflow_definition_id' => $definitionA->id,
+            'name'                   => 'Only Step A',
+            'type'                   => 'verification',
+            'command'                => 'echo ok',
+            'step_order'             => 1,
+        ]);
+        $stepA->Save() or trigger_error((string) $stepA->_error, E_USER_ERROR);
+
+        $definitionB = $this->WorkflowDefinition->Niu([
+            'name'          => 'Chained Workflow B',
+            'project_id'    => $project->id,
+            'status'        => 1,
+            'webhook_token' => bin2hex(random_bytes(16)),
+            'workflow_definition_id' => $definitionA->id,
+        ]);
+        $definitionB->Save() or trigger_error((string) $definitionB->_error, E_USER_ERROR);
+
+        (new CommandBus())->Dispatch(new ExecuteWorkflowCommand((int) $definitionA->id, 'manual'));
+
+        $executionA = $this->WorkflowExecution->Find([
+            ':first',
+            'conditions' => [['workflow_definition_id', $definitionA->id]],
+        ]);
+        $stepExecutionA = $this->StepExecution->Find([
+            ':first',
+            'conditions' => [['workflow_execution_id', $executionA->id]],
+        ]);
+
+        (new CommandBus())->Dispatch(new RunStepCommand((int) $stepExecutionA->id));
+
+        $completedA = $this->WorkflowExecution->Find((int) $executionA->id);
+        $this->assertEquals('completed', $completedA->status, 'A debe haber completado');
+
+        $executionB = $this->WorkflowExecution->Find([
+            'conditions' => [['workflow_definition_id', $definitionB->id]],
+        ]);
+        $this->assertEquals(1, $executionB->counter(), 'B debe haberse disparado solo, sin intervención manual');
+        $this->assertEquals('cascade', $executionB->trigger_type, 'trigger_type debe ser cascade, no manual ni webhook');
+        $this->assertEquals('pending', $executionB->status, 'B queda pending — RunStepCommand de B corre en su propio ciclo, igual que cualquier disparo');
+    }
+
+    /**
+     * Requisito 2.2 — aserción negativa con la misma seriedad que el
+     * resto de esta clase: un Workflow fallido NUNCA encadena, sin
+     * importar que tenga un Workflow configurado para dispararse a
+     * partir de él.
+     */
+    public function workflowFailedNeverTriggersCascadeTest(): void {
+        $this->describe('Al fallar C, D configurado con workflow_definition_id=C.id NUNCA debe dispararse');
+
+        $project = $this->_createProjectFixture();
+
+        $definitionC = $this->WorkflowDefinition->Niu([
+            'name'          => 'Origin Workflow C (fails)',
+            'project_id'    => $project->id,
+            'status'        => 1,
+            'webhook_token' => bin2hex(random_bytes(16)),
+        ]);
+        $definitionC->Save() or trigger_error((string) $definitionC->_error, E_USER_ERROR);
+
+        $stepC = $this->WorkflowStepDefinition->Niu([
+            'workflow_definition_id' => $definitionC->id,
+            'name'                   => 'Broken Step C',
+            'type'                   => 'build',
+            'command'                => 'exit 1',
+            'step_order'             => 1,
+        ]);
+        $stepC->Save() or trigger_error((string) $stepC->_error, E_USER_ERROR);
+
+        $definitionD = $this->WorkflowDefinition->Niu([
+            'name'          => 'Chained Workflow D',
+            'project_id'    => $project->id,
+            'status'        => 1,
+            'webhook_token' => bin2hex(random_bytes(16)),
+            'workflow_definition_id' => $definitionC->id,
+        ]);
+        $definitionD->Save() or trigger_error((string) $definitionD->_error, E_USER_ERROR);
+
+        (new CommandBus())->Dispatch(new ExecuteWorkflowCommand((int) $definitionC->id, 'manual'));
+
+        $executionC = $this->WorkflowExecution->Find([
+            ':first',
+            'conditions' => [['workflow_definition_id', $definitionC->id]],
+        ]);
+        $stepExecutionC = $this->StepExecution->Find([
+            ':first',
+            'conditions' => [['workflow_execution_id', $executionC->id]],
+        ]);
+
+        (new CommandBus())->Dispatch(new RunStepCommand((int) $stepExecutionC->id));
+
+        $failedC = $this->WorkflowExecution->Find((int) $executionC->id);
+        $this->assertEquals('failed', $failedC->status, 'C debe haber fallado');
+
+        $executionD = $this->WorkflowExecution->Find([
+            'conditions' => [['workflow_definition_id', $definitionD->id]],
+        ]);
+        $this->assertEquals(0, $executionD->counter(), 'D nunca debe dispararse — solo completed encadena, nunca failed');
+    }
 }
