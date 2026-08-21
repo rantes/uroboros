@@ -225,3 +225,28 @@ agente que lo haga (ya estableciste que ese repo commitea directo a
 botón "Agregar" en su vista de listado — vista incompleta, categoría
 distinta a los bugs de mecanismo de arriba, pendiente cuando se
 retome ese spec.
+
+## Campo nuevo — `working_directory` (bloqueador real para ejecutar Workflows)
+
+Hallazgo del usuario: `repository_url` se diseñó como dato puramente
+informativo, nunca se conectó a un directorio físico real donde los
+pasos de un Workflow (`git pull`, `docker build`, etc.) se ejecutan.
+Sin esto, `ejecucion-workflows` corre los comandos sin ningún `cd`
+previo — o fallan, o corren en el directorio de Uroboros mismo.
+
+**Decisión confirmada:** campo nuevo `working_directory` en
+`Project`, independiente de `repository_url`. **Uroboros crea el
+directorio si no existe** (`mkdir` recursivo) — pero **no clona el
+repositorio**. Esas son dos responsabilidades de tamaño muy distinto:
+crear una carpeta vacía es simple y sin riesgo; clonar implica
+credenciales de Git, autenticación, manejo de errores de red — eso
+sigue siendo responsabilidad del primer paso del propio Workflow
+(`git clone ...`) o de que el devops ya haya clonado ahí a mano.
+
+- [x] 43-47. **Resuelto.** Campo `working_directory` agregado y
+      verificado con clicks reales (persistencia confirmada creando y
+      editando un proyecto real).
+
+Ver `.claude/specs/ejecucion-workflows/tasks.md` para el uso real de
+este campo en `RunStepCommandHandler`, y la corrección operativa del
+usuario de `cron`.

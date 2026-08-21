@@ -10,6 +10,7 @@ class testWorkflowRunnerController extends dumboTests {
     public function beforeEach(): void {
         $this->_migrateTables([
             'events',
+            'projects',
             'workflow_definitions',
             'workflow_step_definitions',
             'workflow_executions',
@@ -17,10 +18,29 @@ class testWorkflowRunnerController extends dumboTests {
         ]);
     }
 
+    /**
+     * working_directory (gestion-proyectos) — RunStepCommandHandler
+     * ahora exige un Project real con working_directory válido, ver
+     * la misma nota en testWorkflowExecutionChain.php.
+     */
+    private function _createProjectFixture(): object {
+        $project = $this->Project->Niu([
+            'name'              => 'Test Project ' . bin2hex(random_bytes(4)),
+            'type'              => 'backend',
+            'status'            => 1,
+            'working_directory' => sys_get_temp_dir(),
+        ]);
+        $project->Save() or trigger_error((string) $project->_error, E_USER_ERROR);
+
+        return $project;
+    }
+
     private function _createWorkflowWithSteps(array $commands): object {
+        $project = $this->_createProjectFixture();
+
         $definition = $this->WorkflowDefinition->Niu([
             'name'          => 'Runner Workflow ' . bin2hex(random_bytes(4)),
-            'project_id'    => 1,
+            'project_id'    => $project->id,
             'status'        => 1,
             'webhook_token' => bin2hex(random_bytes(16)),
         ]);

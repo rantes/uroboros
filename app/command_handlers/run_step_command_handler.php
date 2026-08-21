@@ -51,7 +51,22 @@ class RunStepCommandHandler extends Controller {
         $stepExecution->Save()
             or throw new \Exception((string) $stepExecution->_error);
 
-        exec($stepDefinition->command . ' 2>&1', $outputLines, $exitCode);
+        $project = $workflowExecution->workflow_definition()->project();
+
+        // working_directory (gestion-proyectos) — Uroboros nunca clona el
+        // repositorio, solo garantiza que el directorio exista antes de
+        // ejecutar ahí. Cualquier fallo de esta resolución es un fallo de
+        // step limpio (exit_code=1, mensaje en output), nunca una
+        // excepción no capturada que tumbe el proceso de cron completo.
+        if (empty($project->working_directory)):
+            $exitCode    = 1;
+            $outputLines = ['El proyecto no tiene working_directory configurado.'];
+        elseif (!is_dir($project->working_directory) and !@mkdir($project->working_directory, 0755, true)):
+            $exitCode    = 1;
+            $outputLines = ["No se pudo crear el directorio de trabajo: {$project->working_directory}"];
+        else:
+            exec('cd ' . escapeshellarg($project->working_directory) . ' && ' . $stepDefinition->command . ' 2>&1', $outputLines, $exitCode);
+        endif;
 
         $stepExecution->exit_code    = $exitCode;
         $stepExecution->output       = implode("\n", $outputLines);

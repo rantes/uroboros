@@ -11,6 +11,7 @@ class CreateProjects extends Migrations {
             ['field' => 'name',           'type' => 'VARCHAR', 'null' => 'false', 'limit' => '255'],
             ['field' => 'description',    'type' => 'TEXT',    'null' => 'true'],
             ['field' => 'repository_url', 'type' => 'VARCHAR', 'null' => 'true', 'limit' => '255'],
+            ['field' => 'working_directory', 'type' => 'VARCHAR', 'null' => 'true', 'limit' => '255'],
             ['field' => 'type',           'type' => 'VARCHAR', 'null' => 'false', 'limit' => '50'],
             ['field' => 'status',         'type' => 'INTEGER', 'null' => 'false', 'limit' => '1', 'default' => '0'],
             ['field' => 'created_at',     'type' => 'INTEGER', 'null' => 'false', 'limit' => '11'],

@@ -36,6 +36,13 @@
                         dmb-value="<?= $this->data->repository_url; ?>">
                     </dmb-input>
                 </div>
+                <div class="col col12">
+                    <dmb-input
+                        label="Directorio de trabajo"
+                        dmb-name="project[working_directory]"
+                        dmb-value="<?= $this->data->working_directory; ?>">
+                    </dmb-input>
+                </div>
                 <div class="col col6 col6-md col6-sm">
                     <dmb-select label="Tipo" dmb-name="project[type]" dmb-value="<?= $this->data->type; ?>" validate="required">
                         <option value="">Seleccione...</option>
