@@ -8,6 +8,7 @@ class Project extends ActiveRecord {
     public ?string $name           = null;
     public ?string $description    = null;
     public ?string $repository_url = null;
+    public ?string $working_directory = null;
     public ?string $type           = null;
     public ?int    $status         = null;
 
@@ -29,7 +30,7 @@ class Project extends ActiveRecord {
             ],
         ];
 
-        $this->before_save = ['sanitizeName', 'sanitizeDescription', 'sanitizeRepositoryUrl', 'validateType'];
+        $this->before_save = ['sanitizeName', 'sanitizeDescription', 'sanitizeRepositoryUrl', 'sanitizeWorkingDirectory', 'validateType'];
     }
 
     public function sanitizeName(): void {
@@ -42,6 +43,17 @@ class Project extends ActiveRecord {
 
     public function sanitizeRepositoryUrl(): void {
         empty($this->repository_url) or ($this->repository_url = htmlentities(trim($this->repository_url), ENT_QUOTES, 'UTF-8', false));
+    }
+
+    /**
+     * Texto libre normal (mismo criterio que repository_url) — no el
+     * criterio especial de command/output (esos son contenido
+     * técnico sin sanitizar, ver WorkflowStepDefinition/StepExecution).
+     * working_directory es una ruta que un devops escribe en un
+     * formulario, se sanitiza igual que el resto de campos de texto.
+     */
+    public function sanitizeWorkingDirectory(): void {
+        empty($this->working_directory) or ($this->working_directory = htmlentities(trim($this->working_directory), ENT_QUOTES, 'UTF-8', false));
     }
 
     /**

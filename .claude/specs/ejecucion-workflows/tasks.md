@@ -188,3 +188,48 @@ genuinamente en ejecución sigue reportándose como `pending`.
       coincidiendo exactamente con la duración del `sleep` de prueba.
 - [x] 34. **`dumboTest all`:** 43 tests, 165 assertions — mismo
       conteo exacto que antes del fix, cero regresión confirmada.
+
+## Campo `working_directory` — conectar la ejecución al directorio real
+
+Depende de `.claude/specs/gestion-proyectos/tasks.md` tareas 43-47
+(agregar el campo a `Project`) — hacer esa parte primero.
+
+**Hallazgo:** `RunStepCommandHandler` ejecuta `exec($stepDefinition->command)`
+sin ningún `cd` previo — los comandos de un Workflow (`git pull`,
+`docker build`, etc.) necesitan correr dentro del checkout real del
+proyecto, que hoy no existe como concepto conectado.
+
+- [x] 35-38. **Resuelto.** `RunStepCommandHandler` conecta el
+      `working_directory` real: falla limpio si está vacío, intenta
+      `mkdir` si no existe, `cd` antes de ejecutar si existe. Los 3
+      escenarios verificados con datos reales (A: `cd` surte efecto,
+      B: falla sin ejecutar el comando real, C: directorio creado y
+      usado). 4 tests preexistentes con fixtures irreales corregidos
+      (usaban un `project_id` inexistente); 3 tests nuevos agregados.
+      `dumboTest all`: 53/194, sin regresión.
+
+## Corrección operativa — usuario del `cron`
+
+**Hallazgo más urgente de lo esperado:** la entrada de `cron` no solo
+corre bajo el usuario equivocado — **está comentada, el `cron` no
+corre en absoluto ahora mismo.** Ningún Workflow se está procesando
+automáticamente hasta que esto se resuelva, independientemente de
+bajo qué usuario.
+
+Datos adicionales confirmados: `www-data` (uid 33) ya pertenece al
+grupo `rantes` como grupo secundario (favorable para permisos). Sin
+comandos reales configurados todavía (solo `echo`/`pwd` de pruebas),
+así que no hay nada concreto que verificar aún sobre credenciales
+adicionales que `www-data` necesite — eso se sabrá cuando se
+configuren Workflows reales.
+
+- [ ] 39. **Pendiente de tu coordinación directa** (no del agente sin
+      supervisión): `sudo crontab -u www-data -e`, agregar la entrada
+      **activa** (sin `#`) apuntando a
+      `dumbo run workflow_runner/processpending`. Hasta que esto pase,
+      ningún Workflow se procesa automáticamente — solo con
+      `dumbo run` manual, como en las verificaciones de esta sesión.
+- [ ] 40. Cuando configures Workflows con comandos reales (Git,
+      Docker, etc.), verificar en ese momento qué credenciales/accesos
+      adicionales necesita `www-data` — no generalizable de antemano,
+      no hay nada concreto que verificar todavía.
