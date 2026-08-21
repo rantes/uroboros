@@ -51,6 +51,14 @@
                         validate="required">
                     </dmb-input>
                 </div>
+                <div class="col col12">
+                    <dmb-select label="Encadenar después de" dmb-name="workflow_definition[workflow_definition_id]" dmb-value="<?= $this->data->workflow_definition_id; ?>">
+                        <option value="">Ninguno</option>
+                        <? foreach ($this->cascadeCandidates as $candidate): ?>
+                        <option value="<?= $candidate->id; ?>"><?= $candidate->name; ?> (Proyecto: <?= $candidate->project()->name; ?>)</option>
+                        <? endforeach; ?>
+                    </dmb-select>
+                </div>
             </div>
         </dmb-content>
         <dmb-footer class="section group">

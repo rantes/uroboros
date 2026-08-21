@@ -13,6 +13,7 @@ class CreateWorkflowDefinitions extends Migrations {
             ['field' => 'project_id',     'type' => 'INTEGER', 'null' => 'false', 'limit' => '11'],
             ['field' => 'status',         'type' => 'INTEGER', 'null' => 'false', 'limit' => '1', 'default' => '0'],
             ['field' => 'webhook_token',  'type' => 'VARCHAR', 'null' => 'false', 'limit' => '64'],
+            ['field' => 'workflow_definition_id', 'type' => 'INTEGER', 'null' => 'true', 'limit' => '11'],
             ['field' => 'created_at',     'type' => 'INTEGER', 'null' => 'false', 'limit' => '11'],
             ['field' => 'updated_at',     'type' => 'INTEGER', 'null' => 'false', 'limit' => '11'],
         ];

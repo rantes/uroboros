@@ -4,6 +4,7 @@ use App\Reactions\OnPingStartedReaction;
 use App\Reactions\OnWorkflowStartedReaction;
 use App\Reactions\OnStepCompletedReaction;
 use App\Reactions\OnStepFailedReaction;
+use App\Reactions\OnWorkflowCompletedReaction;
 use tests\fixtures\TestFailingReaction;
 use tests\fixtures\TestSucceedingReaction;
 
@@ -12,10 +13,11 @@ return [
         OnPingStartedReaction::class,
     ],
 
-    // Ejecución de Workflows — StepQueued, WorkflowRunning y
-    // WorkflowCompleted/WorkflowFailed no tienen Reaction todavía:
-    // nada más se dispara desde ellos en esta parte del spec. Ver
-    // .claude/specs/ejecucion-workflows/design.md.
+    // Ejecución de Workflows — StepQueued y WorkflowRunning no tienen
+    // Reaction todavía: nada más se dispara desde ellos en esta parte
+    // del spec. Ver .claude/specs/ejecucion-workflows/design.md.
+    // WorkflowFailed nunca dispara nada — Requisito 2.2 de
+    // encadenamiento-workflows, solo completed encadena.
     'WorkflowStarted' => [
         OnWorkflowStartedReaction::class,
     ],
@@ -24,6 +26,13 @@ return [
     ],
     'StepFailed' => [
         OnStepFailedReaction::class,
+    ],
+    // encadenamiento-workflows — dispara ExecuteWorkflowCommand con
+    // trigger_type='cascade' hacia cualquier WorkflowDefinition
+    // configurado con workflow_definition_id apuntando
+    // al que acaba de completar. Ver design.md.
+    'WorkflowCompleted' => [
+        OnWorkflowCompletedReaction::class,
     ],
 
     // Fixture de test del Requisito 3.4 (una Reaction fallida no
