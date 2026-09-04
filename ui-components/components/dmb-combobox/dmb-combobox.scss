@@ -7,7 +7,9 @@ dmb-combobox {
     label {
         box-sizing: border-box;
         display: inline-block;
-        margin-bottom: 5px;
+        margin-bottom: 0.267rem;
+        // padding-left: 6px — ambiguo entre 4px/8px (empate exacto),
+        // no forzado (auditoría design-guide Fase 4).
         padding-left: 6px;
         text-align: left;
         width: 99%;
@@ -51,7 +53,7 @@ dmb-combobox {
         line-height: normal;
         margin: 0;
         outline: 0 none;
-        padding: 0.5em 0.5em 0.3em;
+        padding: 0.5em 0.5em 0.267em;
         transition: all 0.3s cubic-bezier(0.64, 0.09, 0.08, 1);
         width: 100%;
 
@@ -82,7 +84,7 @@ dmb-combobox {
             color: var(--primary);
             cursor: pointer;
             line-height: normal;
-            padding: 0.5em 0.75em;
+            padding: 0.5em 0.533em;
         }
 
         .dmb-combobox-option:hover,

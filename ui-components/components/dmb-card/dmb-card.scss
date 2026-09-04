@@ -1,7 +1,8 @@
 dmb-card {
     background-color: transparent;
     border: 1px solid var(--border-subtle);
-    border-radius: 12px;
+    // Componente principal (design-guide.md 06: 12px)
+    border-radius: 0.8rem;
     box-shadow: none;
     color: var(--primary);
     display: block;
@@ -9,7 +10,7 @@ dmb-card {
     margin-bottom: 1em;
     margin-right: 1em;
     min-height: 12em;
-    padding: 1.25rem;
+    padding: 1.067rem;
     position: relative;
     transition: border-color 0.15s ease;
     width: 21em;
@@ -44,8 +45,8 @@ dmb-card {
 
     .head {
         border-bottom: 1px solid var(--border-subtle);
-        margin-bottom: 0.75rem;
-        padding-bottom: 0.75rem;
+        margin-bottom: 0.533rem;
+        padding-bottom: 0.533rem;
 
         .header {
             color: var(--primary);

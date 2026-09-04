@@ -1,12 +1,13 @@
 .button {
     border: none;
-    border-radius: 6px;
+    // Control (design-guide.md 06: 8px inputs y controles)
+    border-radius: 0.533rem;
     box-sizing: border-box;
     cursor: pointer;
     display: inline-block;
     font-size: var(--font-size-sm);
     font-weight: 600;
-    padding: 0.65rem 1.25rem;
+    padding: 0.533rem 1.067rem;
     position: relative;
     text-align: center;
     transition: opacity 0.15s ease;
@@ -70,7 +71,7 @@
         background: transparent;
         border: none;
         color: var(--secondary);
-        padding: 0.65rem 0;
+        padding: 0.533rem 0;
         transition: color 0.15s ease;
         &::after { content: " →"; }
         &:hover { color: var(--primary); }

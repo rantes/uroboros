@@ -136,6 +136,194 @@ class testAdminController extends dumboTests {
         $this->assertEquals('manual', $execution->trigger_type, 'El trigger_type debe ser manual');
     }
 
+    /**
+     * Prueba de regresión de seguridad real (vista-ejecucion,
+     * design.md "Extender executeworkflowAction()") — sin esta
+     * protección, cualquiera podría forzar trigger_type=webhook desde
+     * el botón manual y falsificar el origen real de un disparo.
+     * Confirmado también con DumboChromeDriver contra datos reales
+     * (ver reporte), este test lo deja como regresión permanente.
+     */
+    public function executeworkflowRejectsForgedTriggerTypeTest(): void {
+        $this->describe('GET /admin/executeworkflow/{id}?trigger_type=webhook NUNCA debe crear una ejecución con trigger_type=webhook — cae a manual');
+
+        $definition = $this->WorkflowDefinition->Niu([
+            'name'          => 'Forgery Attempt Workflow',
+            'project_id'    => 1,
+            'status'        => 1,
+            'webhook_token' => bin2hex(random_bytes(16)),
+        ]);
+        $definition->Save() or trigger_error((string) $definition->_error, E_USER_ERROR);
+
+        $step = $this->WorkflowStepDefinition->Niu([
+            'workflow_definition_id' => $definition->id,
+            'name'                   => 'Only Step',
+            'type'                   => 'build',
+            'command'                => 'echo hi',
+            'step_order'             => 1,
+        ]);
+        $step->Save() or trigger_error((string) $step->_error, E_USER_ERROR);
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $result = $this->_runAction("/admin/executeworkflow/{$definition->id}?trigger_type=webhook");
+
+        $this->assertEquals(HTTP_202, (int) $result->_code, 'Debe responder 202 igual — el request en sí es válido, solo el trigger_type se corrige');
+
+        $execution = $this->WorkflowExecution->Find([
+            ':first',
+            'conditions' => [['workflow_definition_id', $definition->id]],
+        ]);
+        $this->assertEquals('manual', $execution->trigger_type, 'CRÍTICO si esto falla: el trigger_type forzado debe caer a manual, nunca aceptar webhook crudo del request');
+    }
+
+    public function executeworkflowAcceptsRetryTriggerTypeTest(): void {
+        $this->describe('GET /admin/executeworkflow/{id}?trigger_type=retry debe crear la ejecución con trigger_type=retry — valor real en la lista blanca');
+
+        $definition = $this->WorkflowDefinition->Niu([
+            'name'          => 'Retry Workflow',
+            'project_id'    => 1,
+            'status'        => 1,
+            'webhook_token' => bin2hex(random_bytes(16)),
+        ]);
+        $definition->Save() or trigger_error((string) $definition->_error, E_USER_ERROR);
+
+        $step = $this->WorkflowStepDefinition->Niu([
+            'workflow_definition_id' => $definition->id,
+            'name'                   => 'Only Step',
+            'type'                   => 'build',
+            'command'                => 'echo hi',
+            'step_order'             => 1,
+        ]);
+        $step->Save() or trigger_error((string) $step->_error, E_USER_ERROR);
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $this->_runAction("/admin/executeworkflow/{$definition->id}?trigger_type=retry");
+
+        $execution = $this->WorkflowExecution->Find([
+            ':first',
+            'conditions' => [['workflow_definition_id', $definition->id]],
+        ]);
+        $this->assertEquals('retry', $execution->trigger_type, 'retry sí debe aceptarse — es un valor real de la lista blanca');
+    }
+
+    /**
+     * Fixture completo para workflowexecutiondetailAction() — un
+     * Project real, un WorkflowDefinition con 3 WorkflowStepDefinition
+     * reales (step_order 1/2/3), y sus StepExecution creados
+     * deliberadamente en orden INVERSO de id (3, 2, 1) — el único modo
+     * de probar de verdad que $this->steps ordena por el step_order
+     * real (join) y no por una coincidencia de id ASC == step_order
+     * (la Fase 1 de vista-ejecucion confirmó que en el flujo normal
+     * siempre coinciden, precisamente porque nunca se insertan así —
+     * este fixture simula el caso fuera de flujo normal que el propio
+     * código advierte que podría, en teoría, ocurrir vía el CRUD
+     * genérico de step_executions).
+     */
+    private function _createOutOfOrderExecutionFixture(): object {
+        $project = $this->Project->Niu(['name' => 'Detail Fixture ' . bin2hex(random_bytes(4)), 'type' => 'backend']);
+        $project->Save() or trigger_error((string) $project->_error, E_USER_ERROR);
+
+        $definition = $this->WorkflowDefinition->Niu([
+            'name'          => 'Detail Fixture Workflow ' . bin2hex(random_bytes(4)),
+            'project_id'    => $project->id,
+            'status'        => 1,
+            'webhook_token' => bin2hex(random_bytes(16)),
+        ]);
+        $definition->Save() or trigger_error((string) $definition->_error, E_USER_ERROR);
+
+        $steps = [];
+        foreach ([1, 2, 3] as $order) {
+            $step = $this->WorkflowStepDefinition->Niu([
+                'workflow_definition_id' => $definition->id,
+                'name'                   => "Step {$order}",
+                'type'                   => 'build',
+                'command'                => 'echo hi',
+                'step_order'             => $order,
+            ]);
+            $step->Save() or trigger_error((string) $step->_error, E_USER_ERROR);
+            $steps[$order] = $step;
+        }
+
+        $execution = $this->WorkflowExecution->Niu([
+            'workflow_definition_id' => $definition->id,
+            'status'                 => 'failed',
+            'trigger_type'           => 'manual',
+        ]);
+        $execution->Save() or trigger_error((string) $execution->_error, E_USER_ERROR);
+
+        // Insertados a propósito en orden 3, 2, 1 — id ASC daría
+        // exactamente el orden equivocado si el código confiara en id
+        // en vez del step_order real.
+        foreach ([3, 2, 1] as $order) {
+            $stepExecution = $this->StepExecution->Niu([
+                'workflow_execution_id'       => $execution->id,
+                'workflow_step_definition_id' => $steps[$order]->id,
+                'status'                      => $order === 3 ? 'failed' : 'completed',
+            ]);
+            $stepExecution->Save() or trigger_error((string) $stepExecution->_error, E_USER_ERROR);
+        }
+
+        return $execution;
+    }
+
+    public function workflowexecutiondetailOrdersByRealStepOrderTest(): void {
+        $this->describe('workflowexecutiondetail debe ordenar por step_order real, no por id de StepExecution');
+
+        $execution = $this->_createOutOfOrderExecutionFixture();
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $result = $this->_runAction("/admin/workflowexecutiondetail/{$execution->id}");
+
+        $names = [];
+        foreach ($result->steps as $step):
+            $names[] = $step->workflow_step_definition()->name;
+        endforeach;
+
+        $this->assertEquals(['Step 1', 'Step 2', 'Step 3'], $names, 'Debe respetar step_order (1,2,3) aunque los StepExecution se hayan insertado en orden inverso de id');
+        $this->assertEquals('Step 3', $result->failedStep->workflow_step_definition()->name, 'failedStep debe ser el paso realmente marcado failed (Step 3)');
+    }
+
+    public function workflowexecutiondetailShowsRollbackWhenAvailableTest(): void {
+        $this->describe('workflowexecutiondetail debe exponer rollbackWorkflow cuando el proyecto tiene un workflow con paso type=rollback');
+
+        $execution = $this->_createOutOfOrderExecutionFixture();
+        $projectId = (int) $execution->workflow_definition()->project_id;
+
+        $rollbackDefinition = $this->WorkflowDefinition->Niu([
+            'name'          => 'Rollback Workflow ' . bin2hex(random_bytes(4)),
+            'project_id'    => $projectId,
+            'status'        => 1,
+            'webhook_token' => bin2hex(random_bytes(16)),
+        ]);
+        $rollbackDefinition->Save() or trigger_error((string) $rollbackDefinition->_error, E_USER_ERROR);
+
+        $rollbackStep = $this->WorkflowStepDefinition->Niu([
+            'workflow_definition_id' => $rollbackDefinition->id,
+            'name'                   => 'Revert',
+            'type'                   => 'rollback',
+            'command'                => 'echo revert',
+            'step_order'             => 1,
+        ]);
+        $rollbackStep->Save() or trigger_error((string) $rollbackStep->_error, E_USER_ERROR);
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $result = $this->_runAction("/admin/workflowexecutiondetail/{$execution->id}");
+
+        $this->assertNotEmpty($result->rollbackWorkflow, 'rollbackWorkflow debe resolverse — el proyecto sí tiene un workflow con paso type=rollback');
+        $this->assertEquals($rollbackDefinition->id, (int) $result->rollbackWorkflow->id, 'Debe ser exactamente el WorkflowDefinition con el paso rollback');
+    }
+
+    public function workflowexecutiondetailHidesRollbackWhenNoneExistsTest(): void {
+        $this->describe('workflowexecutiondetail NO debe exponer rollbackWorkflow cuando el proyecto no tiene ningún workflow con paso type=rollback');
+
+        $execution = $this->_createOutOfOrderExecutionFixture();
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $result = $this->_runAction("/admin/workflowexecutiondetail/{$execution->id}");
+
+        $this->assertTrue(empty($result->rollbackWorkflow), 'rollbackWorkflow debe quedar null — nunca inventar un botón Rollback sin un workflow real');
+    }
+
     public function executeworkflowRequiresIdTest(): void {
         $this->describe('GET /admin/executeworkflow sin id debe responder 400 sin disparar ningún Command');
 

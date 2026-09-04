@@ -55,7 +55,7 @@ dmb-tree-view {
     }
 
     details {
-        margin: 0.3em 0;
+        margin: 0.267em 0;
 
         > summary::before {
             color: var(--information);
@@ -71,11 +71,11 @@ dmb-tree-view {
 
         summary {
             align-items: center;
-            border-radius: 4px;
+            border-radius: 0.533em;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
-            padding: 0.3em 0.6em;
+            padding: 0.267em 0.533em;
             transition: background-color 0.15s ease;
 
             &::marker {
@@ -106,9 +106,12 @@ dmb-tree-view {
                 dmb-button-action {
                     background: transparent;
                     border: none;
-                    border-radius: 4px;
+                    border-radius: 0.533em;
                     cursor: pointer;
-                    padding: 0.3em 0.4em;
+                    // El segundo valor (0.4em) es ambiguo entre
+                    // 4px/8px de la escala (empate exacto), no
+                    // forzado (auditoría design-guide Fase 4).
+                    padding: 0.267em 0.4em;
                     transition: background-color 0.15s ease, color 0.15s ease;
 
                     &::before,

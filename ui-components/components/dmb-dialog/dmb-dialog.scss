@@ -26,7 +26,8 @@ dmb-dialog {
 
     & .wrapper {
         background-color: white;
-        border-radius: 0.6rem;
+        // Componente principal (design-guide.md 06: 12px) — modal
+        border-radius: 0.8rem;
         box-shadow: 0 0 1em black;
         display: block;
         left: 50%;
@@ -40,11 +41,11 @@ dmb-dialog {
         z-index: 9;
 
         .dmb-header {
-            border-radius: 0.6rem 0.6rem 0 0;
+            border-radius: 0.8rem 0.8rem 0 0;
         }
 
         .dmb-footer {
-            border-radius: 0 0 0.6rem 0.6rem;
+            border-radius: 0 0 0.8rem 0.8rem;
         }
 
         .message {

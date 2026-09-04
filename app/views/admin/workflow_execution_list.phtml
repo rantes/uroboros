@@ -7,16 +7,26 @@
                 <th>Disparo</th>
                 <th>Iniciado</th>
                 <th>Completado</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
             <? foreach ($this->data as $row): ?>
             <tr>
                 <td><?= $row->workflow_definition()->name; ?></td>
-                <td><?= $row->status; ?></td>
+                <td><dmb-status-badge tone="<?= $row->status; ?>"><?= ucfirst($row->status); ?></dmb-status-badge></td>
                 <td><?= $row->trigger_type; ?></td>
                 <td><?= !empty($row->started_at) ? date('Y-m-d H:i:s', $row->started_at) : '—'; ?></td>
                 <td><?= !empty($row->completed_at) ? date('Y-m-d H:i:s', $row->completed_at) : '—'; ?></td>
+                <td>
+                    <dmb-more-options>
+                        <dmb-more-option
+                            behavior="launch-url"
+                            url="/admin/workflowexecutiondetail/<?= $row->id; ?>">
+                            Ver detalle
+                        </dmb-more-option>
+                    </dmb-more-options>
+                </td>
             </tr>
             <? endforeach; ?>
         </tbody>

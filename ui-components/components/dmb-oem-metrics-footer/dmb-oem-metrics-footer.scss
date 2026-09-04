@@ -4,7 +4,7 @@ dmb-oem-metrics-footer {
     border-top: 1px solid var(--border-subtle);
     display: flex;
     font-size: var(--font-size-xs);
-    padding: 0.5em 1.25em;
+    padding: 0.5em 1.067em;
     width: 100%;
 
     .footer-inner {
@@ -30,9 +30,11 @@ dmb-oem-metrics-footer {
     }
 
     .oem-status {
-        border-radius: 0.6em;
+        // Píldora completamente redondeada (design-guide.md 06) —
+        // mismo criterio que dmb-status-badge.
+        border-radius: 6.4rem;
         margin-left: auto;
-        padding: 0.15em 0.6em;
+        padding: 0.267em 0.533em;
 
         &.tone-healthy {
             background: var(--success-hover);

@@ -164,13 +164,23 @@ class AdminController extends MainController {
         $this->layout = null;
 
         try {
-            $workflowDefinitionId = (int) ($this->params['id'] ?? 0);
+            // Lista blanca explícita — trigger_type nunca se toma
+            // crudo del request. Sin esto, cualquiera podría forzar
+            // trigger_type=webhook desde este botón manual y
+            // falsificar el origen real de un disparo, rompiendo la
+            // trazabilidad que trigger_type existe para garantizar
+            // (vista-ejecucion/design.md, "Extender
+            // executeworkflowAction() para aceptar trigger_type").
+            $workflowDefinitionId  = (int) ($this->params['id'] ?? 0);
+            $allowedManualTriggers = ['manual', 'retry'];
+            $triggerType           = $this->params['trigger_type'] ?? 'manual';
+            in_array($triggerType, $allowedManualTriggers, true) or ($triggerType = 'manual');
 
             empty($workflowDefinitionId)
                 and throw new ControllerException('workflow_definition_id requerido', HTTP_400);
 
             (new CommandBus())->Dispatch(
-                new ExecuteWorkflowCommand($workflowDefinitionId, 'manual')
+                new ExecuteWorkflowCommand($workflowDefinitionId, $triggerType)
             );
 
             $this->_code = HTTP_202;
@@ -185,6 +195,95 @@ class AdminController extends MainController {
             $this->setResponseCode($this->_code);
             $this->respondToAJAX(json_encode($this->_response));
         }
+    }
+
+    /**
+     * Vista de detalle de una WorkflowExecution — de solo lectura
+     * salvo las acciones puntuales (Reintentar/Rollback), que
+     * despachan Commands vía executeworkflowAction(), nunca editan el
+     * registro directo. 'workflowexecutiondetail' NO está en
+     * $this->_actions deliberadamente, mismo criterio que
+     * executeworkflowAction()/saveprojectAction(). Ver
+     * .claude/specs/vista-ejecucion/design.md.
+     *
+     * No se toca $this->layout — hereda el shell admin por defecto
+     * (MainController::$layout = 'layout'), igual que
+     * workflow_execution_list/workflow_step_definition_list. El
+     * layout=null de otras acciones de este controlador es solo para
+     * las que responden JSON puro (executeworkflow, saveproject,
+     * healthmetrics, syncconfigfiles) — esta renderiza una página real
+     * dentro del shell, no un endpoint de API.
+     */
+    public function workflowexecutiondetailAction(): void {
+        // Orden real de los pasos — verificado con datos reales
+        // (workflow_definition_id=14, ver reporte): StepExecution.id
+        // ASC coincide con step_order en el flujo normal, por
+        // construcción del chain OnWorkflowStartedReaction ->
+        // OnStepCompletedReaction (un StepExecution se crea solo
+        // cuando el anterior completa). Pero workflow_step_definitions
+        // y step_executions también tienen CRUD genérico en
+        // $this->_actions — un StepExecution podría, en teoría,
+        // insertarse fuera de ese orden por esa vía. Se ordena por el
+        // step_order real (join), no por la coincidencia observada,
+        // para no depender de un supuesto fuera del flujo normal.
+        $executionId = (int) ($this->params['id'] ?? 0);
+
+        $this->execution = $this->WorkflowExecution->Find($executionId);
+
+        // formatLeadTime() ya existe (HealthMetrics_Helper.php,
+        // cargado en el constructor de este controlador) — reutilizado
+        // tal cual en vez de duplicar el formateo de segundos.
+        $this->duration = null;
+        (!empty($this->execution->started_at) and !empty($this->execution->completed_at))
+            and ($this->duration = formatLeadTime((int) $this->execution->completed_at - (int) $this->execution->started_at));
+
+        $this->steps      = $this->StepExecution->Find([
+            'fields'     => 'step_executions.*',
+            'join'       => 'INNER JOIN workflow_step_definitions ON workflow_step_definitions.id = step_executions.workflow_step_definition_id',
+            'conditions' => "step_executions.workflow_execution_id = '{$executionId}'",
+            'sort'       => 'workflow_step_definitions.step_order ASC',
+        ]);
+
+        // Timeline agrupa por type — se agrupa en PHP, nunca en la
+        // vista (design.md).
+        $this->stepsByType    = [];
+        $this->completedCount = 0;
+        $this->failedCount    = 0;
+        foreach ($this->steps as $step):
+            $this->stepsByType[$step->workflow_step_definition()->type][] = $step;
+            $step->status === 'completed' and $this->completedCount++;
+            $step->status === 'failed' and $this->failedCount++;
+        endforeach;
+
+        $this->failedStep = null;
+        if ($this->execution->status === 'failed'):
+            foreach ($this->steps as $step):
+                $step->status === 'failed' and ($this->failedStep = $step);
+            endforeach;
+        endif;
+
+        // Rollback — Requisito 3.2 (vista-ejecucion) pide filtrar
+        // WorkflowDefinition por type='rollback', pero esa columna NO
+        // existe en workflow_definitions (confirmado contra la
+        // migración real) — agregarla violaría el alcance explícito
+        // de design.md ("Sin migraciones nuevas salvo trigger_type").
+        // workflow_step_definitions sí tiene type='rollback' ya
+        // real y usado — un Workflow de rollback se identifica por
+        // tener al menos un paso de ese tipo, sin inventar columnas
+        // nuevas.
+        $this->rollbackWorkflow = null;
+        if (!empty($this->failedStep)):
+            $projectId         = (int) $this->execution->workflow_definition()->project_id;
+            $rollbackCandidate = $this->WorkflowDefinition->Find([
+                ':first',
+                'fields'     => 'workflow_definitions.*',
+                'join'       => 'INNER JOIN workflow_step_definitions ON workflow_step_definitions.workflow_definition_id = workflow_definitions.id',
+                'conditions' => "workflow_definitions.project_id = '{$projectId}' AND workflow_step_definitions.type = 'rollback'",
+            ]);
+            $rollbackCandidate->counter() > 0 and ($this->rollbackWorkflow = $rollbackCandidate);
+        endif;
+
+        $this->render = ['file' => 'admin/workflow_execution_detail.phtml'];
     }
 
     /**

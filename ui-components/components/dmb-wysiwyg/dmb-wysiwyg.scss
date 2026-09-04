@@ -5,7 +5,8 @@ dmb-wysiwyg {
         display: flex;
         flex-direction: column;
         border: 1px solid var(--border-default);
-        border-radius: 0.5em;
+        // Componente principal (design-guide.md 06: 12px)
+        border-radius: 0.8em;
         overflow: hidden;
         background: var(--surface-1);
         position: relative;
@@ -17,8 +18,8 @@ dmb-wysiwyg {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 0.125em;
-        padding: 0.375em 0.5em;
+        gap: 0.267em;
+        padding: 0.267em 0.5em;
         background: var(--surface-2);
         border-bottom: 1px solid var(--border-subtle);
     }
@@ -31,7 +32,7 @@ dmb-wysiwyg {
         height: 2em;
         padding: 0.25em;
         border: 1px solid transparent;
-        border-radius: 0.375em;
+        border-radius: 0.533em;
         background: transparent;
         color: var(--primary);
         cursor: pointer;
@@ -73,7 +74,7 @@ dmb-wysiwyg {
 
     .dmb-wysiwyg__editor {
         min-height: 8em;
-        padding: 0.75em 1em;
+        padding: 0.533em 1em;
         outline: none;
         font-size: var(--font-size-base);
         line-height: var(--line-height-base);
@@ -113,7 +114,7 @@ dmb-wysiwyg {
 
         blockquote {
             margin: 0.5em 0 0.5em 1em;
-            padding: 0.25em 0.75em;
+            padding: 0.25em 0.533em;
             border-left: 3px solid var(--primary);
             color: var(--primary);
             font-style: italic;
@@ -126,7 +127,7 @@ dmb-wysiwyg {
         }
 
         li {
-            margin: 0.125em 0;
+            margin: 0.267em 0;
         }
 
         a {
@@ -147,7 +148,7 @@ dmb-wysiwyg {
         resize: vertical;
         font-family: monospace;
         font-size: var(--font-size-sm);
-        padding: 0.75em 1em;
+        padding: 0.533em 1em;
         border: none;
         outline: none;
         background: var(--surface-3);
@@ -170,7 +171,7 @@ dmb-wysiwyg {
         z-index: 100;
         background: var(--surface-1);
         border: 1px solid var(--border-default);
-        border-radius: 0.5em;
+        border-radius: 0.533em;
         padding: 0.5em;
         box-shadow: 0 0.25em 0.75em rgba(0, 0, 0, 0.15);
 
@@ -182,15 +183,15 @@ dmb-wysiwyg {
     .dmb-wysiwyg__popup--link {
         display: flex;
         align-items: center;
-        gap: 0.375em;
+        gap: 0.267em;
         min-width: 20em;
     }
 
     .dmb-wysiwyg__popup-input {
         flex: 1;
-        padding: 0.375em 0.625em;
+        padding: 0.267em 0.533em;
         border: 1px solid var(--border-default);
-        border-radius: 0.375em;
+        border-radius: 0.533em;
         font-size: var(--font-size-sm);
         background: var(--surface-2);
         color: var(--primary);
@@ -202,11 +203,11 @@ dmb-wysiwyg {
     }
 
     .dmb-wysiwyg__popup-ok {
-        padding: 0.375em 0.75em;
+        padding: 0.267em 0.533em;
         background: var(--primary);
         color: var(--primary-contrast);
         border: none;
-        border-radius: 0.375em;
+        border-radius: 0.533em;
         font-size: var(--font-size-sm);
         cursor: pointer;
 
@@ -216,11 +217,11 @@ dmb-wysiwyg {
     }
 
     .dmb-wysiwyg__popup-cancel {
-        padding: 0.375em 0.5em;
+        padding: 0.267em 0.5em;
         background: transparent;
         color: var(--primary);
         border: 1px solid var(--border-subtle);
-        border-radius: 0.375em;
+        border-radius: 0.533em;
         font-size: var(--font-size-sm);
         cursor: pointer;
 
@@ -245,7 +246,7 @@ dmb-wysiwyg {
         width: 1.5em;
         height: 1.5em;
         border: 1px solid var(--border-subtle);
-        border-radius: 0.25em;
+        border-radius: 0.533em;
         cursor: pointer;
         padding: 0;
 

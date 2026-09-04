@@ -1,14 +1,20 @@
 .config-pending-btn {
     align-items: center;
     background: var(--warning);
-    border-radius: 1.5em;
+    // Píldora completamente redondeada (design-guide.md 06) — mismo
+    // criterio que dmb-status-badge (ya era efectivamente una píldora
+    // con 1.5em dado el tamaño del botón, se alinea al mismo token
+    // para no tener dos formas distintas de expresar "siempre redondo").
+    border-radius: 6.4rem;
     box-shadow: 0 0.15em 0.4em var(--overlay-subtle);
     color: var(--warning-contrast);
     cursor: pointer;
     display: inline-flex;
     font-weight: var(--font-weight-bold);
-    gap: 0.35em;
-    padding: 0.4em 0.85em;
+    gap: 0.267em;
+    // El primer valor del padding (0.4em) es ambiguo entre 4px/8px de
+    // la escala (empate exacto), no forzado.
+    padding: 0.4em 1.067em;
     position: fixed;
     right: 5em;
     top: 5em;
@@ -24,7 +30,7 @@
         background-color: var(--primary-contrast);
         color: var(--primary);
         padding: 0.5em 1em;
-        border-radius: 0.5em;
+        border-radius: 0.533em;
         white-space: nowrap;
     }
 

@@ -15,7 +15,7 @@
             <tr>
                 <td>#<?= $row->workflow_execution_id; ?></td>
                 <td><?= $row->workflow_step_definition()->name; ?></td>
-                <td><?= $row->status; ?></td>
+                <td><dmb-status-badge tone="<?= $row->status; ?>"><?= ucfirst($row->status); ?></dmb-status-badge></td>
                 <td><?= $row->exit_code ?? '—'; ?></td>
                 <td><?= !empty($row->started_at) ? date('Y-m-d H:i:s', $row->started_at) : '—'; ?></td>
                 <td><?= !empty($row->completed_at) ? date('Y-m-d H:i:s', $row->completed_at) : '—'; ?></td>

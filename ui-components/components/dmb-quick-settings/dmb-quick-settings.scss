@@ -5,7 +5,7 @@ dmb-quick-settings {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0.75em 1em;
+        padding: 0.533em 1em;
         border-bottom: 1px solid var(--border-subtle);
 
         h3 {
@@ -19,7 +19,7 @@ dmb-quick-settings {
     }
 
     .qs-block {
-        padding: 0.85em 0;
+        padding: 1.067em 0;
         border-bottom: 1px solid var(--border-subtle);
 
         &:last-child {
@@ -27,7 +27,7 @@ dmb-quick-settings {
         }
 
         h4 {
-            margin: 0 0 0.35em;
+            margin: 0 0 0.267em;
             font-size: var(--font-size-sm);
             color: var(--default);
             font-weight: var(--font-weight-bold);
@@ -65,14 +65,14 @@ dmb-quick-settings {
     .qs-jump {
         display: inline-flex;
         align-items: center;
-        gap: 0.3em;
+        gap: 0.267em;
         font-size: var(--font-size-xs);
         color: var(--primary);
         cursor: pointer;
     }
 
     .qs-foot {
-        padding: 0.75em 1em;
+        padding: 0.533em 1em;
         border-top: 1px solid var(--border-subtle);
     }
 
