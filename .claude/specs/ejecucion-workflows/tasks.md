@@ -233,3 +233,33 @@ configuren Workflows reales.
       Docker, etc.), verificar en ese momento qué credenciales/accesos
       adicionales necesita `www-data` — no generalizable de antemano,
       no hay nada concreto que verificar todavía.
+
+## ✅ Hallazgo confirmado por el usuario mismo — sin navegación de `projects` a sus workflows
+
+Diferente del hallazgo de "Ver pasos" (tarea 23b, ya resuelto) — este
+es el nivel de arriba: **no había ningún camino visible desde la fila
+de un `Project` hacia sus `WorkflowDefinition`**. El único acceso era
+"Operaciones" en el sidebar (lista global sin filtrar, requiere elegir
+el Proyecto desde un dropdown al crear un Workflow — un camino "hacia
+adelante", no "hacia atrás" desde el Proyecto).
+
+**Confirmado de la forma más contundente posible**: no solo por
+inspección de código — el usuario, probando la app por su cuenta como
+un usuario real, se atascó exactamente en este punto. El agente,
+siguiendo una regla explícita de "solo clicks, nunca URL directa",
+replicó el mismo atasco exacto antes de corregirlo — confirma que
+toda la verificación anterior de esta sesión con "clicks reales"
+nunca replicó genuinamente el camino de alguien sin conocimiento
+previo de las URLs (el agente las conocía de memoria, por haberlas
+construido).
+
+- [x] 41. **Resuelto.** `dmb-more-option` "Ver workflows" agregado a
+      `project_list.phtml`, junto a "Ver archivos"/"Ver credenciales"
+      — apunta a `workflow_definitions?project_id=<id>`.
+      `AdminController` filtra por `project_id` cuando viene en query
+      string (mismo mecanismo `_listConditions` ya usado), sin romper
+      el acceso sin filtrar desde "Operaciones" en el sidebar.
+- [x] 42. **Re-verificado con la misma regla de solo-clicks**: cadena
+      completa Proyectos → "Ver workflows" (filtrado correcto) →
+      "Ver pasos" → pasos visibles, navegable de principio a fin sin
+      adivinar ninguna URL. `dumboTest all`: 86/261, sin regresión.

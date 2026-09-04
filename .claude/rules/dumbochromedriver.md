@@ -169,6 +169,45 @@ similar aparece en Uroboros contra un dominio .local,
 vale la pena revisar el certificado/TLS como
 hipótesis temprana, no solo al final.
 
+### 6. `start($url)` puede conectar al target de Chrome
+   equivocado — condición de carrera intermitente
+
+`DevToolsClient::start($url)` lanza Chrome pasando la
+URL directamente en la línea de comandos, y apenas el
+puerto de debugging responde, `getWebSocketUrl()`
+consulta `/json` para encontrar el target cuya `url`
+coincida con la solicitada. El problema: en ese
+instante Chrome puede no haber registrado todavía la
+navegación (sigue en `about:blank`), así que ningún
+target coincide y el código cae al fallback
+(`$pages[0]`) — que termina siendo la pestaña en blanco,
+no la que está a punto de navegar. `_waitForLoad()`
+entonces ve que esa pestaña en blanco ya "cargó"
+(`readyState` completo) y retorna, dejando al cliente
+conectado al target equivocado para siempre — sin
+error, sin excepción.
+
+Reproducido en Uroboros: tres corridas consecutivas del
+mismo script (`start($baseUrl.'/index/login')` seguido
+de `waitUntilInteractable('input[name="e"]')`) — la 1ª
+y 3ª funcionaron, la 2ª agotó los 10s de timeout con
+`location.href` devolviendo literalmente `about:blank`
+y `document.readyState` en `complete`. Intermitente, no
+determinista — no depende de timing externo (red, TLS),
+es una carrera interna entre el lanzamiento del proceso
+y el primer `/json` fetch.
+
+Workaround confirmado: nunca pasar la URL real a
+`start()`. Usar `start('about:blank')` y luego
+`navigate($url)` explícito — `navigate()` no depende de
+adivinar el target correcto entre varios candidatos de
+`/json`, reasigna `window.location.href` sobre la
+sesión ya conectada, que en ese punto es inequívoca (un
+solo target, ya emparejado). Mismo patrón que ya evita
+la carrera documentada en el comentario de
+`_waitForLoad()` para `navigate()` posteriores — aplica
+igual de bien a la navegación inicial.
+
 ## Patrón de trabajo recomendado (probado, funciona)
 
 1. Diagnóstico ANTES de escribir cualquier fix —
