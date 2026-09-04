@@ -4,7 +4,7 @@ dmb-pagination {
     display: flex;
     font-size: var(--font-size-xs);
     gap: 0.25rem;
-    padding: 0.75rem 0;
+    padding: 0.533rem 0;
 
     // Texto "Página:" y "de X"
     .paginate {
@@ -18,7 +18,7 @@ dmb-pagination {
         align-items: center;
         background: transparent;
         border: none;
-        border-radius: 6px;
+        border-radius: 0.533rem;
         color: var(--information);
         cursor: pointer;
         display: inline-flex;

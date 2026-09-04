@@ -9,13 +9,14 @@
 dmb-dock {
     align-items: center;
     background: var(--primary);
-    border-radius: 12px;
+    // Componente principal (design-guide.md 06: 12px)
+    border-radius: 0.8rem;
     bottom: 1.5rem;
     box-shadow: 0 4px 12px var(--border-default);
     display: inline-flex;
     gap: 0.5rem;
     left: 50%;
-    padding: 0.5rem 0.75rem;
+    padding: 0.5rem 0.533rem;
     position: fixed;
     transform: translateX(-50%);
     z-index: 999;
@@ -28,13 +29,13 @@ dmb-dock {
 
         &::before {
             background: var(--primary);
-            border-radius: 6px;
+            border-radius: 0.533rem;
             color: var(--primary-contrast);
             content: attr(data-title);
             font-size: var(--font-size-xs);
             left: 50%;
             opacity: 0;
-            padding: 0.2rem 0.5rem;
+            padding: 0.267rem 0.5rem;
             position: absolute;
             text-align: center;
             top: -2.2rem;
@@ -55,7 +56,7 @@ dmb-dock {
         dmb-button-action {
             align-items: center;
             background: var(--overlay-light);
-            border-radius: 8px;
+            border-radius: 0.533rem;
             cursor: pointer;
             display: inline-flex;
             height: 2.5em;

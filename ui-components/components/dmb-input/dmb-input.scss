@@ -30,13 +30,14 @@ dmb-input {
 
     input {
         border: 1px solid var(--information);
-        border-radius: 4px;
+        // Input (design-guide.md 06: 8px inputs y controles)
+        border-radius: 0.533em;
         box-sizing: border-box;
         display: block;
         line-height: normal;
         margin: 0;
         outline: none;
-        padding: 0.5em 0.5em 0.3em;
+        padding: 0.5em 0.5em 0.267em;
         transition: all 0.3s cubic-bezier(0.64, 0.09, 0.08, 1);
         width: 100%;
 

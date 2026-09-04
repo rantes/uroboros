@@ -1,0 +1,132 @@
+<?
+$__workflowDefinition = $this->execution->workflow_definition();
+$__project            = $__workflowDefinition->project();
+?>
+<div class="section group execution-detail-header">
+    <div class="col col12">
+        <a href="/admin/workflow_executions">&laquo; Volver a Ejecuciones</a>
+        <h2><?= htmlspecialchars($__workflowDefinition->name, ENT_QUOTES, 'UTF-8'); ?></h2>
+        <dmb-status-badge tone="<?= $this->execution->status; ?>"><?= ucfirst($this->execution->status); ?></dmb-status-badge>
+    </div>
+</div>
+
+<? if (!empty($this->failedStep)): ?>
+<dmb-failure-summary
+    step-name="<?= htmlspecialchars($this->failedStep->workflow_step_definition()->name, ENT_QUOTES, 'UTF-8'); ?>"
+    output="<?= htmlspecialchars(substr((string) $this->failedStep->output, 0, 500), ENT_QUOTES, 'UTF-8'); ?>">
+    <a href="#logs">Ver Logs</a>
+
+    <dmb-button-action
+        behavior="ajax"
+        url="/admin/executeworkflow/<?= $this->execution->workflow_definition_id; ?>?trigger_type=retry">
+        Reintentar
+    </dmb-button-action>
+
+    <? if (!empty($this->rollbackWorkflow)): ?>
+    <dmb-button-action
+        behavior="ajax"
+        url="/admin/executeworkflow/<?= $this->rollbackWorkflow->id; ?>">
+        Rollback
+    </dmb-button-action>
+    <? endif; ?>
+</dmb-failure-summary>
+<? endif; ?>
+
+<dmb-tabs>
+    <div data-tab-label="Summary">
+        <dmb-table>
+            <table>
+                <tbody>
+                    <tr>
+                        <th>Workflow</th>
+                        <td>
+                            <a href="/admin/workflow_step_definitions?workflow_definition_id=<?= $__workflowDefinition->id; ?>">
+                                <?= htmlspecialchars($__workflowDefinition->name, ENT_QUOTES, 'UTF-8'); ?>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Proyecto</th>
+                        <td>
+                            <a href="/admin/workflow_definitions?project_id=<?= $__project->id; ?>">
+                                <?= htmlspecialchars($__project->name, ENT_QUOTES, 'UTF-8'); ?>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Disparo</th>
+                        <td><?= htmlspecialchars($this->execution->trigger_type, ENT_QUOTES, 'UTF-8'); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Estado</th>
+                        <td><dmb-status-badge tone="<?= $this->execution->status; ?>"><?= ucfirst($this->execution->status); ?></dmb-status-badge></td>
+                    </tr>
+                    <tr>
+                        <th>Inicio</th>
+                        <td><?= !empty($this->execution->started_at) ? date('Y-m-d H:i:s', $this->execution->started_at) : '—'; ?></td>
+                    </tr>
+                    <tr>
+                        <th>Fin</th>
+                        <td><?= !empty($this->execution->completed_at) ? date('Y-m-d H:i:s', $this->execution->completed_at) : '—'; ?></td>
+                    </tr>
+                    <tr>
+                        <th>Duración</th>
+                        <td><?= $this->duration ?? 'Sin datos'; ?></td>
+                    </tr>
+                    <tr>
+                        <th>Pasos completados</th>
+                        <td><?= $this->completedCount; ?> / <?= $this->steps->counter(); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Pasos fallidos</th>
+                        <td><?= $this->failedCount; ?></td>
+                    </tr>
+                </tbody>
+            </table>
+        </dmb-table>
+    </div>
+
+    <div data-tab-label="Timeline">
+        <? foreach ($this->stepsByType as $type => $stepsOfType): ?>
+        <div class="timeline-group">
+            <h4><?= htmlspecialchars($type, ENT_QUOTES, 'UTF-8'); ?></h4>
+            <? foreach ($stepsOfType as $step): ?>
+            <div class="timeline-item">
+                <dmb-status-badge tone="<?= $step->status; ?>"><?= ucfirst($step->status); ?></dmb-status-badge>
+                <span><?= htmlspecialchars($step->workflow_step_definition()->name, ENT_QUOTES, 'UTF-8'); ?></span>
+            </div>
+            <? endforeach; ?>
+        </div>
+        <? endforeach; ?>
+    </div>
+
+    <div data-tab-label="Tasks">
+        <ul class="task-checklist">
+            <? foreach ($this->steps as $step): ?>
+            <li>
+                <dmb-status-badge tone="<?= $step->status; ?>"><?= ucfirst($step->status); ?></dmb-status-badge>
+                <span><?= htmlspecialchars($step->workflow_step_definition()->name, ENT_QUOTES, 'UTF-8'); ?></span>
+            </li>
+            <? endforeach; ?>
+        </ul>
+    </div>
+
+    <div data-tab-label="Logs">
+        <div class="execution-logs">
+            <? foreach ($this->steps as $step): ?>
+            <div class="log-block">
+                <div class="log-block-header">
+                    <?= htmlspecialchars($step->workflow_step_definition()->name, ENT_QUOTES, 'UTF-8'); ?>
+                    — <?= ucfirst($step->status); ?>
+                </div>
+                <pre><?= htmlspecialchars((string) $step->output, ENT_QUOTES, 'UTF-8'); ?></pre>
+            </div>
+            <? endforeach; ?>
+        </div>
+    </div>
+
+    <? $widgetTitle = 'Artifacts'; $widgetReason = 'Requiere un dominio de artefactos que Uroboros no implementa todavía'; ?>
+    <div data-tab-label="Artifacts">
+        <? include(INST_PATH.'app/views/_widget-empty-state.phtml'); ?>
+    </div>
+</dmb-tabs>

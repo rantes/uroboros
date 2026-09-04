@@ -40,7 +40,7 @@ class WorkflowExecution extends ActiveRecord {
     }
 
     public function validateTriggerType(): void {
-        $validTriggerTypes = ['manual', 'webhook', 'cascade'];
+        $validTriggerTypes = ['manual', 'webhook', 'cascade', 'retry'];
 
         in_array($this->trigger_type, $validTriggerTypes, true)
             or $this->_error->add(['field' => 'trigger_type', 'message' => 'El trigger_type debe ser uno de: ' . implode(', ', $validTriggerTypes)]);

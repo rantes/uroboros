@@ -1,9 +1,13 @@
 :root {
-    --primary:              #0DDBFF;
+    /* Valores alineados a .claude/rules/design-guide.md, sección 03
+       (fuente de verdad) — --primary, --success, --pending,
+       --secondary-surface y --elevated-surface tenían hex ligeramente
+       corridos respecto a la guía; se corrigieron aquí. */
+    --primary:              #00D8FF;
     --primary-surface:      #0D1117;
-    --primary-hover:        #0DDBFF15;
-    --secondary-surface:    #181B22;
-    --elevated-surface:     #21202D;
+    --primary-hover:        #00D8FF15;
+    --secondary-surface:    #161B22;
+    --elevated-surface:     #21262D;
     --border-outline:       #30363D;
     --main-font-color:      #FFFFFF;
 
@@ -11,21 +15,111 @@
     --error-contrast:       #FFFFFF;
     --error-hover:          #E74C3C15;
 
-    --success:              #2ECC71;
+    --success:              #26CC71;
     --success-contrast:     #FFFFFF;
-    --success-hover:        #2ECC7115;
+    --success-hover:        #26CC7115;
 
     --warning:              #F1C40F;
     --warning-contrast:     #FFFFFF;
     --warning-hover:        #F1C40F15;
 
-    --pending:              #6E7681;
+    --pending:              #667681;
     --pending-contrast:     #FFFFFF;
-    --pending-hover:        #6E768115;
+    --pending-hover:        #66768115;
 
     --recovered:            #27AE60;
     --recovered-contrast:   #FFFFFF;
     --recovered-hover:      #27AE6015;
+
+    /* "Running" (design-guide.md 03/12) es literalmente Electric Cyan
+       — el mismo hex que --primary, no un color nuevo. Se define
+       aparte (en vez de que cada consumidor escriba var(--primary)
+       directo) porque semánticamente es un estado, no la marca — si
+       algún día difieren, el punto de cambio es este alias, no cada
+       sitio que pinta un status "running". */
+    --running:              var(--primary);
+    --running-contrast:     var(--primary-contrast);
+    --running-hover:        var(--primary-hover);
+
+    /* --- Cierre de variables indefinidas (auditoría design-guide) ---
+       17 variables se usaban en 32/68 archivos .scss sin estar nunca
+       definidas en ningún lado — main.css nunca las declaró. Cada
+       mapeo abajo tiene su razón, no es un valor adivinado. */
+
+    /* --primary-contrast: la variable indefinida más usada del
+       proyecto (31 usos, 16 archivos) — texto sobre fondo --primary
+       sólido (ej. botón primario). Electric Cyan (#00D8FF) es un
+       cyan claro/brillante — texto blanco encima tiene contraste
+       pobre. Se usa el mismo tono oscuro de --primary-surface
+       (#0D1117, "Dark Surface" de la guía) en vez de blanco, a
+       diferencia del resto de *-contrast (todos blancos) que sí
+       tienen colores base oscuros/saturados donde blanco sí legible. */
+    --primary-contrast:     var(--primary-surface);
+
+    /* --information: la guía (03) no tiene un swatch "Information"
+       propio — pero su propia nota de sección 03 sugiere mapearla a
+       un color de estado o a Electric Cyan. El uso real confirma esto
+       último: se usa como acento genérico/neutral en toda la UI
+       (bordes de tree-view, texto de paginación, tono "default" del
+       badge, iconos de tarjetas) — exactamente el patrón de un acento
+       de marca reutilizado, no el de un raro mensaje "info" aislado.
+       Misma razón de contraste que --primary-contrast. */
+    --information:          var(--primary);
+    --information-hover:    var(--primary-hover);
+    --information-contrast: var(--primary-contrast);
+
+    /* --secondary: la guía tampoco define un swatch "Secondary"
+       propio. Uso real (dmb-menu, dmb-button, dmb-card, dmb-bar-chart)
+       es de acento neutral secundario, no un color de marca — se
+       reusa el tono neutral ya sancionado por la guía (Pending,
+       #667681) en vez de inventar un hex nuevo no respaldado por el
+       documento. Si el equipo quiere un "Secondary" propio y distinto
+       de "Pending" en el futuro, es una decisión de diseño real, no
+       algo para adivinar aquí. */
+    --secondary:            var(--pending);
+    --secondary-hover:      var(--pending-hover);
+    --secondary-contrast:   var(--pending-contrast);
+
+    /* --surface-1/2/3: la guía (03, "Colores de superficie") define
+       exactamente 3 niveles — Dark Surface (base), Secondary Surface,
+       Elevated Surface — que ya existen en este archivo con otros
+       nombres. Se alias-ean en vez de renombrar los ~100 usos ya
+       existentes de --primary-surface/--secondary-surface/
+       --elevated-surface (eso sí sería un refactor masivo, fuera de
+       alcance de esta ronda). */
+    --surface-1:            var(--primary-surface);
+    --surface-2:            var(--secondary-surface);
+    --surface-3:            var(--elevated-surface);
+
+    /* --border-default/--border-subtle: la guía solo da un hex de
+       borde (#30363D). El código ya distingue dos pesos visuales
+       (17 usos "default", 8 "subtle") — default es el valor exacto de
+       la guía, subtle es el mismo tono al 50% de opacidad (mismo
+       patrón de sufijo alfa de 2 dígitos que ya usa el resto de este
+       archivo para *-hover). */
+    --border-default:       var(--border-outline);
+    --border-subtle:        #30363D80;
+
+    /* --status-ok-text: nombre auto-descriptivo, mapea directo a
+       --success (el "ok" semántico ya definido). */
+    --status-ok-text:       var(--success);
+
+    /* --default: color neutral genérico para texto/íconos fuera de
+       cualquier estado (dmb-document-uploader, dmb-quick-settings) —
+       mismo tono neutral que --secondary, sin inventar un hex nuevo. */
+    --default:              var(--pending);
+    --default-hover:        var(--pending-hover);
+    --default-contrast:     var(--pending-contrast);
+
+    /* --overlay-*: utilidades de superposición para hover/sombra sobre
+       fondo oscuro — no son colores de marca de la sección 03, son
+       infraestructura de UI. Blanco semitransparente para resaltar al
+       pasar el mouse (dmb-dock, dmb-combobox), negro semitransparente
+       para sombra sutil (dmb-config-pending) — convención estándar de
+       tema oscuro, no arbitraria. */
+    --overlay-light:        rgba(255, 255, 255, 0.06);
+    --overlay-light-hover:  rgba(255, 255, 255, 0.12);
+    --overlay-subtle:       rgba(0, 0, 0, 0.35);
 
     --font-size-base:      clamp(13px, 1.2vw, 15px);
     --font-size-xs:        0.8rem;

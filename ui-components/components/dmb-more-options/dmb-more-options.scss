@@ -9,7 +9,7 @@ dmb-more-options {
     .wrapper {
         background-color: var(--surface-1);
         border: 1px solid var(--border-subtle);
-        border-radius: 8px;
+        border-radius: 0.533rem;
         box-shadow: 0 4px 12px var(--border-subtle);
         display: none;
         padding: 0.4rem;
@@ -21,7 +21,7 @@ dmb-more-options {
         &.active {
             display: flex;
             flex-direction: column;
-            gap: 0.15rem;
+            gap: 0.267rem;
         }
 
         &::after {

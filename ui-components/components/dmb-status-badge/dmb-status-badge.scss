@@ -1,8 +1,14 @@
 dmb-status-badge {
     display: inline-flex;
     align-items: center;
-    padding: .15em .5em;
-    border-radius: .6em;
+    padding: .267em .5em;
+    // Píldora completamente redondeada (design-guide.md 06) — se
+    // reutiliza el mismo valor del tope de la escala de espaciado
+    // (96px/6.4rem) en vez de inventar un "999px" literal: cualquier
+    // badge es muchísimo más chico que eso, así que sigue clipeando
+    // a un óvalo perfecto, sin agregar un número mágico nuevo fuera
+    // de la escala ya establecida.
+    border-radius: 6.4rem;
     font-size: var(--font-size-xs);
     border: 1px solid currentColor;
 
@@ -25,5 +31,27 @@ dmb-status-badge {
     &[tone="default"] {
         color: var(--information);
         background: var(--information-hover);
+    }
+
+    // Vocabulario real de status (WorkflowExecution/StepExecution) —
+    // design-guide.md 03/12: Running = Electric Cyan, Pending = gris
+    // neutral. "completed"/"failed" son los nombres reales en BD para
+    // los estados que la guía llama "Success"/"Failed" — mismo color,
+    // sin agregar un mapeo intermedio en la vista.
+    &[tone="pending"] {
+        color: var(--pending);
+        background: var(--pending-hover);
+    }
+    &[tone="running"] {
+        color: var(--running);
+        background: var(--running-hover);
+    }
+    &[tone="completed"] {
+        color: var(--success);
+        background: var(--success-hover);
+    }
+    &[tone="failed"] {
+        color: var(--error);
+        background: var(--error-hover);
     }
 }

@@ -11,14 +11,15 @@ dmb-dialog:has(dmb-login) {
 dmb-login {
     background: var(--surface-1);
     border: 1px solid var(--border-subtle);
-    border-radius: 12px;
+    // Componente principal (design-guide.md 06: 12px)
+    border-radius: 0.8rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 1rem;
     margin: auto;
     max-width: 380px;
-    padding: 2.5rem;
+    padding: 2.133rem;
     text-align: center;
     width: 100%;
 
@@ -51,7 +52,7 @@ dmb-login {
     }
 
     dmb-button.login-button {
-        border-radius: 6px;
+        border-radius: 0.533rem;
         margin: 0;
         width: 100%;
     }

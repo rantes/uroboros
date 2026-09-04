@@ -4,6 +4,7 @@
 <template id="Dmb-config-pending-template"></template>
 <template id="Dmb-dialog-template"><dmb-view class="wrapper" transclude></dmb-view></template>
 <template id="Dmb-document-uploader-template"><dmb-input type="file" dmb-name="__document_uploader_file"></dmb-input><input type="hidden"><div class="preview">    <img src="#" alt="Vista previa del documento" hidden>    <span class="filename"></span></div></template>
+<template id="Dmb-failure-summary-template"><h3>Resumen de fallo</h3><p class="failure-summary-step"></p><pre class="failure-summary-output"></pre><div class="failure-summary-actions" transclude></div></template>
 <template id="DmbIdReader-template"><dmb-dialog no-auto-open no-close>    <div class="dmb-id-reader">        <div class="section group">            <div class="col col12">                <h3 class="title">                    Active el lector o continue manualmente...
                 </h3>            </div>        </div>        <div class="section group">            <div class="col col1"></div>            <div class="col col10">                <dmb-button
                     id="pedestrian-in-manually"
@@ -26,6 +27,7 @@
 <template id="Dmb-push-subscribe-template"><p>This is the dmb-push-subscribe component</p></template>
 <template id="Dmb-reception-type-select-template"><p>This is the dmb-reception-type-select component</p></template>
 <template id="Dmb-status-badge-template"><span transclude></span></template>
+<template id="Dmb-tabs-template"><nav class="dmb-tabs-nav"></nav><div class="dmb-tabs-panels" transclude></div></template>
 <template id="Dmb-tree-view-template"><ul class="trunk" transclude></ul></template>
 <template id="Dmb-video-uploader-template"><dmb-input type="file" dmb-name="videofile" accept="video/*"></dmb-input><div class="preview">    <video controls></video></div>'</template>
 <template id="Dmb-wysiwyg-template"></template>

@@ -1,0 +1,45 @@
+dmb-failure-summary {
+    background: var(--error-hover);
+    border: 1px solid var(--error);
+    border-radius: 0.8rem;
+    display: block;
+    margin-bottom: 1.6rem;
+    padding: 1.067rem;
+
+    h3 {
+        color: var(--error);
+        margin: 0 0 0.533rem;
+    }
+
+    .failure-summary-step {
+        color: var(--main-font-color);
+        margin: 0 0 0.533rem;
+    }
+
+    // Estilo terminal (design-guide.md 15) — JetBrains Mono, fondo
+    // oscuro, nunca para texto de interfaz general.
+    .failure-summary-output {
+        background: var(--primary-surface);
+        border-radius: 0.533em;
+        color: var(--main-font-color);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: var(--font-size-xs);
+        max-height: 12em;
+        overflow-y: auto;
+        padding: 0.533em;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .failure-summary-actions {
+        display: flex;
+        gap: 0.533rem;
+        margin-top: 0.533rem;
+
+        a {
+            align-items: center;
+            color: var(--information);
+            display: inline-flex;
+        }
+    }
+}

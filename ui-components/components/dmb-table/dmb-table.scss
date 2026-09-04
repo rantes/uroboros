@@ -24,7 +24,7 @@ dmb-table {
                     font-size: var(--font-size-xs);
                     font-weight: 600;
                     letter-spacing: 0.05em;
-                    padding: 0.75rem 1rem;
+                    padding: 0.533rem 1rem;
                     text-align: left;
                     text-transform: uppercase;
                 }
@@ -38,11 +38,11 @@ dmb-table {
                     color: var(--primary);
                     font-size: var(--font-size-sm);
                     height: 44px;
-                    padding: 0.75rem 1rem;
+                    padding: 0.533rem 1rem;
                     vertical-align: middle;
 
                     &:last-child {
-                        padding: 0 0.75rem;
+                        padding: 0 0.533rem;
                         text-align: right;
                         vertical-align: middle;
                         width: 3rem;
@@ -81,8 +81,8 @@ dmb-table {
                 td {
                     background-color: var(--surface-2);
                     border-radius: 0;
-                    padding-bottom: 0.6em;
-                    padding-top: 0.6em;
+                    padding-bottom: 0.533em;
+                    padding-top: 0.533em;
                     text-align: center;
                 }
             }
@@ -91,12 +91,16 @@ dmb-table {
 
     .badge {
         align-items: center;
-        border-radius: 20px;
+        // Píldora completamente redondeada (design-guide.md 06) —
+        // mismo criterio que dmb-status-badge: reutiliza el tope de
+        // la escala de espaciado (96px/6.4rem) en vez de un "999px"
+        // literal nuevo.
+        border-radius: 6.4rem;
         display: inline-flex;
         font-size: var(--font-size-xs);
         font-weight: 600;
         line-height: 1.4;
-        padding: 0.15rem 0.6rem;
+        padding: 0.267rem 0.533rem;
     }
 
     .badge.badge-ok {
@@ -117,10 +121,11 @@ dmb-table {
     .table-button {
         background-color: var(--primary);
         border: 1px solid var(--border-default);
-        border-radius: 0.2em;
+        // Control pequeño (design-guide.md 06: 8px inputs y controles)
+        border-radius: 0.533em;
         box-sizing: border-box;
         color: var(--primary-contrast);
-        padding: 0.2em;
+        padding: 0.267em;
         width: 2.2em;
 
         &:before {
@@ -133,10 +138,10 @@ dmb-table {
     .head-button {
         background-color: var(--surface-1);
         border: 1px solid var(--border-default);
-        border-radius: 0.2em;
+        border-radius: 0.533em;
         box-sizing: border-box;
         color: var(--information);
-        padding: 0.2em;
+        padding: 0.267em;
 
         &:before {
             color: var(--information);

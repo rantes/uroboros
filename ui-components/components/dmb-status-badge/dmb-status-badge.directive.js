@@ -1,6 +1,11 @@
 import {DumboDirective } from "../../libs/dumbojs/dumbo.min.js";
 
-const TONES = ['warning', 'error', 'success', 'information', 'default'];
+// 'pending'/'running'/'completed'/'failed' son el vocabulario real de
+// WorkflowExecution/StepExecution::validateStatus() — se agregan tal
+// cual (no como alias de success/error) para que las vistas puedan
+// pasar $row->status directo como tone, sin una capa de mapeo
+// intermedia en el controlador o la vista.
+const TONES = ['warning', 'error', 'success', 'information', 'default', 'pending', 'running', 'completed', 'failed'];
 
 export class DmbStatusBadge extends DumboDirective {
     static selector = 'dmb-status-badge';

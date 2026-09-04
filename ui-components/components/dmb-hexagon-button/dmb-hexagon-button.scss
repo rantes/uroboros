@@ -8,6 +8,10 @@ dmb-hexagon-button {
     cursor: pointer;
     display: inline-block;
     left: 50%;
+    // Offset de posicionamiento visual pixel-perfect para la forma
+    // hexagonal (left: 50% + position: relative) — no es un valor de
+    // la escala de espaciado, es un ajuste óptico deliberado. Se deja
+    // sin tocar (auditoría design-guide Fase 4, caso ambiguo/intencional).
     margin: 0 -1px -4px 54px;
     height: 13em;
     padding: 0.5em;
@@ -40,7 +44,7 @@ dmb-hexagon-button {
                 left: 0;
                 line-height: normal;
                 min-width: 1em;
-                padding: 0.2em 0.2em 0;
+                padding: 0.267em 0.267em 0;
                 position: absolute;
                 text-align: center;
                 top: -1.5em;

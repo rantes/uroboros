@@ -3,7 +3,7 @@ dmb-operational-topbar {
     background: var(--surface-1);
     border-bottom: 1px solid var(--border-subtle);
     display: flex;
-    padding: 0.75em 1.25em;
+    padding: 0.533em 1.067em;
     width: 100%;
 
     .topbar-inner {
@@ -17,7 +17,7 @@ dmb-operational-topbar {
         align-items: center;
         background: var(--surface-2);
         border: 1px solid var(--border-subtle);
-        border-radius: 0.75em;
+        border-radius: 0.533em;
         display: flex;
         gap: 0.5em;
         padding: 0.5em 1em;
@@ -173,7 +173,10 @@ dmb-panel#operational-sidebar {
     color: var(--main-font-color);
     display: block;
     font-size: var(--font-size-sm);
-    padding: 0.6em 0.75em;
+    // Los dos valores originales (0.6em/0.75em) clasificaban ambos al
+    // mismo punto de la escala (8px) — quedan iguales, no fue una
+    // decisión de forzar simetría, es donde cae cada uno por separado.
+    padding: 0.533em 0.533em;
     text-decoration: none;
 }
 

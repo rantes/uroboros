@@ -1,6 +1,38 @@
 
+// Bug real corregido (auditoría design-guide, Fase 4 parte A): estas
+// dos declaraciones se llamaban 'Inter' pero cargaban los .ttf de
+// JetBrains Mono — todo el texto de interfaz general renderizaba en
+// una fuente monoespaciada creyendo que era Inter. Ahora apuntan a
+// los archivos reales de Inter (variable font oficial, self-hosted
+// vía woff2, mismo patrón de auto-hosting ya usado en este archivo
+// para JetBrains Mono/Material Symbols — nunca Google Fonts vía
+// <link>/@import externo).
 @font-face {
     font-family: 'Inter';
+    font-display: swap;
+    font-style: normal;
+    font-weight: 100 900;
+    src: url('/fonts/Inter-VariableFont_wght.woff2')
+         format('woff2');
+}
+
+@font-face {
+    font-family: 'Inter';
+    font-display: swap;
+    font-style: italic;
+    font-weight: 100 900;
+    src: url('/fonts/Inter-Italic-VariableFont_wght.woff2')
+         format('woff2');
+}
+
+// JetBrains Mono — design-guide.md 04: "logs, código, comandos,
+// variables, salida de consola — nunca para texto de interfaz
+// general". Los archivos .ttf ya estaban en el proyecto (antes
+// cargados bajo el nombre 'Inter' por error) — se declaran aquí bajo
+// su nombre real para que los contextos de código/logs puedan
+// pedirlos explícitamente sin heredar el fix de Inter arriba.
+@font-face {
+    font-family: 'JetBrains Mono';
     font-display: swap;
     font-style: normal;
     font-weight: 100 900;
@@ -9,7 +41,7 @@
 }
 
 @font-face {
-    font-family: 'Inter';
+    font-family: 'JetBrains Mono';
     font-display: swap;
     font-style: italic;
     font-weight: 100 900;
