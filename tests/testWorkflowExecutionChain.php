@@ -454,6 +454,15 @@ class testWorkflowExecutionChain extends dumboTests {
         ]);
         $definitionB->Save() or trigger_error((string) $definitionB->_error, E_USER_ERROR);
 
+        $stepB = $this->WorkflowStepDefinition->Niu([
+            'workflow_definition_id' => $definitionB->id,
+            'name'                   => 'Only Step B',
+            'type'                   => 'verification',
+            'command'                => 'echo ok from B',
+            'step_order'             => 1,
+        ]);
+        $stepB->Save() or trigger_error((string) $stepB->_error, E_USER_ERROR);
+
         (new CommandBus())->Dispatch(new ExecuteWorkflowCommand((int) $definitionA->id, 'manual'));
 
         $executionA = $this->WorkflowExecution->Find([

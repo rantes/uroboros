@@ -247,6 +247,46 @@ sigue siendo responsabilidad del primer paso del propio Workflow
       verificado con clicks reales (persistencia confirmada creando y
       editando un proyecto real).
 
+## ⚠️ Hallazgo real de producción — `working_directory` relativo mutó (casi) el propio Uroboros
+
+Confirmado con el uso real del usuario: un `working_directory`
+guardado como ruta **relativa** (`"quedicende"`, no `/algo/quedicende`)
+hizo que `git pull` (corriendo tras el `cd` a la raíz de Uroboros del
+`cron`) resolviera hacia el `.git` más cercano hacia arriba — **el
+propio repositorio de Uroboros**, confirmado con
+`git rev-parse --show-toplevel`. No mutó nada esta vez porque un error
+de SSH cortó la ejecución antes — pero de no ser así, un step de
+cualquier Proyecto real podría haber escrito sobre el código fuente
+de la plataforma misma. Riesgo real, no hipotético.
+
+**Decisión confirmada:** mover la validación al momento de
+guardar/editar el Proyecto (`saveprojectAction()`), no solo confiar
+en la verificación tardía de `RunStepCommandHandler` (que se
+mantiene, como red de seguridad adicional, no se elimina):
+
+- [ ] 48. `saveprojectAction()`: antes de `$project->Save()`, si
+      `working_directory` no está vacío:
+      1. Rechazar si no es ruta absoluta (no empieza con `/`) —
+         error claro, no se guarda el Proyecto.
+      2. Si es absoluta y el directorio no existe: intentar crearlo
+         (`mkdir` recursivo, mismo criterio ya usado en
+         `RunStepCommandHandler`).
+      3. Si existe pero no es escribible (`is_writable()` falso):
+         error claro indicando que faltan permisos — nunca falla
+         silenciosamente, nunca degrada a "guardar de todas formas".
+- [ ] 49. Verificar con `DumboChromeDriver`: intentar guardar un
+      Proyecto con ruta relativa → rechazado con mensaje claro.
+      Ruta absoluta a un directorio que no existe → se crea, Proyecto
+      se guarda. Ruta absoluta a un directorio existente sin permisos
+      de escritura (crear uno real con permisos restringidos para la
+      prueba) → error claro, Proyecto no se guarda.
+- [ ] 50. Confirmar que el proyecto real del usuario
+      (`working_directory = "quedicende"`) queda bloqueado hasta que
+      lo corrija a una ruta absoluta real — no migrar el valor
+      automáticamente por él, que decida la ruta correcta él mismo.
+- [ ] 51. `dumboTest all` — conteo de `test-result.xml`, cero
+      regresión.
+
 Ver `.claude/specs/ejecucion-workflows/tasks.md` para el uso real de
 este campo en `RunStepCommandHandler`, y la corrección operativa del
 usuario de `cron`.

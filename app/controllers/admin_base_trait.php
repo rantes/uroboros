@@ -158,6 +158,9 @@ trait AdminBaseTrait {
             case 'project_config_file':
                 $this->sectionTitle = 'Archivos de Configuración';
             break;
+            case 'project_credential':
+                $this->sectionTitle = 'Credenciales de Proyecto';
+            break;
         endswitch;
 
         $paginateParams = ['conditions'=>$conditions];

@@ -64,12 +64,34 @@ class RunStepCommandHandler extends Controller {
         elseif (!is_dir($project->working_directory) and !@mkdir($project->working_directory, 0755, true)):
             $exitCode    = 1;
             $outputLines = ["No se pudo crear el directorio de trabajo: {$project->working_directory}"];
+        elseif ($stepDefinition->counter() === 0 or empty($stepDefinition->command)):
+            // Defensa en profundidad — un StepExecution que referencia
+            // un WorkflowStepDefinition inexistente o sin comando
+            // (dato corrupto, borrado a mitad de camino, o cualquier
+            // otro origen futuro) nunca debe llegar como NULL a
+            // _substituteCredentials(string $command, ...) y tumbar
+            // el proceso de cron con un TypeError no capturado. Mismo
+            // criterio de fallo limpio que working_directory ausente.
+            $exitCode    = 1;
+            $outputLines = ['El paso no tiene un WorkflowStepDefinition válido o su comando está vacío.'];
         else:
-            exec('cd ' . escapeshellarg($project->working_directory) . ' && ' . $stepDefinition->command . ' 2>&1', $outputLines, $exitCode);
+            $substitution = $this->_substituteCredentials($stepDefinition->command, (int) $project->id);
+
+            // Requisito 2.2 (credenciales-proyecto) — un placeholder
+            // referenciando una credencial inexistente para este
+            // proyecto es un fallo limpio del step, mismo criterio
+            // que working_directory ausente: nunca ejecuta el
+            // comando con el placeholder literal sin sustituir.
+            if (!empty($substitution['missing'])):
+                $exitCode    = 1;
+                $outputLines = ['Faltan credenciales referenciadas: ' . implode(', ', $substitution['missing'])];
+            else:
+                exec('cd ' . escapeshellarg($project->working_directory) . ' && ' . $substitution['command'] . ' 2>&1', $outputLines, $exitCode);
+            endif;
         endif;
 
         $stepExecution->exit_code    = $exitCode;
-        $stepExecution->output       = implode("\n", $outputLines);
+        $stepExecution->output       = $this->_maskCredentials(implode("\n", $outputLines), (int) $project->id);
         $stepExecution->completed_at = time();
         $stepExecution->status       = $exitCode === 0 ? 'completed' : 'failed';
         $stepExecution->Save()
@@ -90,5 +112,47 @@ class RunStepCommandHandler extends Controller {
             or throw new \Exception((string) $event->_error);
 
         (new EventBus())->Dispatch($event);
+    }
+
+    /**
+     * Sustituye {{credential:nombre}} por el valor real descifrado,
+     * en memoria, justo antes de exec() — $stepDefinition->command
+     * en BD nunca cambia (Requisito 2.3, credenciales-proyecto).
+     * Cualquier placeholder que no coincide con una ProjectCredential
+     * de este proyecto queda listado en 'missing' — el llamador
+     * decide el fallo limpio (Requisito 2.2), esta función nunca
+     * ejecuta nada ni lanza excepción por sí misma.
+     */
+    private function _substituteCredentials(string $command, int $projectId): array {
+        $credentials = $this->ProjectCredential->Find(['conditions' => [['project_id', $projectId]]]);
+        $missing     = [];
+
+        foreach ($credentials as $credential):
+            $placeholder = '{{credential:' . $credential->name . '}}';
+            str_contains($command, $placeholder)
+                and ($command = str_replace($placeholder, $credential->DecryptedValue(), $command));
+        endforeach;
+
+        preg_match_all('/\{\{credential:([a-zA-Z0-9_]+)\}\}/', $command, $matches);
+        $missing = $matches[1];
+
+        return ['command' => $command, 'missing' => $missing];
+    }
+
+    /**
+     * Enmascara en el output capturado el valor real de CUALQUIER
+     * credencial del proyecto (Requisito 3.1, credenciales-proyecto)
+     * — no solo la referenciada en el command de este step, mismo
+     * criterio que GitHub Actions. Se aplica antes de persistir
+     * StepExecution.output, nunca como filtro de vista.
+     */
+    private function _maskCredentials(string $output, int $projectId): string {
+        $credentials = $this->ProjectCredential->Find(['conditions' => [['project_id', $projectId]]]);
+
+        foreach ($credentials as $credential):
+            $output = str_replace($credential->DecryptedValue(), '***', $output);
+        endforeach;
+
+        return $output;
     }
 }

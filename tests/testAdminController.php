@@ -514,6 +514,76 @@ class testAdminController extends dumboTests {
         return $project;
     }
 
+    /**
+     * Hallazgo real de producción — .claude/specs/gestion-proyectos/
+     * tasks.md, "Hallazgo real de producción". saveprojectAction()
+     * no escribe $this->_code (usa una variable local $code), mismo
+     * hueco preexistente ya documentado arriba para landingAction()
+     * — se assertea el efecto real en BD/disco, no $result->_code.
+     */
+    public function saveprojectRejectsRelativeWorkingDirectoryTest(): void {
+        $this->describe('POST /admin/saveproject con working_directory relativo no debe crear el Proyecto');
+
+        $before = $this->Project->Find()->counter();
+
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_POST['project'] = [
+            'name'              => 'Rejected Relative ' . bin2hex(random_bytes(4)),
+            'type'              => 'backend',
+            'status'            => 1,
+            'working_directory' => 'quedicende',
+        ];
+        $this->_runAction('/admin/saveproject');
+
+        $this->assertEquals($before, $this->Project->Find()->counter(), 'No debe haberse creado ninguna fila con ruta relativa');
+    }
+
+    public function saveprojectCreatesAbsoluteWorkingDirectoryTest(): void {
+        $this->describe('POST /admin/saveproject con working_directory absoluto inexistente debe crearlo y guardar el Proyecto');
+
+        $workingDirectory = sys_get_temp_dir() . '/uroboros-wd-test-' . bin2hex(random_bytes(4));
+        $this->assertFalse(is_dir($workingDirectory), 'Precondición: el directorio no debe existir todavía');
+
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_POST['project'] = [
+            'name'              => 'Accepted Absolute ' . bin2hex(random_bytes(4)),
+            'type'              => 'backend',
+            'status'            => 1,
+            'working_directory' => $workingDirectory,
+        ];
+        $this->_runAction('/admin/saveproject');
+
+        $this->assertTrue(is_dir($workingDirectory), 'El directorio debe haberse creado realmente en disco');
+
+        $created = $this->Project->Find(['conditions' => [['working_directory', $workingDirectory]]]);
+        $this->assertEquals(1, $created->counter(), 'El Proyecto debe haberse guardado');
+
+        rmdir($workingDirectory);
+    }
+
+    public function saveprojectRejectsNonWritableWorkingDirectoryTest(): void {
+        $this->describe('POST /admin/saveproject con working_directory absoluto sin permisos de escritura no debe crear el Proyecto');
+
+        $workingDirectory = sys_get_temp_dir() . '/uroboros-wd-readonly-' . bin2hex(random_bytes(4));
+        mkdir($workingDirectory, 0755, true);
+        chmod($workingDirectory, 0555);
+        $before = $this->Project->Find()->counter();
+
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_POST['project'] = [
+            'name'              => 'Rejected Readonly ' . bin2hex(random_bytes(4)),
+            'type'              => 'backend',
+            'status'            => 1,
+            'working_directory' => $workingDirectory,
+        ];
+        $this->_runAction('/admin/saveproject');
+
+        $this->assertEquals($before, $this->Project->Find()->counter(), 'No debe haberse creado ninguna fila apuntando a un directorio sin permisos de escritura');
+
+        chmod($workingDirectory, 0755);
+        rmdir($workingDirectory);
+    }
+
     public function projectConfigFilesListFiltersByProjectIdTest(): void {
         $this->describe('GET /admin/project_config_files?project_id=X debe listar solo los archivos de ese proyecto, nunca los de otro');
 

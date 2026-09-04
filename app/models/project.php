@@ -64,7 +64,7 @@ class Project extends ActiveRecord {
      * mano en un hook before_save.
      */
     public function validateType(): void {
-        $validTypes = ['backend', 'frontend', 'library', 'mobile'];
+        $validTypes = ['backend', 'frontend', 'library', 'mobile', 'fullstack', 'custom'];
 
         in_array($this->type, $validTypes, true)
             or $this->_error->add(['field' => 'type', 'message' => 'El tipo debe ser uno de: ' . implode(', ', $validTypes)]);

@@ -34,6 +34,7 @@ class AdminController extends MainController {
             'workflow_executions',
             'step_executions',
             'project_config_files',
+            'project_credentials',
         ];
         $this->noyes = ['no', 'si'];
         $this->statuses = ['Inactivo', 'Activo'];
@@ -69,6 +70,16 @@ class AdminController extends MainController {
                         'conditions' => empty($currentId) ? '' : "`id`<>'{$currentId}'",
                     ]);
                 endif;
+
+                // Filtro opcional por Project — mismo patrón que
+                // project_config_files/project_credentials, pero acá
+                // el parámetro es opcional: "Operaciones" en el
+                // sidebar lista todos los workflows sin filtrar,
+                // mientras que "Ver workflows" desde un Project llega
+                // con project_id en la query string.
+                $this->projectId = (int) ($this->params['project_id'] ?? 0);
+                empty($this->projectId)
+                    or ($this->_listConditions = "`project_id`='{$this->projectId}'");
             break;
             case 'workflow_step_definitions':
                 // Colección anidada, no una lista global — cada
@@ -82,6 +93,13 @@ class AdminController extends MainController {
                 // Colección anidada, mismo patrón que
                 // workflow_step_definitions — cada pantalla referencia
                 // un único Project por parámetro.
+                $this->projectId = (int) ($this->params['project_id'] ?? 0);
+                $this->_listConditions = "`project_id`='{$this->projectId}'";
+            break;
+            case 'project_credentials':
+                // Colección anidada, mismo patrón que
+                // project_config_files — cada pantalla referencia un
+                // único Project por parámetro.
                 $this->projectId = (int) ($this->params['project_id'] ?? 0);
                 $this->_listConditions = "`project_id`='{$this->projectId}'";
             break;
@@ -198,8 +216,33 @@ class AdminController extends MainController {
             !empty($data['id']) and ($data['id'] = (int) $data['id']);
 
             $project = $this->Project->Niu($data);
+
+            // working_directory relativo — hallazgo real de
+            // producción (.claude/specs/gestion-proyectos/tasks.md,
+            // "Hallazgo real de producción"): resuelto contra el cwd
+            // del proceso de cron, un valor relativo puede terminar
+            // apuntando al `.git` más cercano hacia arriba en el
+            // árbol — que puede ser el propio repositorio de
+            // Uroboros. Se valida aquí, al guardar, no solo en
+            // RunStepCommandHandler (que se mantiene como red de
+            // seguridad adicional ante un directorio que cambia de
+            // estado entre el guardado y la ejecución real).
+            if (!empty($project->working_directory)):
+                str_starts_with($project->working_directory, '/')
+                    or throw new ControllerException('El directorio de trabajo debe ser una ruta absoluta (debe iniciar con /).', HTTP_422);
+
+                is_dir($project->working_directory) or @mkdir($project->working_directory, 0755, true);
+                is_dir($project->working_directory)
+                    or throw new ControllerException("No se pudo crear el directorio de trabajo: {$project->working_directory}", HTTP_500);
+
+                is_writable($project->working_directory)
+                    or throw new ControllerException("El directorio de trabajo existe pero no tiene permisos de escritura ({$project->working_directory}). Ajusta los permisos (ej. chown/chmod) e intenta de nuevo.", HTTP_422);
+            endif;
+
             $project->Save()
                 or throw new ControllerException((string) $project->_error, HTTP_422);
+
+            $this->_importExistingEnvFiles($project);
 
             // Sync simple del pivote: borra todas las filas existentes
             // de este proyecto y recrea desde la selección actual.
@@ -301,6 +344,40 @@ class AdminController extends MainController {
         endforeach;
 
         return $isSafe;
+    }
+
+    /**
+     * Hallazgo E2E post-cierre: un working_directory ya vinculado
+     * puede traer su propio .env/.env.secrets (clonado antes de que
+     * Uroboros gestionara el archivo) — se importa una sola vez, sin
+     * pisar lo que ya esté rastreado. Ver design.md,
+     * "Auto-importación de .env/.env.secrets existentes".
+     */
+    private function _importExistingEnvFiles($project): void {
+        $envFileNames = ['.env', '.env.secrets'];
+
+        if (!empty($project->working_directory) and is_dir($project->working_directory)):
+            foreach ($envFileNames as $filename):
+                $targetPath = $project->working_directory . DIRECTORY_SEPARATOR . $filename;
+
+                if (is_file($targetPath)):
+                    $alreadyTracked = $this->ProjectConfigFile->Find([
+                        'conditions' => [['project_id', $project->id], ['filename', $filename]],
+                    ]);
+
+                    if ($alreadyTracked->counter() === 0):
+                        $newFile = $this->ProjectConfigFile->Niu([
+                            'project_id' => $project->id,
+                            'filename'   => $filename,
+                            'format'     => 'ini',
+                            'content'    => file_get_contents($targetPath),
+                            'is_secret'  => ($filename === '.env.secrets') ? 1 : 0,
+                        ]);
+                        $newFile->Save(); // si falla validación de formato, se omite silenciosamente — no bloquea el guardado del Project
+                    endif;
+                endif;
+            endforeach;
+        endif;
     }
 
     private function _writeConfigFile(string $baseDir, $file): void {

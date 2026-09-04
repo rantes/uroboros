@@ -18,8 +18,18 @@
                     <dmb-more-options>
                         <dmb-more-option
                             behavior="launch-url"
+                            url="/admin/workflow_definitions?project_id=<?= $row->id; ?>">
+                            Ver workflows
+                        </dmb-more-option>
+                        <dmb-more-option
+                            behavior="launch-url"
                             url="/admin/project_config_files?project_id=<?= $row->id; ?>">
                             Ver archivos
+                        </dmb-more-option>
+                        <dmb-more-option
+                            behavior="launch-url"
+                            url="/admin/project_credentials?project_id=<?= $row->id; ?>">
+                            Ver credenciales
                         </dmb-more-option>
                         <dmb-more-option
                             behavior="open-panel"

@@ -226,6 +226,74 @@ devuelve `DecryptedContent()` — nunca incluir el contenido descifrado
 en el HTML inicial de la página para archivos secretos (evita que
 quede en el historial del navegador/logs de acceso sin necesidad).
 
+## Auto-importación de `.env`/`.env.secrets` existentes (extensión post-cierre)
+
+**Hallazgo real, surgido de la primera prueba E2E con un repositorio
+real clonado:** un `Project` puede vincularse a un `working_directory`
+que ya tiene código (clonado manualmente, o por un Workflow que
+corrió antes de que el archivo de configuración se gestionara en
+Uroboros) — incluyendo su propio `.env`/`.env.secrets` con valores
+reales. Sin esto, alguien tendría que copiar esos valores a mano a
+Uroboros, con riesgo real de escribir valores de relleno que rompan
+lo que ya funcionaba.
+
+**Alcance deliberadamente acotado** — solo dos nombres exactos, solo
+en la raíz de `working_directory`, nunca rutas anidadas (`tests/.env`
+y similares quedan fuera a propósito, son archivos propios de la
+suite de tests del proyecto gestionado, no archivos de ambiente que
+Uroboros deba administrar):
+
+```php
+private function _importExistingEnvFiles(Project $project): void {
+    $envFileNames = ['.env', '.env.secrets'];
+
+    if (!empty($project->working_directory) and is_dir($project->working_directory)):
+        foreach ($envFileNames as $filename):
+            $targetPath = $project->working_directory . DIRECTORY_SEPARATOR . $filename;
+
+            if (is_file($targetPath)):
+                $alreadyTracked = $this->ProjectConfigFile->Find([
+                    'conditions' => [['project_id', $project->id], ['filename', $filename]],
+                ]);
+
+                if ($alreadyTracked->counter() === 0):
+                    $newFile = $this->ProjectConfigFile->Niu([
+                        'project_id' => $project->id,
+                        'filename'   => $filename,
+                        'format'     => 'ini',
+                        'content'    => file_get_contents($targetPath),
+                        'is_secret'  => ($filename === '.env.secrets') ? 1 : 0,
+                    ]);
+                    $newFile->Save(); // si falla validación de formato, se omite silenciosamente — no bloquea el guardado del Project
+                endif;
+            endif;
+        endforeach;
+    endif;
+}
+```
+
+Se invoca desde `AdminController::saveprojectAction()`, después de
+guardar el `Project` exitosamente. Reglas:
+- **Solo importa si no hay ya un `ProjectConfigFile` con ese nombre**
+  para el proyecto — nunca pisa lo que ya está gestionado en Uroboros
+  con lo que hay en disco en guardados posteriores.
+- Si el contenido no valida como `ini` (formato asumido para archivos
+  `.env`), se omite silenciosamente esa importación puntual — no
+  bloquea el guardado del Proyecto en sí.
+- Reutiliza el mismo ciclo de `before_save` ya construido y probado
+  (sanitización, validación, cifrado) — nada nuevo ahí.
+
+> **Verificar empíricamente antes de dar por buena:** `saveprojectAction()`
+> corre como `www-data` (request web real), pero el archivo real en
+> disco lo crea `git clone` corriendo como `rantes` (vía `dumbo run`
+> manual). El directorio tiene `chown rantes:www-data` +
+> `chmod 2775` (setgid), lo que debería hacer que archivos nuevos
+> hereden el grupo `www-data` — pero si `www-data` realmente puede
+> **leer** esos archivos depende también de los permisos del archivo
+> mismo (no solo del directorio), y de si el `setgid` efectivamente
+> se respetó en la práctica. No asumido, verificar con el escenario
+> real, no con un caso sintético.
+
 ## Fuera de alcance de este documento
 
 Ver "Fuera de alcance" en `requirements.md`.
