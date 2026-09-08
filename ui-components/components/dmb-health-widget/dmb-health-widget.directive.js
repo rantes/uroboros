@@ -5,7 +5,7 @@ import { DumboDirective } from "../../libs/dumbojs/dumbo.min.js";
  * dashboard — el PHP server-rendered sigue siendo el contenido real
  * (dmb-donut-chart, dmb-select, texto de Lead Time); este componente
  * solo escucha el 'change' del dmb-select interno, dispara la
- * llamada AJAX a /admin/healthmetrics, y actualiza el DOM en el
+ * llamada AJAX a /index/healthmetrics, y actualiza el DOM en el
  * lugar — sin recargar la página completa (Requisito 3.2).
  */
 export class DmbHealthWidget extends DumboDirective {
@@ -19,7 +19,7 @@ export class DmbHealthWidget extends DumboDirective {
     // su innerHTML antes de que el hijo termine su propio ciclo de
     // render, los <option> del dmb-select interno se pierden en
     // silencio (confirmado empíricamente — select vacío en
-    // /admin/index). Mismo tipo de hallazgo ya documentado en
+    // /index/index). Mismo tipo de hallazgo ya documentado en
     // dumbochromedriver.md, "Componentes anidados con renderizado
     // async". Sin template propio, este wrapper no toca su DOM hijo
     // en absoluto — mismo patrón que dmb-content/dmb-footer.
@@ -33,7 +33,7 @@ export class DmbHealthWidget extends DumboDirective {
     }
 
     _refresh(windowDays) {
-        fetch(`/admin/healthmetrics?window=${encodeURIComponent(windowDays)}`)
+        fetch(`/index/healthmetrics?window=${encodeURIComponent(windowDays)}`)
             .then(response => response.json())
             .then(payload => this._render(payload.d))
             .catch(() => {});

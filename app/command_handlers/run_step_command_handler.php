@@ -15,6 +15,12 @@ class RunStepCommandHandler extends Controller {
      * real del script externo".
      */
     public function Handle(RunStepCommand $command): void {
+        // No dispatchado vía HTTP — el auto-load de $this->helper del
+        // framework (DumboPHP\index::__construct()) nunca corre para
+        // esta clase. LoadHelper() no depende de eso, es seguro
+        // llamarlo directo.
+        $this->LoadHelper('ProjectDirectory');
+
         $stepExecution     = $this->StepExecution->Find($command->stepExecutionId);
         $stepDefinition    = $stepExecution->workflow_step_definition();
         $workflowExecution = $this->WorkflowExecution->Find((int) $stepExecution->workflow_execution_id);
@@ -61,32 +67,49 @@ class RunStepCommandHandler extends Controller {
         if (empty($project->working_directory)):
             $exitCode    = 1;
             $outputLines = ['El proyecto no tiene working_directory configurado.'];
-        elseif (!is_dir($project->working_directory) and !@mkdir($project->working_directory, 0755, true)):
-            $exitCode    = 1;
-            $outputLines = ["No se pudo crear el directorio de trabajo: {$project->working_directory}"];
-        elseif ($stepDefinition->counter() === 0 or empty($stepDefinition->command)):
-            // Defensa en profundidad — un StepExecution que referencia
-            // un WorkflowStepDefinition inexistente o sin comando
-            // (dato corrupto, borrado a mitad de camino, o cualquier
-            // otro origen futuro) nunca debe llegar como NULL a
-            // _substituteCredentials(string $command, ...) y tumbar
-            // el proceso de cron con un TypeError no capturado. Mismo
-            // criterio de fallo limpio que working_directory ausente.
-            $exitCode    = 1;
-            $outputLines = ['El paso no tiene un WorkflowStepDefinition válido o su comando está vacío.'];
         else:
-            $substitution = $this->_substituteCredentials($stepDefinition->command, (int) $project->id);
+            $directoryCheck = $this->_prepareWorkingDirectory($project->working_directory);
+            $outputLines    = $directoryCheck['log'];
 
-            // Requisito 2.2 (credenciales-proyecto) — un placeholder
-            // referenciando una credencial inexistente para este
-            // proyecto es un fallo limpio del step, mismo criterio
-            // que working_directory ausente: nunca ejecuta el
-            // comando con el placeholder literal sin sustituir.
-            if (!empty($substitution['missing'])):
-                $exitCode    = 1;
-                $outputLines = ['Faltan credenciales referenciadas: ' . implode(', ', $substitution['missing'])];
+            if (!$directoryCheck['ready']):
+                $exitCode      = 1;
+                $outputLines[] = $directoryCheck['error'];
+            elseif ($stepDefinition->counter() === 0 or empty($stepDefinition->command)):
+                // Defensa en profundidad — un StepExecution que referencia
+                // un WorkflowStepDefinition inexistente o sin comando
+                // (dato corrupto, borrado a mitad de camino, o cualquier
+                // otro origen futuro) nunca debe llegar como NULL a
+                // _substituteCredentials(string $command, ...) y tumbar
+                // el proceso de cron con un TypeError no capturado. Mismo
+                // criterio de fallo limpio que working_directory ausente.
+                $exitCode      = 1;
+                $outputLines[] = 'El paso no tiene un WorkflowStepDefinition válido o su comando está vacío.';
             else:
-                exec('cd ' . escapeshellarg($project->working_directory) . ' && ' . $substitution['command'] . ' 2>&1', $outputLines, $exitCode);
+                $substitution = $this->_substituteCredentials($stepDefinition->command, (int) $project->id);
+
+                // Solo el nombre de la credencial va al log — nunca el
+                // valor. _substituteCredentials() ya sustituyó el valor
+                // real dentro de $substitution['command'] (nunca
+                // logueado tal cual), y _maskCredentials() más abajo
+                // vuelve a pasar sobre TODO el output (incluido este log)
+                // como defensa adicional, no como el único mecanismo.
+                foreach ($substitution['substituted'] as $credentialName):
+                    $outputLines[] = "[Uroboros] Sustituyendo credencial: {$credentialName}";
+                endforeach;
+
+                // Requisito 2.2 (credenciales-proyecto) — un placeholder
+                // referenciando una credencial inexistente para este
+                // proyecto es un fallo limpio del step, mismo criterio
+                // que working_directory ausente: nunca ejecuta el
+                // comando con el placeholder literal sin sustituir.
+                if (!empty($substitution['missing'])):
+                    $exitCode      = 1;
+                    $outputLines[] = 'Faltan credenciales referenciadas: ' . implode(', ', $substitution['missing']);
+                else:
+                    $outputLines[] = "[Uroboros] cd {$project->working_directory}";
+                    $outputLines[] = '--- Salida del comando ---';
+                    exec('cd ' . escapeshellarg($project->working_directory) . ' && ' . $substitution['command'] . ' 2>&1', $outputLines, $exitCode);
+                endif;
             endif;
         endif;
 
@@ -115,28 +138,85 @@ class RunStepCommandHandler extends Controller {
     }
 
     /**
+     * Verifica/crea/corrige permisos del working_directory con
+     * ensureWritableProjectDirectory() (ProjectDirectory_Helper.php),
+     * devolviendo el log verboso de lo intentado (Requisito de log de
+     * orquestación) junto con si quedó listo para usar. El mensaje de
+     * error distingue dos causas reales, no una genérica: el
+     * directorio nunca existió y no se pudo crear, vs. el directorio
+     * existe pero el proceso actual no pudo corregirle los permisos
+     * (típicamente porque no es su dueño — chmod() en Linux solo lo
+     * puede hacer el dueño o root, nunca un mero miembro del grupo;
+     * confirmado empíricamente).
+     */
+    private function _prepareWorkingDirectory(string $path): array {
+        $log = ["[Uroboros] Verificando working_directory: {$path}"];
+
+        $existedBefore = is_dir($path);
+        // projectDirectoryMissingGroupWrite(), no is_writable() — el
+        // chmod real de ensureWritableProjectDirectory() se dispara
+        // por el bit de grupo ausente en el modo, no por si el
+        // proceso actual ya puede escribir (que da true por el bit de
+        // dueño incluso cuando el bit de grupo sigue faltando — ver
+        // ProjectDirectory_Helper.php). El log debe reflejar la misma
+        // condición que realmente dispara la acción.
+        $neededFixBefore = $existedBefore and projectDirectoryMissingGroupWrite($path);
+
+        if (!$existedBefore):
+            $log[] = '[Uroboros] Directorio no existe — creando (mkdir 0775)';
+        elseif ($neededFixBefore):
+            $log[] = '[Uroboros] Directorio existe, permisos insuficientes — intentando corregir (chmod 0775)';
+        endif;
+
+        $ready = ensureWritableProjectDirectory($path);
+
+        if (!$existedBefore):
+            $log[] = is_dir($path)
+                ? '[Uroboros] Directorio creado correctamente'
+                : '[Uroboros] No se pudo crear el directorio de trabajo';
+        elseif ($neededFixBefore):
+            $log[] = is_writable($path)
+                ? '[Uroboros] Permisos corregidos correctamente'
+                : '[Uroboros] No se pudieron corregir los permisos automáticamente';
+        endif;
+
+        $error = null;
+        if (!$ready and !is_dir($path)):
+            $error = "No se pudo crear el directorio de trabajo: {$path}";
+        elseif (!$ready):
+            $error = "El directorio de trabajo existe pero no tiene permisos de escritura para el usuario que ejecuta los Workflows — verifica el dueño/grupo real ({$path}).";
+        endif;
+
+        return ['ready' => $ready, 'log' => $log, 'error' => $error];
+    }
+
+    /**
      * Sustituye {{credential:nombre}} por el valor real descifrado,
      * en memoria, justo antes de exec() — $stepDefinition->command
      * en BD nunca cambia (Requisito 2.3, credenciales-proyecto).
      * Cualquier placeholder que no coincide con una ProjectCredential
      * de este proyecto queda listado en 'missing' — el llamador
      * decide el fallo limpio (Requisito 2.2), esta función nunca
-     * ejecuta nada ni lanza excepción por sí misma.
+     * ejecuta nada ni lanza excepción por sí misma. 'substituted'
+     * lleva solo los NOMBRES realmente sustituidos — el llamador los
+     * usa para el log de orquestación, nunca el valor descifrado.
      */
     private function _substituteCredentials(string $command, int $projectId): array {
         $credentials = $this->ProjectCredential->Find(['conditions' => [['project_id', $projectId]]]);
-        $missing     = [];
+        $substituted = [];
 
         foreach ($credentials as $credential):
             $placeholder = '{{credential:' . $credential->name . '}}';
-            str_contains($command, $placeholder)
-                and ($command = str_replace($placeholder, $credential->DecryptedValue(), $command));
+            if (str_contains($command, $placeholder)):
+                $command       = str_replace($placeholder, $credential->DecryptedValue(), $command);
+                $substituted[] = $credential->name;
+            endif;
         endforeach;
 
         preg_match_all('/\{\{credential:([a-zA-Z0-9_]+)\}\}/', $command, $matches);
         $missing = $matches[1];
 
-        return ['command' => $command, 'missing' => $missing];
+        return ['command' => $command, 'missing' => $missing, 'substituted' => $substituted];
     }
 
     /**

@@ -303,7 +303,12 @@ class testWorkflowExecutionChain extends dumboTests {
 
         $completed = $this->StepExecution->Find((int) $stepExecution->id);
         $this->assertEquals('completed', $completed->status, 'pwd debe salir con exit_code=0 dentro de un directorio real');
-        $this->assertEquals(realpath(sys_get_temp_dir()), trim((string) $completed->output), 'pwd debe reportar el working_directory del proyecto, no el cwd de Uroboros');
+
+        // El output ahora lleva el log verboso de orquestación
+        // (Uroboros — log de ejecución) antes de la salida real del
+        // comando — la última línea sigue siendo el pwd real.
+        $outputLines = explode("\n", trim((string) $completed->output));
+        $this->assertEquals(realpath(sys_get_temp_dir()), end($outputLines), 'pwd debe reportar el working_directory del proyecto, no el cwd de Uroboros');
     }
 
     /**
@@ -410,7 +415,9 @@ class testWorkflowExecutionChain extends dumboTests {
 
         $completed = $this->StepExecution->Find((int) $stepExecution->id);
         $this->assertEquals('completed', $completed->status, 'El comando debe correr con éxito dentro del directorio recién creado');
-        $this->assertEquals(realpath($newDir), trim((string) $completed->output), 'pwd debe reportar el directorio recién creado');
+
+        $outputLines = explode("\n", trim((string) $completed->output));
+        $this->assertEquals(realpath($newDir), end($outputLines), 'pwd debe reportar el directorio recién creado');
 
         rmdir($newDir);
     }

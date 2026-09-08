@@ -2,6 +2,9 @@
     <nav>
         <div class="nav-group">
             <span class="nav-group-title">Explorar</span>
+            <a href="/index/index" class="<?= activeNavItem($this) === 'dashboard' ? 'active' : ''; ?>">
+                Cockpit
+            </a>
             <a href="/admin/projects" class="<?= activeNavItem($this) === 'project' ? 'active' : ''; ?>">
                 Proyectos
             </a>

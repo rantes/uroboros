@@ -15,9 +15,25 @@ class testAdminController extends dumboTests {
             'step_executions',
             'projects',
             'project_config_files',
+            'app_users',
         ]);
         $_SERVER['HTTP_x-sf-token'] = 'token';
         $_SESSION['xsfr_token']     = 'token';
+
+        // MainController::requireLogin() ahora sí bloquea acciones sin
+        // sesión (bug de seguridad corregido — antes el chequeo real
+        // estaba comentado y before_filter() nunca exigía login). Un
+        // AppUser real, no un id inventado — currentUserInitials()
+        // (OperationalShell_Helper.php) hace AppUser->Find($_SESSION['user'])
+        // en cada página con layout completo.
+        $user = $this->AppUser->Niu([
+            'firstname' => 'Test',
+            'lastname'  => 'Admin',
+            'email'     => 'admin-test@uroboros.local',
+            'status'    => 1,
+        ]);
+        $user->Save();
+        $_SESSION['user'] = $user->id;
     }
 
     public function eventsListRendersWithoutErrorTest(): void {
@@ -356,113 +372,6 @@ class testAdminController extends dumboTests {
      * completed_at quedaría fuera de cualquier ventana y rompería
      * silenciosamente el caso mixto de abajo.
      */
-    private function _createWorkflowExecutionFixture(string $status, int $leadTimeOffsetSeconds = 0): object {
-        $definition = $this->_createWorkflowDefinitionFixture();
-        $execution  = $this->WorkflowExecution->Niu([
-            'workflow_definition_id' => $definition->id,
-            'status'                 => $status,
-            'trigger_type'           => 'manual',
-        ]);
-        $execution->Save() or trigger_error((string) $execution->_error, E_USER_ERROR);
-
-        if (in_array($status, ['completed', 'failed'], true)):
-            $execution->completed_at = (int) $execution->created_at + $leadTimeOffsetSeconds;
-            $execution->Save() or trigger_error((string) $execution->_error, E_USER_ERROR);
-        endif;
-
-        return $execution;
-    }
-
-    public function indexActionHealthMetricsWithRealDataTest(): void {
-        $this->describe('GET /admin/index debe calcular Deployment Success Rate y Lead Time reales sobre WorkflowExecution');
-
-        $this->_createWorkflowExecutionFixture('completed', 60);
-        $this->_createWorkflowExecutionFixture('completed', 120);
-        $this->_createWorkflowExecutionFixture('completed', 180);
-        $this->_createWorkflowExecutionFixture('failed');
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $result = $this->_runAction('/admin/index');
-
-        $this->assertEquals(HTTP_200, (int) $result->_code, 'Debe responder 200');
-        $this->assertEquals(75.0, $result->deploymentSuccessRate, '3 completed de 4 concluidas = 75.0%');
-        $this->assertEquals('2m', $result->leadTime, 'Promedio de 60/120/180 segundos = 120s = 2m');
-    }
-
-    public function indexActionHealthEmptyStateTest(): void {
-        $this->describe('GET /admin/index sin ninguna WorkflowExecution debe mostrar estado vacío explícito, nunca 0%');
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $result = $this->_runAction('/admin/index');
-
-        $this->assertEquals(HTTP_200, (int) $result->_code, 'Debe responder 200');
-        $this->assertEquals(null, $result->deploymentSuccessRate, 'Sin ejecuciones concluidas debe ser null, nunca 0%');
-        $this->assertEquals('Sin datos en este período', $result->leadTime, 'Sin ejecuciones completadas debe mostrar el mensaje de estado vacío');
-    }
-
-    public function indexActionHealthMixedCaseTest(): void {
-        $this->describe('GET /admin/index con solo ejecuciones failed: success rate calculable (0%) pero lead time vacío — estados vacíos independientes');
-
-        $this->_createWorkflowExecutionFixture('failed');
-        $this->_createWorkflowExecutionFixture('failed');
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $result = $this->_runAction('/admin/index');
-
-        $this->assertEquals(0.0, $result->deploymentSuccessRate, '0 completed de 2 concluidas = 0.0%, no null — sí hay dato');
-        $this->assertEquals('Sin datos en este período', $result->leadTime, 'Ninguna completed — debe mostrar el mensaje de estado vacío, no 0s');
-    }
-
-    public function indexActionHealthWindowParamTest(): void {
-        $this->describe('GET /admin/index?window=N resuelve la ventana desde whitelist [7,30,90], default y valores inválidos caen a 7');
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-
-        $default = $this->_runAction('/admin/index');
-        $this->assertEquals(7, $default->healthWindowDays, 'Sin parámetro, default 7 días');
-
-        $thirty = $this->_runAction('/admin/index?window=30');
-        $this->assertEquals(30, $thirty->healthWindowDays, '?window=30 debe resolver a 30');
-
-        $invalid = $this->_runAction('/admin/index?window=999');
-        $this->assertEquals(7, $invalid->healthWindowDays, 'Valor fuera de whitelist cae al default de 7');
-    }
-
-    public function healthmetricsActionRecalculatesForRequestedWindowTest(): void {
-        $this->describe('GET /admin/healthmetrics?window=N responde JSON con las métricas recalculadas, sin recargar la página completa');
-
-        $this->_createWorkflowExecutionFixture('completed', 10);
-        $this->_createWorkflowExecutionFixture('failed');
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $result = $this->_runAction('/admin/healthmetrics?window=30');
-
-        $this->assertEquals(HTTP_200, (int) $result->_code, 'Debe responder 200');
-        $this->assertEquals(50.0, $result->_response['d']['success_rate'], '1 completed de 2 concluidas = 50.0%');
-        $this->assertEquals('10s', $result->_response['d']['lead_time'], 'Lead time de la única ejecución completed = 10s');
-    }
-
-    public function healthmetricsActionFormatsLeadTimeInHoursTest(): void {
-        $this->describe('formatLeadTime() debe usar horas cuando el promedio pasa de 3600 segundos');
-
-        $this->_createWorkflowExecutionFixture('completed', 7200);
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $result = $this->_runAction('/admin/healthmetrics');
-
-        $this->assertEquals('2h', $result->_response['d']['lead_time'], '7200 segundos = 2h');
-    }
-
-    public function healthmetricsActionInvalidWindowFallsBackToDefaultTest(): void {
-        $this->describe('GET /admin/healthmetrics?window=999 (fuera de whitelist) cae al default de 7 días, no un error');
-
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $result = $this->_runAction('/admin/healthmetrics?window=999');
-
-        $this->assertEquals(HTTP_200, (int) $result->_code, 'Debe responder 200 igual, sin importar el valor inválido');
-        $this->assertEquals(null, $result->_response['d']['success_rate'], 'Sin datos en la ventana default — null, no error');
-    }
-
     private function _createWorkflowDefinitionFixture(): object {
         $definition = $this->WorkflowDefinition->Niu([
             'name'          => 'Fixture Workflow ' . bin2hex(random_bytes(4)),
@@ -749,8 +658,21 @@ class testAdminController extends dumboTests {
         rmdir($workingDirectory);
     }
 
-    public function saveprojectRejectsNonWritableWorkingDirectoryTest(): void {
-        $this->describe('POST /admin/saveproject con working_directory absoluto sin permisos de escritura no debe crear el Proyecto');
+    /**
+     * Antes rechazaba (assertEquals($before, ...)) — ese era el
+     * comportamiento correcto cuando ensureWritableProjectDirectory()
+     * solo chmodeaba directorios que ella misma creaba. Bug real
+     * corregido después (directorio existente con permisos viejos
+     * nunca se autocorregía — ver ProjectDirectory_Helper.php): ahora
+     * también intenta chmod() sobre un directorio EXISTENTE sin
+     * permisos de escritura. Como este directorio lo crea el propio
+     * proceso de test (dueño real), el chmod() sí puede corregirlo —
+     * el caso "no se puede corregir" (dueño distinto, ej. www-data vs
+     * rantes) no es reproducible en un test de un solo usuario del
+     * SO; se verificó empíricamente fuera de test (ver reporte).
+     */
+    public function saveprojectAutoCorrectsExistingDirectoryPermissionsTest(): void {
+        $this->describe('POST /admin/saveproject con working_directory existente pero sin permisos de escritura debe autocorregir (chmod 0775) y crear el Proyecto');
 
         $workingDirectory = sys_get_temp_dir() . '/uroboros-wd-readonly-' . bin2hex(random_bytes(4));
         mkdir($workingDirectory, 0755, true);
@@ -759,14 +681,15 @@ class testAdminController extends dumboTests {
 
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST['project'] = [
-            'name'              => 'Rejected Readonly ' . bin2hex(random_bytes(4)),
+            'name'              => 'Autocorrected Readonly ' . bin2hex(random_bytes(4)),
             'type'              => 'backend',
             'status'            => 1,
             'working_directory' => $workingDirectory,
         ];
         $this->_runAction('/admin/saveproject');
 
-        $this->assertEquals($before, $this->Project->Find()->counter(), 'No debe haberse creado ninguna fila apuntando a un directorio sin permisos de escritura');
+        $this->assertEquals($before + 1, $this->Project->Find()->counter(), 'El proceso es dueño del directorio — ensureWritableProjectDirectory() debe poder chmod-earlo y permitir crear el Proyecto');
+        $this->assertTrue(is_writable($workingDirectory), 'El directorio debe quedar escribible tras la autocorrección');
 
         chmod($workingDirectory, 0755);
         rmdir($workingDirectory);

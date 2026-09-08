@@ -25,6 +25,24 @@ export class DmbDialog extends DumboDirective {
 
     close(value, remove = false) {
         this.returnValue = value;
+        // Carrera real corregida — DmbDialogService.loader()/error()/
+        // info() crean el elemento y le piden abrirse (showModal())
+        // solo DESPUÉS de que su propio templateUrl termine de
+        // cargarse (#afterRendered, async). Si el caller (ej.
+        // appModel.updateData()) llama close() sobre el loader ANTES
+        // de que ese fetch async del propio dmb-dialog haya
+        // terminado, close() no tenía nada que hacer (el atributo
+        // 'open' ni existía todavía) y el open() diferido, que llega
+        // más tarde, volvía a abrir un diálogo que ya se había
+        // "cerrado" — quedaba visible indefinidamente por encima del
+        // diálogo de error real, tapando su mensaje (confirmado real:
+        // un dmb-dialog.loader y un dmb-dialog.error con open="" los
+        // dos a la vez tras un 403 real de project_credentials).
+        // dismissed hace que open() sea un no-op para siempre después
+        // de este close() — correcto para el patrón de este proyecto,
+        // donde cada diálogo es un elemento de un solo uso (nunca se
+        // reabre el mismo <dmb-dialog> tras cerrarlo).
+        this.dismissed = true;
         this.removeAttribute('open');
         this.dispatchEvent(new Event('close'));
         this.dispatchEvent(new Event('close-dialog'));
@@ -35,6 +53,9 @@ export class DmbDialog extends DumboDirective {
     }
 
     open() {
+        if (this.dismissed) {
+            return;
+        }
         this.hasAttribute('open') || this.setAttribute('open','');
         this.dispatchEvent(DmbEvents.dialogOpen.event);
     }

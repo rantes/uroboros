@@ -22,7 +22,6 @@
  * en el namespace actual.
  */
 
-use App\Controllers\AdminController;
 use App\Models\AppUser;
 use App\Models\Event;
 use App\Models\OemMetric;
@@ -39,9 +38,31 @@ use App\Models\OemMetric;
  * accessor público, no $controller->_model directo: _model es
  * `protected`, inaccesible desde esta función externa a la clase
  * (confirmado empíricamente, mismo caso que Controller::$params).
+ *
+ * Corregido de nuevo (migracion-dashboard-index) — estaba tipada
+ * estrictamente a AdminController (type hint `AdminController
+ * $controller`), así que invocarla desde una vista renderizada por
+ * IndexController (el Cockpit, ahora ahí) rompía con un TypeError
+ * antes de ejecutar nada. IndexController no usa AdminBaseTrait, así
+ * que no tiene GetActiveModel() — confirmado empíricamente
+ * (method_exists() === false). Sin type hint, method_exists() como
+ * guarda: si el controlador SÍ tiene GetActiveModel() (AdminController),
+ * mismo comportamiento de siempre, sin cambios. Si no (IndexController),
+ * su única "página" real es el Cockpit — valor fijo 'dashboard'.
+ * get_class($controller) === 'App\Controllers\IndexController'
+ * confirmado empíricamente (get_class() real, no asumido) antes de
+ * escribir esta comparación.
  */
-function activeNavItem(AdminController $controller): string {
-    return $controller->GetActiveModel();
+function activeNavItem($controller): string {
+    $active = '';
+
+    method_exists($controller, 'GetActiveModel')
+        and ($active = $controller->GetActiveModel());
+
+    empty($active) and get_class($controller) === 'App\Controllers\IndexController'
+        and ($active = 'dashboard');
+
+    return $active;
 }
 
 /**

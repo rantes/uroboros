@@ -316,8 +316,32 @@ trait AdminBaseTrait {
         } finally {
             $this->setResponseCode($code);
             if (!empty($message)):
-                $this->render = ['text'=>$message];
-                $this->yield = $message;
+                // Bug real corregido — _create_reg()/_update_reg()/
+                // _delete_reg() ya responden JSON en su camino feliz
+                // (respondToAJAX()), pero cuando alguna de ellas
+                // lanza ControllerException (ej. validación de
+                // nombre único fallida), este catch/finally genérico
+                // caía siempre en $this->render = ['text'=>$message]
+                // — respuesta HTML de página completa (con layout,
+                // sidebar, etc.), nunca JSON. Confirmado con curl
+                // real: POST /admin/project_credentials duplicado
+                // devolvía 422 real con el mensaje real embebido en
+                // <dmb-content>, pero como HTML, no JSON — el cliente
+                // (appModel.createData()/updateData()/deleteData(),
+                // que siempre hacen res.json()) fallaba con
+                // "Unexpected token '<'" en vez de mostrar el mensaje
+                // real. Los métodos que sí esperan JSON son
+                // exactamente los mismos que exigen token CSRF
+                // (POST/PUT/DELETE) — GET (_list_regs/_edit_reg/
+                // _add_reg, que renderizan página real) conserva el
+                // comportamiento anterior sin cambios.
+                if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'])):
+                    $this->_response['message'] = $message;
+                    $this->respondToAJAX(json_encode($this->_response));
+                else:
+                    $this->render = ['text'=>$message];
+                    $this->yield = $message;
+                endif;
             endif;
         }
     }
