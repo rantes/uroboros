@@ -25,7 +25,18 @@ dmb-dialog {
     z-index: 999;
 
     & .wrapper {
-        background-color: white;
+        // Bug real corregido — background-color: white hardcodeado
+        // (viola css-conventions.md, "nunca hardcodear colores") deja
+        // el texto del mensaje ilegible: dmb-dialog no fija su propio
+        // color, hereda --main-font-color (blanco, ver main.css) del
+        // body — blanco sobre blanco. Confirmado real: un diálogo de
+        // error con mensaje real en el DOM (getComputedStyle
+        // msgColor: rgb(255,255,255), wrapBg: rgb(255,255,255)),
+        // visualmente una caja en blanco sin texto legible.
+        // --elevated-surface es el token ya documentado para esto
+        // (design-guide.md 03, "Elevated Surface — modales,
+        // dropdowns").
+        background-color: var(--elevated-surface);
         // Componente principal (design-guide.md 06: 12px) — modal
         border-radius: 0.8rem;
         box-shadow: 0 0 1em black;

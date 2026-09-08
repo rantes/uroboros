@@ -62,8 +62,18 @@ abstract class MainController extends Controller {
 
         if (in_array($_method, $_requiredTokenMethods)):
             if (empty($headers['x-sf-token']) or $headers['x-sf-token'] !== $_SESSION['xsfr_token']):
+                // Bug de seguridad corregido — este bloque fijaba
+                // HTTP_403 pero nunca detenía la ejecución ($continue
+                // seguía en true), así que una sesión ya autenticada
+                // con token CSRF inválido/ausente igual llegaba a la
+                // acción real (confirmado con curl: POST
+                // /admin/saveproject sin token pasaba la validación
+                // real de negocio). Mismo criterio que el caso
+                // 'x-sf-token: fetch' más abajo, que sí pone
+                // $continue = false.
                 $this->_code                = HTTP_403;
                 $this->_response['message'] = 'Invalid CSRF Token';
+                $continue                   = false;
             endif;
         endif;
 
@@ -108,15 +118,16 @@ abstract class MainController extends Controller {
 
         $ctrl = $this->_getController_();
         $this->loginAction   = "/{$ctrl}/signin";
-        // Antes "/{$ctrl}/index" — para /index/login eso apuntaba a
-        // IndexController::indexAction(), un noop sin shell operativo
-        // (operationalShell nunca se activa ahí). El destino real
-        // post-login es el shell operativo, no el controlador que
-        // sirvió el formulario.
-        $this->loginRedirect = '/admin/index';
+        // migracion-dashboard-index — IndexController::indexAction()
+        // ya es el Cockpit real (operationalShell activo, movido desde
+        // AdminController), no el noop que era antes. El destino
+        // post-login vuelve a ser la página real por defecto
+        // (DEF_CONTROLLER/DEF_ACTION = index/index en config/host.php),
+        // no un controlador aparte solo para alojar el shell operativo.
+        $this->loginRedirect = '/index/index';
 
         if (!empty($_SESSION['user'])):
-            $this->redirect('/admin/index');
+            $this->redirect('/index/index');
         endif;
     }
 
@@ -167,11 +178,30 @@ abstract class MainController extends Controller {
         $actions = ['login', 'signin', 'logout'];
         $canGo   = true;
 
-        // if (empty($_SESSION['user']) and !in_array($this->_getAction_(), $actions)):
-        //     $canGo    = false;
-        //     $_SESSION = []; // limpia las variables de sesión cruzadas antes de redirigir
-        //     $this->redirect(INST_URI . $this->_getController_() . '/login');
-        // endif;
+        // Bug crítico corregido — este chequeo real estaba comentado,
+        // así que before_filter() nunca bloqueaba ninguna acción sin
+        // sesión (confirmado con curl sin cookies: /admin/index,
+        // /admin/projects, /admin/workflowexecutiondetail/<id>,
+        // /admin/executeworkflow/<id>, /admin/saveproject y
+        // /admin/syncconfigfiles respondían 200/202/422 con datos y
+        // efectos reales, sin login). $actions es redundante con
+        // MainController::exceptsBeforeFilter['actions'] (login,
+        // logout, pusher, signin ya excluidas antes de llegar aquí),
+        // pero se deja como guarda explícita — es el chequeo real ya
+        // diseñado para este método, solo estaba desactivado.
+        if (empty($_SESSION['user']) and !in_array($this->_getAction_(), $actions)):
+            $canGo    = false;
+            $_SESSION = []; // limpia las variables de sesión cruzadas antes de redirigir
+            // {$this->_getController_()}/login no existe salvo para
+            // 'index' — solo hay una vista de login en todo el
+            // proyecto (app/views/index/login.phtml), genérica para
+            // cualquier controlador (postea a "/{$ctrl}/signin" según
+            // MainController::loginAction()). Redirigir al controlador
+            // actual (ej. admin/login) intenta incluir un .phtml
+            // inexistente — nunca se había ejecutado porque este
+            // chequeo estaba deshabilitado.
+            $this->redirect(INST_URI . 'index/login');
+        endif;
 
         return $canGo;
     }

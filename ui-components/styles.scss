@@ -151,3 +151,16 @@ a {
 #page-content {
   background-color: var(--primary-surface);
 }
+
+// dmb-footer (layout.phtml) renderiza <dmb-oem-metrics-footer> antes
+// del <div class="col col12"> de la línea "Uroboros CI/CD v1.0.0"
+// cuando operationalShell está activo — el col12 deja de ser
+// :first-child de su .group y hereda el margin-left:1.6% del sistema
+// de grid (_base.grid.scss), desbordando el documento ~1.6% del
+// ancho de página (confirmado: scrollWidth > clientWidth) y
+// disparando el scrollbar horizontal amarillo (*::-webkit-scrollbar-thumb
+// más abajo). dmb-oem-metrics-footer no es un .col — es contenido
+// ajeno al grid, así que este col12 nunca debe cargar ese margen.
+dmb-footer > .col12 {
+    margin-left: 0;
+}

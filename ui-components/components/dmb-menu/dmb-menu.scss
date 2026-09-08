@@ -1,22 +1,35 @@
 .dmb-menu {
+    // Bug real corregido — var(--primary) es Electric Cyan
+    // (design-guide.md 03: color de ACENTO — estados activos, links,
+    // acciones primarias — nunca fondo de panel completo). Fondo real
+    // reportado: sidebar entero en cian sólido. --surface-1 (alias de
+    // --primary-surface, Dark Surface #0D1117) es el mismo token que
+    // ya usan dmb-operational-topbar y dmb-oem-metrics-footer para el
+    // resto del "chrome" del shell — consistencia con el resto del
+    // shell, no una elección aislada. --primary-contrast (texto
+    // oscuro, pensado para ir SOBRE cian) queda mal sobre fondo
+    // oscuro — pasa a --main-font-color (blanco), el mismo token que
+    // ya usan .nav-group-title/.nav-group a/.nav-item en
+    // dmb-operational-topbar.scss para el contenido real de este
+    // mismo sidebar (_sidebar-operational.phtml).
     .wrapper {
-        background: var(--primary);
+        background: var(--surface-1);
     }
 
     header {
-        background: var(--primary);
+        background: var(--surface-1);
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         padding: 1rem;
 
         h3 {
-            color: var(--primary-contrast);
+            color: var(--main-font-color);
             font-size: var(--font-size-md);
             font-weight: 600;
             margin: 0;
         }
 
         dmb-close-panel {
-            color: var(--primary-contrast);
+            color: var(--main-font-color);
             opacity: 0.7;
             transition: opacity 0.15s ease;
 
@@ -27,8 +40,8 @@
     }
 
     dmb-content {
-        background: var(--primary);
-        color: var(--primary-contrast);
+        background: var(--surface-1);
+        color: var(--main-font-color);
         display: flex;
         flex-direction: column;
         padding: 0.5rem;

@@ -211,6 +211,67 @@ no el código HTTP realmente emitido. Confirmado con `curl` real contra
 el servidor, no solo con tests — ver auditoría en
 `.claude/specs/ejecucion-workflows/` (Parte 3).
 
+### Toda acción de controlador dentro de `try`/`catch`
+
+**Regla del proyecto, sin excepción**: cada acción de controlador
+(`*Action()`) debe estar envuelta en `try`/`catch` — incluidas las que
+renderizan una página HTML completa, no solo las que responden JSON.
+Sin esto, una excepción sin capturar en una acción de página completa
+no tiene ningún manejador global (no hay `set_exception_handler()` ni
+catch en el dispatcher del framework — verificado contra
+`/etc/dumbophp/bin/dumbophp.php`) y termina en un fatal error crudo,
+sin control sobre el código HTTP ni el mensaje mostrado.
+
+El formato de la respuesta ante un error **no tiene que ser JSON** —
+depende de qué tipo de acción es:
+
+```php
+// Acción JSON/AJAX — patrón ya documentado arriba
+public function miAccionAction(): void {
+    $this->layout = null;
+    try {
+        // lógica
+    } catch (ControllerException $e) {
+        $this->_code = $e->getCode();
+        $this->_response['message'] = $e->getMessage();
+    } catch (\Exception $e) {
+        $this->_code = HTTP_500;
+        $this->_response['message'] = $e->getMessage();
+    } finally {
+        $this->setResponseCode($this->_code);
+        $this->respondToAJAX(json_encode($this->_response));
+    }
+}
+
+// Acción de página completa (renderiza layout + vista real) — mismo
+// principio, patrón de respuesta distinto: $this->render en vez de
+// respondToAJAX(). No forzar el patrón JSON aquí.
+public function miPaginaAction(): void {
+    try {
+        $registro = $this->MiModelo->Find((int) ($this->params['id'] ?? 0));
+
+        if ($registro->counter() > 0):
+            // if positivo — nunca un return anticipado para evitar
+            // esto (ver "Control de flujo — return vs throw vs if
+            // positivo" más abajo)
+            $this->data = $registro;
+            $this->render = ['file' => 'admin/mi_modelo_detail.phtml'];
+        else:
+            $this->setResponseCode(HTTP_404);
+            $this->render = ['text' => 'Registro no encontrado.'];
+        endif;
+    } catch (\Exception $e) {
+        $this->setResponseCode(HTTP_500);
+        $this->render = ['text' => 'Ocurrió un error al cargar la página.'];
+    }
+}
+```
+
+Caso aplicado: `AdminController::workflowexecutiondetailAction()` —
+ver `.claude/specs/vista-ejecucion/design.md` y el hallazgo de
+seguridad que originó esta regla (bypass de autenticación real,
+`MainController::requireLogin()`).
+
 ### Sanitización de datos
 
 ```php

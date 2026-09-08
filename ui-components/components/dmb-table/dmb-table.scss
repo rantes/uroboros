@@ -41,7 +41,17 @@ dmb-table {
                     padding: 0.533rem 1rem;
                     vertical-align: middle;
 
-                    &:last-child {
+                    // Columna de acciones — solo cuando hay más de un
+                    // td en la fila (listas). Una fila de tabla
+                    // clave/valor (<th>Label</th><td>Value</td>, ver
+                    // Summary de workflow_execution_detail.phtml) tiene
+                    // un único td que también es :last-child — sin este
+                    // guard, esa celda de valor heredaba el ancho fijo
+                    // de 3rem pensado para el botón de acciones,
+                    // forzando el th a absorber casi todo el ancho de
+                    // la tabla (table-layout: fixed) y el valor a
+                    // envolverse en una franja angosta.
+                    &:last-child:not(:only-of-type) {
                         padding: 0 0.533rem;
                         text-align: right;
                         vertical-align: middle;

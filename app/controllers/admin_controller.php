@@ -24,6 +24,7 @@ class AdminController extends MainController {
         $this->operationalShell = true;
         $this->helper[]  = 'OperationalShell';
         $this->helper[]  = 'HealthMetrics';
+        $this->helper[]  = 'ProjectDirectory';
         $this->_readOnlyModels = ['event', 'workflow_execution', 'step_execution'];
         $this->_actions  = [
             'projects',
@@ -107,52 +108,6 @@ class AdminController extends MainController {
     }
 
 
-    public function indexAction(): void {
-        $this->sectionTitle = 'Inicio';
-        $this->adminCRUDAction = '';
-        $this->paginate = false;
-
-        // Active Operations — único widget con dominio real hoy
-        // (ejecucion-workflows). El resto del grid (Operational
-        // Health, Risk Indicators, Dependency Graph, Recomendaciones)
-        // sigue en _widget-empty-state.phtml hasta que exista el
-        // dominio correspondiente — ver dashboard-shell/design.md.
-        $this->activeExecutions = $this->WorkflowExecution->Find([
-            'conditions' => [
-                ['status', 'IN', ['pending', 'running']],
-            ],
-            'sort'  => '`id` DESC',
-            'limit' => 10,
-        ]);
-
-        // Render inicial server-side con el default (o el window de
-        // un link/bookmark directo) — el cambio posterior de ventana
-        // ya no recarga la página, ver healthmetricsAction().
-        $this->healthWindowDays = (int) ($this->params['window'] ?? 7);
-        in_array($this->healthWindowDays, [7, 30, 90], true) or ($this->healthWindowDays = 7);
-
-        $this->deploymentSuccessRate = $this->WorkflowExecution->DeploymentSuccessRate($this->healthWindowDays);
-        $this->leadTime               = formatLeadTime($this->WorkflowExecution->LeadTime($this->healthWindowDays));
-    }
-
-    /**
-     * Endpoint AJAX (Requisito 3.3) — recalcula ambas métricas para
-     * la ventana elegida sin recargar la página completa. Sin layout,
-     * responde JSON — mismo patrón que executeworkflowAction().
-     */
-    public function healthmetricsAction(): void {
-        $this->layout = null;
-        $windowDays = (int) ($this->params['window'] ?? 7);
-        in_array($windowDays, [7, 30, 90], true) or ($windowDays = 7);
-
-        $this->_response['d'] = [
-            'success_rate' => $this->WorkflowExecution->DeploymentSuccessRate($windowDays),
-            'lead_time'    => formatLeadTime($this->WorkflowExecution->LeadTime($windowDays)),
-        ];
-        $this->setResponseCode(HTTP_200);
-        $this->respondToAJAX(json_encode($this->_response));
-    }
-
     /**
      * Disparo manual de un WorkflowDefinition (Requisito 2). No pasa
      * por AdminBaseTrait — es una acción de dominio real (despacha un
@@ -215,75 +170,98 @@ class AdminController extends MainController {
      * dentro del shell, no un endpoint de API.
      */
     public function workflowexecutiondetailAction(): void {
-        // Orden real de los pasos — verificado con datos reales
-        // (workflow_definition_id=14, ver reporte): StepExecution.id
-        // ASC coincide con step_order en el flujo normal, por
-        // construcción del chain OnWorkflowStartedReaction ->
-        // OnStepCompletedReaction (un StepExecution se crea solo
-        // cuando el anterior completa). Pero workflow_step_definitions
-        // y step_executions también tienen CRUD genérico en
-        // $this->_actions — un StepExecution podría, en teoría,
-        // insertarse fuera de ese orden por esa vía. Se ordena por el
-        // step_order real (join), no por la coincidencia observada,
-        // para no depender de un supuesto fuera del flujo normal.
-        $executionId = (int) ($this->params['id'] ?? 0);
+        // Convención de controladores (code-conventions.md, "Toda
+        // acción dentro de try/catch") — acción de página completa,
+        // así que el catch responde con $this->render = ['text' =>
+        // ...] + setResponseCode(), nunca respondToAJAX().
+        try {
+            // Orden real de los pasos — verificado con datos reales
+            // (workflow_definition_id=14, ver reporte): StepExecution.id
+            // ASC coincide con step_order en el flujo normal, por
+            // construcción del chain OnWorkflowStartedReaction ->
+            // OnStepCompletedReaction (un StepExecution se crea solo
+            // cuando el anterior completa). Pero workflow_step_definitions
+            // y step_executions también tienen CRUD genérico en
+            // $this->_actions — un StepExecution podría, en teoría,
+            // insertarse fuera de ese orden por esa vía. Se ordena por el
+            // step_order real (join), no por la coincidencia observada,
+            // para no depender de un supuesto fuera del flujo normal.
+            $executionId = (int) ($this->params['id'] ?? 0);
 
-        $this->execution = $this->WorkflowExecution->Find($executionId);
+            $this->execution = $this->WorkflowExecution->Find($executionId);
 
-        // formatLeadTime() ya existe (HealthMetrics_Helper.php,
-        // cargado en el constructor de este controlador) — reutilizado
-        // tal cual en vez de duplicar el formateo de segundos.
-        $this->duration = null;
-        (!empty($this->execution->started_at) and !empty($this->execution->completed_at))
-            and ($this->duration = formatLeadTime((int) $this->execution->completed_at - (int) $this->execution->started_at));
+            // Guard — sin esto, un id inexistente (ej. una ejecución de
+            // prueba ya borrada) no fallaba: Find() de un belongs_to sobre
+            // un registro vacío cae en el bug de __call() en dumbophp.php
+            // (foreign key vacía -> condición '1=1' sin filtro) y termina
+            // renderizando datos "fantasma" de OTRO registro real
+            // cualquiera, en vez de un 404 real. if positivo (no
+            // return anticipado) envuelve el resto de la lógica —
+            // code-conventions.md, "Control de flujo — return vs throw
+            // vs if positivo".
+            if ($this->execution->counter() > 0):
+                // formatLeadTime() ya existe (HealthMetrics_Helper.php,
+                // cargado en el constructor de este controlador) — reutilizado
+                // tal cual en vez de duplicar el formateo de segundos.
+                $this->duration = null;
+                (!empty($this->execution->started_at) and !empty($this->execution->completed_at))
+                    and ($this->duration = formatLeadTime((int) $this->execution->completed_at - (int) $this->execution->started_at));
 
-        $this->steps      = $this->StepExecution->Find([
-            'fields'     => 'step_executions.*',
-            'join'       => 'INNER JOIN workflow_step_definitions ON workflow_step_definitions.id = step_executions.workflow_step_definition_id',
-            'conditions' => "step_executions.workflow_execution_id = '{$executionId}'",
-            'sort'       => 'workflow_step_definitions.step_order ASC',
-        ]);
+                $this->steps      = $this->StepExecution->Find([
+                    'fields'     => 'step_executions.*',
+                    'join'       => 'INNER JOIN workflow_step_definitions ON workflow_step_definitions.id = step_executions.workflow_step_definition_id',
+                    'conditions' => "step_executions.workflow_execution_id = '{$executionId}'",
+                    'sort'       => 'workflow_step_definitions.step_order ASC',
+                ]);
 
-        // Timeline agrupa por type — se agrupa en PHP, nunca en la
-        // vista (design.md).
-        $this->stepsByType    = [];
-        $this->completedCount = 0;
-        $this->failedCount    = 0;
-        foreach ($this->steps as $step):
-            $this->stepsByType[$step->workflow_step_definition()->type][] = $step;
-            $step->status === 'completed' and $this->completedCount++;
-            $step->status === 'failed' and $this->failedCount++;
-        endforeach;
+                // Timeline agrupa por type — se agrupa en PHP, nunca en la
+                // vista (design.md).
+                $this->stepsByType    = [];
+                $this->completedCount = 0;
+                $this->failedCount    = 0;
+                foreach ($this->steps as $step):
+                    $this->stepsByType[$step->workflow_step_definition()->type][] = $step;
+                    $step->status === 'completed' and $this->completedCount++;
+                    $step->status === 'failed' and $this->failedCount++;
+                endforeach;
 
-        $this->failedStep = null;
-        if ($this->execution->status === 'failed'):
-            foreach ($this->steps as $step):
-                $step->status === 'failed' and ($this->failedStep = $step);
-            endforeach;
-        endif;
+                $this->failedStep = null;
+                if ($this->execution->status === 'failed'):
+                    foreach ($this->steps as $step):
+                        $step->status === 'failed' and ($this->failedStep = $step);
+                    endforeach;
+                endif;
 
-        // Rollback — Requisito 3.2 (vista-ejecucion) pide filtrar
-        // WorkflowDefinition por type='rollback', pero esa columna NO
-        // existe en workflow_definitions (confirmado contra la
-        // migración real) — agregarla violaría el alcance explícito
-        // de design.md ("Sin migraciones nuevas salvo trigger_type").
-        // workflow_step_definitions sí tiene type='rollback' ya
-        // real y usado — un Workflow de rollback se identifica por
-        // tener al menos un paso de ese tipo, sin inventar columnas
-        // nuevas.
-        $this->rollbackWorkflow = null;
-        if (!empty($this->failedStep)):
-            $projectId         = (int) $this->execution->workflow_definition()->project_id;
-            $rollbackCandidate = $this->WorkflowDefinition->Find([
-                ':first',
-                'fields'     => 'workflow_definitions.*',
-                'join'       => 'INNER JOIN workflow_step_definitions ON workflow_step_definitions.workflow_definition_id = workflow_definitions.id',
-                'conditions' => "workflow_definitions.project_id = '{$projectId}' AND workflow_step_definitions.type = 'rollback'",
-            ]);
-            $rollbackCandidate->counter() > 0 and ($this->rollbackWorkflow = $rollbackCandidate);
-        endif;
+                // Rollback — Requisito 3.2 (vista-ejecucion) pide filtrar
+                // WorkflowDefinition por type='rollback', pero esa columna NO
+                // existe en workflow_definitions (confirmado contra la
+                // migración real) — agregarla violaría el alcance explícito
+                // de design.md ("Sin migraciones nuevas salvo trigger_type").
+                // workflow_step_definitions sí tiene type='rollback' ya
+                // real y usado — un Workflow de rollback se identifica por
+                // tener al menos un paso de ese tipo, sin inventar columnas
+                // nuevas.
+                $this->rollbackWorkflow = null;
+                if (!empty($this->failedStep)):
+                    $projectId         = (int) $this->execution->workflow_definition()->project_id;
+                    $rollbackCandidate = $this->WorkflowDefinition->Find([
+                        ':first',
+                        'fields'     => 'workflow_definitions.*',
+                        'join'       => 'INNER JOIN workflow_step_definitions ON workflow_step_definitions.workflow_definition_id = workflow_definitions.id',
+                        'conditions' => "workflow_definitions.project_id = '{$projectId}' AND workflow_step_definitions.type = 'rollback'",
+                    ]);
+                    $rollbackCandidate->counter() > 0 and ($this->rollbackWorkflow = $rollbackCandidate);
+                endif;
 
-        $this->render = ['file' => 'admin/workflow_execution_detail.phtml'];
+                $this->render = ['file' => 'admin/workflow_execution_detail.phtml'];
+            else:
+                $this->setResponseCode(HTTP_404);
+                $this->render = ['text' => 'Ejecución no encontrada.'];
+            endif;
+        } catch (\Exception $e) {
+            $this->setResponseCode(HTTP_500);
+            $this->render = ['text' => 'Ocurrió un error al cargar la ejecución.'];
+        }
     }
 
     /**
@@ -330,7 +308,7 @@ class AdminController extends MainController {
                 str_starts_with($project->working_directory, '/')
                     or throw new ControllerException('El directorio de trabajo debe ser una ruta absoluta (debe iniciar con /).', HTTP_422);
 
-                is_dir($project->working_directory) or @mkdir($project->working_directory, 0755, true);
+                ensureWritableProjectDirectory($project->working_directory);
                 is_dir($project->working_directory)
                     or throw new ControllerException("No se pudo crear el directorio de trabajo: {$project->working_directory}", HTTP_500);
 
@@ -394,7 +372,7 @@ class AdminController extends MainController {
             empty($project->working_directory)
                 and throw new ControllerException('El proyecto no tiene working_directory configurado.', HTTP_422);
 
-            is_dir($project->working_directory) or @mkdir($project->working_directory, 0755, true);
+            ensureWritableProjectDirectory($project->working_directory);
             is_dir($project->working_directory)
                 or throw new ControllerException("No se pudo crear el directorio de trabajo: {$project->working_directory}", HTTP_500);
 
@@ -485,7 +463,7 @@ class AdminController extends MainController {
 
         $target = rtrim($baseDir, '/') . '/' . $file->filename;
 
-        is_dir(dirname($target)) or mkdir(dirname($target), 0755, true);
+        ensureWritableProjectDirectory(dirname($target));
 
         file_put_contents($target, $file->DecryptedContent()) !== false
             or throw new Exception("No se pudo escribir {$file->filename}");
