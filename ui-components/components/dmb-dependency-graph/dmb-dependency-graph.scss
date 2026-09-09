@@ -1,0 +1,58 @@
+// display: block explícito — los custom elements son `inline` por
+// defecto (mismo hallazgo ya documentado en dmb-health-widget.scss).
+dmb-dependency-graph {
+    display: block;
+
+    .dependency-graph-svg {
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+
+    .dependency-graph-svg .edge {
+        stroke: var(--border-outline);
+        stroke-width: 1.5;
+        fill: none;
+    }
+
+    .dependency-graph-svg .edge-cycle {
+        stroke: var(--warning);
+        stroke-width: 2;
+        fill: none;
+    }
+
+    .dependency-graph-svg .node circle {
+        fill: var(--secondary-surface);
+        stroke: var(--border-outline);
+        stroke-width: 1.5;
+    }
+
+    .dependency-graph-svg .node-cycle circle {
+        fill: var(--secondary-surface);
+        stroke: var(--warning);
+        stroke-width: 2.5;
+    }
+
+    .dependency-graph-svg .node-label {
+        fill: var(--main-font-color);
+        font-size: 0.6rem;
+        text-anchor: middle;
+    }
+
+    .dependency-graph-cycle-warning {
+        align-items: center;
+        background: var(--warning-hover);
+        border: 1px solid var(--warning);
+        border-radius: 0.5rem;
+        color: var(--warning);
+        display: flex;
+        gap: 0.533rem;
+        margin-top: 0.533rem;
+        padding: 0.533rem 0.8rem;
+    }
+
+    .dependency-graph-details-link {
+        display: inline-block;
+        margin-top: 0.8rem;
+    }
+}

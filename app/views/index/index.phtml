@@ -63,8 +63,26 @@
 
 <div class="section group">
     <div class="col col6 col6-md col6-sm">
-        <? $widgetTitle = 'Dependency Graph'; $widgetReason = 'Requiere Dependency Management'; ?>
-        <? include(INST_PATH.'app/views/_widget-empty-state.phtml'); ?>
+        <dmb-card class="full" icon="account_tree">
+            <div class="head">
+                <h4>Dependency Graph</h4>
+            </div>
+            <div class="body">
+                <? if (empty($this->dependencyGraphSvg)): ?>
+                <p class="label">Sin dependencias configuradas todavía</p>
+                <? else: ?>
+                <? if (!empty($this->dependencyCycleLabel)): ?>
+                <dmb-status-badge tone="warning">
+                    Ciclo detectado: <?= $this->dependencyCycleLabel; ?>
+                </dmb-status-badge>
+                <? endif; ?>
+                <?= $this->dependencyGraphSvg; ?>
+                <dmb-button-action behavior="launch-url" url="/index/dependencygraph" icon="account_tree">
+                    Ver detalles
+                </dmb-button-action>
+                <? endif; ?>
+            </div>
+        </dmb-card>
     </div>
     <div class="col col6 col6-md col6-sm">
         <? $widgetTitle = 'Recomendaciones'; $widgetReason = 'Requiere Health Management'; ?>

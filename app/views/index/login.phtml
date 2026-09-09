@@ -8,7 +8,7 @@
     <noscript>
         <h1>Your browser does not support JS</h1>
     </noscript>
-    <dmb-dialog open>
+    <dmb-dialog open no-close>
         <dmb-login
             action="<?= $this->loginAction; ?>"
             user-label="Usuario"
@@ -36,11 +36,9 @@
                         </dmb-input>
                     </div>
                 </div>
-                <dmb-footer class="section group">
-                    <div class="col col12">
-                        <dmb-button type="submit">Ingresar</dmb-button>
-                    </div>
-                </dmb-footer>
+                <div class="col col12">
+                    <dmb-button type="submit">Ingresar</dmb-button>
+                </div>
             </dmb-form>
         </dmb-login>
     </dmb-dialog>
