@@ -1,0 +1,33 @@
+<div class="section group">
+    <div class="col col12">
+        <a href="<?= INST_URI; ?>index/index">&laquo; Volver al Cockpit</a>
+        <h2>Dependency Graph</h2>
+    </div>
+</div>
+
+<? if (!empty($this->dependencyCycleLabel)): ?>
+<div class="section group">
+    <div class="col col12">
+        <dmb-status-badge tone="warning">
+            Ciclo detectado: <?= $this->dependencyCycleLabel; ?>
+        </dmb-status-badge>
+    </div>
+</div>
+<? endif; ?>
+
+<div class="section group">
+    <div class="col col12">
+        <dmb-card class="full" icon="account_tree">
+            <div class="head">
+                <h4>Proyectos y sus dependencias</h4>
+            </div>
+            <div class="body">
+                <? if (empty($this->dependencyGraphSvg)): ?>
+                <p class="label">Sin dependencias configuradas todavía</p>
+                <? else: ?>
+                <?= $this->dependencyGraphSvg; ?>
+                <? endif; ?>
+            </div>
+        </dmb-card>
+    </div>
+</div>
