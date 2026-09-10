@@ -3,5 +3,5 @@
     "target": "app/webroot/",
     "tests": "app/webroot/",
     "dumbojsSource": "/ui-components/libs/dumbojs/",
-    "baseUrl": "https://uroboros.rantes.local/ui-components/components/"
+    "baseUrl": "/ui-components/components/"
 }
