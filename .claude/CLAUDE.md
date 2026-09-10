@@ -29,13 +29,6 @@ y **DumboJS** (Web Components nativos). MySQL vía PDO..
   no agregar JS adicional para esto
 - **Campos nuevos en tablas existentes** — modificar la migración directamente
   y ejecutar `dumbo migration reset [tabla]`; nunca `Add_Column`
-- # Propuesta de adición a CLAUDE.md — Principios no negociables
-
-Agregar esta entrada a la lista de "Principios no negociables" en
-`CLAUDE.md`, junto a las demás (DRY/KISS, Lazy Model Load, etc.):
-
----
-
 - **Gobierno de arquitectura — lo propio prima sobre lo importado.**
   Toda propuesta de patrón, capa o abstracción que provenga de otro
   ecosistema (DDD, Java, frameworks de mensajería externos, etc.) se
@@ -56,8 +49,6 @@ Agregar esta entrada a la lista de "Principios no negociables" en
   rechazada — no diferida — por chocar con "Event extiende
   `ActiveRecord`" + "PHP sin herencia múltiple". Ver
   `.claude/specs/nucleo-oem/design.md`, Decisión 3.
-
----
 
 - **Aprovechamiento de lo existente.** Antes de construir una
   abstracción propia o traer una dependencia externa, verificar si el
@@ -112,8 +103,6 @@ Agregar esta entrada a la lista de "Principios no negociables" en
   aplicado en `.claude/specs/metricas-oem/design.md`
   (`OemMetric::Increment()`).
 
----
-
 - **Cobertura de código nunca por debajo del 98%.** Ningún cambio —
   feature nueva, fix, refactor — se considera completo si hace bajar
   la cobertura general del proyecto de ese umbral. No es una meta
@@ -124,8 +113,6 @@ Agregar esta entrada a la lista de "Principios no negociables" en
   consume ese reporte como quality gate. Es decir: correr los tests en
   local no es garantía de cumplir la regla — el gate real está en
   SonarQube, no en la máquina de cada desarrollador.
-
----
 
 ## Reglas PHP — imports y use
 

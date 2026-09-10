@@ -230,3 +230,23 @@ Descripción del flujo request → controller → model → view
 5. Si no debe tener botón "Agregar", añadir a `$this->dockNoAddActions`
 
 6. Si no debe tener carga por lotes, añadir a `$this->excludeBatch`
+
+## Flujo de trabajo con `tasks.md` durante la ejecución
+
+- **Marca las tareas tú mismo.** Al completar y verificar una tarea
+  de un `tasks.md`, actualízala a `[x]` directamente en el archivo —
+  no dejes que quede pendiente de que alguien más lo haga después de
+  leer tu reporte. Si encontraste algo relevante durante esa tarea
+  (un hallazgo, una decisión, una corrección sobre lo planeado),
+  agrega una nota breve junto al ítem marcado, no solo el checkbox.
+
+- **`/compact` al cerrar un spec completo**, no tarea por tarea.
+  Cuando todas las tareas de un `tasks.md` queden marcadas `[x]`
+  (spec cerrado), ejecuta `/compact` antes de continuar con lo
+  siguiente — no hace falta mantener tanto contexto acumulado una vez
+  que un spec completo ya quedó resuelto y documentado. Con este
+  criterio (compact solo al cierre, no por tarea), el contexto se
+  mantiene disponible durante todas las tareas intermedias de un
+  mismo spec — por ejemplo, la tarea de "regresión" al final de
+  `tasks.md` (que suele necesitar recordar qué se tocó en tareas
+  anteriores) no se ve afectada.
