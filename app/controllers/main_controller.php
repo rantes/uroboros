@@ -22,8 +22,7 @@ abstract class MainController extends Controller {
     public function __construct() {
         parent::__construct();
         $this->exceptsBeforeFilter = [
-            'actions' => 'login,logout,pusher,signin',
-            'controllers' => 'index',
+            'actions' => 'login,logout,pusher,signin'
         ];
         $this->helper     = ['Sessions'];
         $this->noTemplate = ['logout'];
