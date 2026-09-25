@@ -28,7 +28,6 @@ export class DmbMoreOption extends DmbButtonAction {
     panel = null;
     behavior = '';
     #_dialog = null;
-    #_action = '';
 
     constructor() {
         super();
@@ -36,7 +35,7 @@ export class DmbMoreOption extends DmbButtonAction {
     }
 
     init() {
-        this.#_action = this.getAttribute('action') || '';
+        this._action = this.getAttribute('action') || '';
 
         if (this.dataset.id) {
             this.dataId = this.dataset.id;

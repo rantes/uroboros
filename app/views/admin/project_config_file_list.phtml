@@ -37,6 +37,7 @@
                             behavior="ajax"
                             action="delete"
                             data-id="<?= $row->id; ?>"
+                            target="/admin/project_config_files?project_id=<?= $this->projectId; ?>"
                             url="/admin/project_config_files">
                             Eliminar
                         </dmb-more-option>

@@ -4,7 +4,7 @@ import { appModel } from '../models/app-model.factory.js';
 
 export class DmbButtonAction extends DumboDirective {
     static selector = 'dmb-button-action';
-    #_action = '';
+    _action = '';
     icon = '';
     type = null;
     #_dialog = null;
@@ -16,10 +16,10 @@ export class DmbButtonAction extends DumboDirective {
     }
 
     init() {
-        this.#_action = this.getAttribute('action') || '';
+        this._action = this.getAttribute('action') || '';
         this.classList.add('button');
 
-        switch(this.#_action) {
+        switch(this._action) {
             case 'edit':
                 this.icon = 'edit';
                 break;
@@ -81,22 +81,17 @@ export class DmbButtonAction extends DumboDirective {
                 location.href = url;
                 break;
             case 'ajax':
+                appModel.url = url;
                 if(pageLoader) pageLoader.open();
-                if (this.#_action === 'delete') {
-                    appModel.url = url;
-                    appModel.deleteData({id: this.dataId});
+                if (this._action === 'delete') {
+                    appModel.deleteData({id: this.dataId}, target);
                 } else {
-                    fetch(new Request(url, reqParams))
-                        .then(response => {
-                            return response.json();
-                        })
-                        .then(() => {
-                            window.location.reload();
-                        })
-                        .catch(error => {
-                            this.#_dialog.closeAll();
-                            this.#_dialog.error(error);
-                        });
+                    appModel.getFromServer().then((data) => {
+                        this.#_dialog.info(data.message || 'Acción ejecutada correctamente');
+                    }).catch((e) => {
+                        if(pageLoader) pageLoader.close();
+                        this.#_dialog.error(e.message || 'Error en el servidor, intente más tarde.');
+                    });
                 }
                 break;
             case 'download-file':
