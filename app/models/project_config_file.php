@@ -28,6 +28,16 @@ class ProjectConfigFile extends ActiveRecord {
         // hook que active $this->_error) — nunca invertir
         // validateFormat() y encryptContent(): validar el contenido ya
         // cifrado siempre "parece" inválido para cualquier formato.
+        //
+        // Nota descartada a propósito: reordenar este array para que
+        // "presence_of" corra antes que encryptContent() NO es
+        // posible ni tendría efecto — presence_of no es un hook de
+        // este array, es parte de _ValidateOnSave(), que por diseño
+        // del framework corre DESPUÉS de TODOS los before_save sin
+        // importar el orden interno de éstos. Por eso la defensa real
+        // contra un content vacío/null vive en validateFormat()
+        // mismo (ver su docblock) — es el único punto que corre antes
+        // de encryptContent() y después de conocer el content real.
         $this->before_save = [
             'sanitizeFilename',
             'validateFormatType',
@@ -77,12 +87,32 @@ class ProjectConfigFile extends ActiveRecord {
      * ActiveRecord::Save() — antes de $this->_error, este antes de
      * ambos era un throw sin capturar, que hubiera devuelto 500
      * genérico en vez de un 422 con el campo correcto).
+     *
+     * Defensa en profundidad — nunca confiar en que un parser externo
+     * devuelva `false` para contenido vacío: `parse_ini_string('')`
+     * devuelve `array(0){}` (no `false`) y `yaml_parse('')` devuelve
+     * `NULL` (tampoco `false`), así que ambos "validan" un archivo
+     * vacío como válido. Esto es lo que permitía el bug real
+     * corregido: un `content` que llegaba `null`/vacío (por un PUT
+     * cuyo campo multilínea se perdía en el parseo — ver
+     * AdminBaseTrait::_parse_put_input()) pasaba esta validación sin
+     * problema, y como este hook corre ANTES que encryptContent(), el
+     * `Save()` terminaba cifrando y persistiendo una cadena vacía en
+     * vez de fallar. El corto-circuito `&&` de abajo hace que un
+     * content vacío/null sea inválido para CUALQUIER formato, sin
+     * depender de la tolerancia de cada parser — `presence_of` sigue
+     * existiendo como validación de framework, pero no basta por sí
+     * sola porque corre después de este hook (ver antes_save order
+     * abajo), momento en el que encryptContent() ya reemplazó el
+     * content vacío por un cifrado no-vacío.
      */
     public function validateFormat(): void {
-        $isValid = match ($this->format) {
-            'ini'   => (@parse_ini_string((string) $this->content) !== false),
-            'json'  => $this->_validateJson((string) $this->content),
-            'yaml'  => $this->_validateYaml((string) $this->content),
+        $content = (string) $this->content;
+
+        $isValid = (trim($content) !== '') && match ($this->format) {
+            'ini'   => (@parse_ini_string($content) !== false),
+            'json'  => $this->_validateJson($content),
+            'yaml'  => $this->_validateYaml($content),
             default => false,
         };
 

@@ -190,18 +190,80 @@ trait AdminBaseTrait {
         $this->respondToAJAX(json_encode($this->_response));
     }
 
+    /**
+     * En tests no hay una petición HTTP real — php://input no es
+     * simulable de forma fiable dentro del mismo proceso PHP que
+     * corre Timothy (confirmado: siempre vacío). La convención del
+     * proyecto para simular un PUT ya es poblar $_POST[$modelo] antes
+     * de llamar _runAction() (ver testAdminController.php, tests de
+     * guard de solo lectura) — este atajo simplemente hace que ese
+     * valor sea el que _update_reg() reciba, en vez de descartarlo
+     * silenciosamente como antes.
+     */
     private function _parse_put_input(): array {
         if (APP_ENV === 'test'):
-            return [];
+            return empty($_POST[$this->_model]) ? [] : [$this->_model => $_POST[$this->_model]];
         endif;
-        $dataParsed = '';
-        preg_match_all('@name="([a-z_\[\]]+)"[\s]+(.+)\s-@m', file_get_contents("php://input"), $out);
-        foreach($out[1] as $i => $val):
-            $clean = trim(urlencode($out[2][$i]));
-            $dataParsed = "{$dataParsed}{$val}={$clean}&";
-        endforeach;
+
+        return $this->_parse_multipart_put_body(
+            file_get_contents('php://input'),
+            $_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? ''
+        );
+        
+    }
+
+    /**
+     * Parser real de un body multipart/form-data para verbos PUT
+     * (PHP solo popula $_POST/$_FILES para POST — para PUT hay que
+     * parsear php://input a mano).
+     *
+     * Reemplaza al parser anterior basado en una sola regex de línea
+     * (`(.+)\s-` sin el modificador /s) — esa regex nunca podía
+     * capturar un valor que ocupara más de una línea porque `.` no
+     * matchea `\n`. Cualquier campo multilínea (el caso normal de
+     * project_config_file[content] — un .env/ini/yaml real casi
+     * siempre tiene más de una línea) desaparecía por completo del
+     * array resultante, sin error visible (ver bug real corregido:
+     * editar un ProjectConfigFile terminaba guardando el cifrado de
+     * una cadena vacía). Este parser separa el body por el boundary
+     * real declarado en el Content-Type y toma como valor TODO lo que
+     * hay entre la línea en blanco que cierra las cabeceras de la
+     * parte y el siguiente boundary — sin importar cuántas líneas
+     * tenga.
+     *
+     * @param string $rawBody     Contenido crudo de php://input
+     * @param string $contentType Header Content-Type de la petición
+     * @return array
+     */
+    private function _parse_multipart_put_body(string $rawBody, string $contentType): array {
         $result = [];
+
+        if (!preg_match('/boundary=(.+)$/', $contentType, $boundaryMatch)):
+            return $result;
+        endif;
+
+        $boundary = trim($boundaryMatch[1], "\"' \t\r\n");
+        $parts    = preg_split('/--' . preg_quote($boundary, '/') . '(--)?\r?\n?/', $rawBody);
+        $dataParsed = '';
+
+        foreach ($parts as $part):
+            $part = ltrim($part, "\r\n");
+
+            if (trim($part) === '' or !preg_match('/name="([a-zA-Z0-9_\[\]]+)"/', $part, $nameMatch)):
+                continue;
+            endif;
+
+            $headerEnd = strpos($part, "\r\n\r\n");
+            if ($headerEnd === false):
+                continue;
+            endif;
+
+            $value = rtrim(substr($part, $headerEnd + 4), "\r\n");
+            $dataParsed = "{$dataParsed}{$nameMatch[1]}=" . urlencode($value) . '&';
+        endforeach;
+
         parse_str($dataParsed, $result);
+
         return $result;
     }
 

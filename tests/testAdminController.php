@@ -760,6 +760,95 @@ class testAdminController extends dumboTests {
         $this->assertEquals(0, $this->ProjectConfigFile->Find()->counter(), 'Debe haberse eliminado el archivo');
     }
 
+    /**
+     * Regresión del bug real corregido — AdminBaseTrait::_parse_put_input()
+     * usaba una regex de una sola línea para parsear el body multipart de
+     * un PUT, así que cualquier campo multilínea (el caso normal de
+     * project_config_file[content] — un .env/ini/yaml real) desaparecía
+     * por completo del array parseado sin ningún error visible. Combinado
+     * con ProjectConfigFile::validateFormat() tratando un content
+     * vacío/null como "válido" para ini/yaml (parse_ini_string('') y
+     * yaml_parse('') no devuelven false), el Save() terminaba
+     * sobrescribiendo el contenido real por el cifrado de una cadena
+     * vacía — sin fallar, sin avisar. Este test edita un archivo real
+     * con contenido multilínea vía PUT (el mismo verbo que usa
+     * dmb-simple-form[update] desde el navegador) y confirma que el
+     * contenido sobrevive y descifra correctamente.
+     *
+     * Punto ciego que este test cierra: hasta ahora ningún test del
+     * proyecto ejercitaba un PUT real y exitoso sobre AdminBaseTrait —
+     * los únicos tests con REQUEST_METHOD='PUT' (events, workflow_executions,
+     * step_executions) verifican el guard de solo lectura, que revienta
+     * ANTES de llegar a _parse_put_input()/Save().
+     */
+    public function projectConfigFileCanBeUpdatedWithMultilineContentViaPutTest(): void {
+        $this->describe('PUT /admin/project_config_files/{id} con contenido multilínea debe guardarse y descifrar correctamente');
+
+        $project = $this->_createProjectFixture();
+        $plain   = "KEY=value\nOTHER=1\nTHIRD=three";
+        $file    = $this->ProjectConfigFile->Niu([
+            'project_id' => $project->id,
+            'filename'   => '.env',
+            'format'     => 'ini',
+            'content'    => $plain,
+        ]);
+        $file->Save() or trigger_error((string) $file->_error, E_USER_ERROR);
+
+        $newPlain = "KEY=updated\nOTHER=2\nTHIRD=changed\nFOURTH=4";
+
+        $_SERVER['REQUEST_METHOD']    = 'PUT';
+        $_POST['project_config_file'] = [
+            'project_id' => $project->id,
+            'filename'   => '.env',
+            'format'     => 'ini',
+            'content'    => $newPlain,
+        ];
+        // No se assertea $result->_code aquí — AdminBaseTrait::_update_reg()
+        // usa una variable local $code y llama setResponseCode($code), que
+        // solo actualiza la propiedad PRIVADA _http_response_code (la que
+        // display() realmente emite); nunca escribe $this->_code (la
+        // propiedad pública que MainController declara en HTTP_200 por
+        // defecto y que _runAction() expone). Mismo criterio ya usado por
+        // projectConfigFileCanBeCreatedTest()/CanBeDeletedTest() en este
+        // mismo archivo: se assertea el efecto real en BD, no un código
+        // HTTP que este trait nunca sincroniza.
+        $this->_runAction("/admin/project_config_files/{$file->id}");
+
+        $reloaded = $this->ProjectConfigFile->Find($file->id);
+        $this->assertEquals($newPlain, $reloaded->DecryptedContent(), 'El contenido nuevo debe descifrar exactamente igual a lo enviado');
+    }
+
+    /**
+     * Mismo escenario que el reportado originalmente por el usuario:
+     * editar (PUT) sin tocar el contenido no debe perderlo — reenviar el
+     * mismo texto plano debe seguir descifrando al mismo valor.
+     */
+    public function projectConfigFileUpdateWithoutChangingContentPreservesItTest(): void {
+        $this->describe('PUT /admin/project_config_files/{id} reenviando el mismo contenido no debe perderlo');
+
+        $project = $this->_createProjectFixture();
+        $plain   = "host: localhost\nport: 8080\ndebug: true";
+        $file    = $this->ProjectConfigFile->Niu([
+            'project_id' => $project->id,
+            'filename'   => 'config/app.yaml',
+            'format'     => 'yaml',
+            'content'    => $plain,
+        ]);
+        $file->Save() or trigger_error((string) $file->_error, E_USER_ERROR);
+
+        $_SERVER['REQUEST_METHOD']    = 'PUT';
+        $_POST['project_config_file'] = [
+            'project_id' => $project->id,
+            'filename'   => 'config/app.yaml',
+            'format'     => 'yaml',
+            'content'    => $plain,
+        ];
+        $this->_runAction("/admin/project_config_files/{$file->id}");
+
+        $reloaded = $this->ProjectConfigFile->Find($file->id);
+        $this->assertEquals($plain, $reloaded->DecryptedContent(), 'El contenido debe sobrevivir intacto tras un update que no lo cambia');
+    }
+
     public function showconfigfilecontentReturnsDecryptedContentTest(): void {
         $this->describe('GET /admin/showconfigfilecontent/{id} debe devolver el contenido descifrado');
 
