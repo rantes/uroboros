@@ -176,7 +176,7 @@ trait AdminBaseTrait {
         $this->_guardReadOnly();
         $code = HTTP_422;
 
-        $id = $this->params['id'] ?? $this->params[1];
+        $id = $this->params['id'] ?? $this->params[0];
         if (!empty($this->_model) and !empty($id)):
             $obj = $this->{$this->_model_camelized}->Find((integer)$id);
             (

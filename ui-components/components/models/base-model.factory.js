@@ -123,22 +123,7 @@ export class BaseModelClass {
             });
     }
 
-    /**
-     * Token CSRF real, vía el mismo mecanismo x-sf-token:fetch que ya
-     * usaba postToServer() — GET/main_controller.php nunca lo exige,
-     * pero before_filter() SÍ lo exige para POST/PUT/DELETE
-     * (_requiredTokenMethods) y desde el fix de CSRF real (before_filter
-     * ahora pone $continue=false en vez de solo marcar 403) cualquier
-     * método que mande esos verbos sin este token recibe un 403 real.
-     * Bug real corregido — updateToServer()/deleteInServer() nunca
-     * llamaban esto, solo postToServer() lo hacía: confirmado con un
-     * PUT real a /admin/project_credentials capturado en DevTools,
-     * headers=[accept, content-type], sin x-sf-token, 403 real del
-     * servidor. Extraído aquí para que los tres verbos que sí lo
-     * necesitan (POST/PUT/DELETE) compartan un único punto de origen
-     * del token, en vez de repetir la lógica en cada uno.
-     */
-    #_fetchToken(params, headers) {
+    updateToServer(body, params = {}, headers = {}) {
         const getData = this.#_buildHeaders(params, 'GET', { 'X-SF-TOKEN': 'fetch' });
         const requestToken = new Request(getData.url, getData.options);
 
@@ -149,32 +134,44 @@ export class BaseModelClass {
                 }
 
                 const token = resToken.headers.get('X-SF-TOKEN');
-                return { ...headers, 'X-SF-TOKEN': token };
-            });
-    }
-
-    updateToServer(body, params = {}, headers = {}) {
-        return this.#_fetchToken(params, headers)
-            .then(tokenHeaders => {
-                const { options, url } = this.#_buildHeaders(params, 'PUT', tokenHeaders, body);
-                return fetch(new Request(url, options));
+                const putHeaders = { ...headers, 'X-SF-TOKEN': token };
+                const { options, url } = this.#_buildHeaders(params, 'PUT', putHeaders, body);
+                
+                return fetch(url, options);
             })
             .then(res => {
-                if (!res.ok) {
-                    throw new Error(`HTTP error! Status: ${res.status}`);
-                }
 
                 if (res.status === 204) {
                     return {message: 'No se encontraron registros', d: []};
                 }
-                return res.json();
+
+                return res.json().then(data => {
+                    if (!res.ok) {
+                        const message = res.status < 500
+                            ? (data.message || `Error ${res.status}`)
+                            : null;
+                        throw new Error(message);
+                    }
+                    return data;
+                });
             });
     }
 
     postToServer(body, params = {}, headers = {}) {
-        return this.#_fetchToken(params, headers)
-            .then(tokenHeaders => {
-                const { options, url } = this.#_buildHeaders(params, 'POST', tokenHeaders, body);
+        const getData = this.#_buildHeaders(params, 'GET', { 'X-SF-TOKEN': 'fetch' });
+        const requestToken = new Request(getData.url, getData.options);
+        let retValue = null;
+
+        return fetch(requestToken)
+            .then(resToken => {
+                if (!resToken.ok) {
+                    throw new Error(`HTTP error! Status: ${resToken.status}`);
+                }
+
+                const token = resToken.headers.get('X-SF-TOKEN');
+                const postHeaders = { ...headers, 'X-SF-TOKEN': token };
+                const { options, url } = this.#_buildHeaders(params, 'POST', postHeaders, body);
+                
                 return fetch(url, options);
             })
             .then(res => {
@@ -196,20 +193,37 @@ export class BaseModelClass {
     }
 
     deleteInServer(params = {}, headers = {}) {
-        return this.#_fetchToken(params, headers)
-            .then(tokenHeaders => {
-                const { options, url } = this.#_buildHeaders(params, 'DELETE', tokenHeaders);
-                return fetch(new Request(url, options));
+        console.log('deleteInServer', params, this.#_url);
+        const getData = this.#_buildHeaders(params, 'GET', { 'X-SF-TOKEN': 'fetch' });
+        const requestToken = new Request(getData.url, getData.options);
+
+        return fetch(requestToken)
+            .then(resToken => {
+                if (!resToken.ok) {
+                    throw new Error(`HTTP error! Status: ${resToken.status}`);
+                }
+
+                const token = resToken.headers.get('X-SF-TOKEN');
+                const delHeaders = { ...headers, 'X-SF-TOKEN': token };
+                const { options, url } = this.#_buildHeaders(params, 'DELETE', delHeaders);
+                
+                return fetch(url, options);
             })
             .then(res => {
-                if (!res.ok) {
-                    throw new Error(`HTTP error! Status: ${res.status}`);
-                }
 
                 if (res.status === 204) {
                     return {message: 'No se encontraron registros', d: []};
                 }
-                return res.json();
+
+                return res.json().then(data => {
+                    if (!res.ok) {
+                        const message = res.status < 500
+                            ? (data.message || `Error ${res.status}`)
+                            : null;
+                        throw new Error(message);
+                    }
+                    return data;
+                });
             });
     }
 

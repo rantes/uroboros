@@ -1,5 +1,7 @@
-import { DumboDirective } from "../../libs/dumbojs/dumbo.min.js";
+// import { DumboDirective } from "../../libs/dumbojs/dumbo.min.js";
+import { DmbButtonAction } from "../../components/dmb-button-action/dmb-button-action.directive.js";
 import { DmbDialogService } from '../../components/dmb-dialog/dmb-dialog.factory.js';
+import { appModel } from '../models/app-model.factory.js';
 
 /**
  * @dmbdoc directive
@@ -19,13 +21,14 @@ import { DmbDialogService } from '../../components/dmb-dialog/dmb-dialog.factory
     panel="#panel-to-open">
 </dmb-more-option>
  */
-export class DmbMoreOption extends DumboDirective {
+export class DmbMoreOption extends DmbButtonAction {
     static selector = 'dmb-more-option';
     url = '';
     pageLoader = null;
     panel = null;
     behavior = '';
     #_dialog = null;
+    #_action = '';
 
     constructor() {
         super();
@@ -33,58 +36,15 @@ export class DmbMoreOption extends DumboDirective {
     }
 
     init() {
-        this.behavior = this.getAttribute('behavior') || '';
+        this.#_action = this.getAttribute('action') || '';
 
-        if (!this.behavior.length) {
-            throw 'A behavior attribute must to be defined.';
+        if (this.dataset.id) {
+            this.dataId = this.dataset.id;
         }
 
-        this.url = this.getAttribute('url') || '';
-        this.pageLoader = document.querySelector('#page-loader');
-        this.panel = this.getAttribute('panel');
-
-        this.addEventListener('click', e => {
-            e.preventDefault();
+        this.addEventListener('click', () => {
             this.handleClick();
         });
     }
 
-    handleClick() {
-        let panel = null;
-        switch (this.behavior) {
-        case 'open-panel':
-            panel = document.querySelector(this.panel);
-            if(this.url) panel.setAttribute('source', this.url);
-            panel.open();
-            break;
-        case 'launch-url':
-            location.href = this.url;
-            break;
-        case 'ajax':
-            if(this.pageLoader) this.pageLoader.open();
-            // Todo uso real de dmb-more-option[behavior=ajax] en el
-            // proyecto es "Eliminar" (confirmado por grep en
-            // app/views/admin/*.phtml) — sin method:'delete' esto
-            // hacía un GET, y AdminBaseTrait solo borra en verbo
-            // DELETE. El botón "Eliminar" del menú de tres puntos
-            // nunca eliminó nada realmente.
-            fetch(new Request(this.url, {method: 'delete'}))
-                .then(response => {
-                    if(this.pageLoader) this.pageLoader.close();
-                    return response.json();
-                })
-                .then((response) => {
-                    this.#_dialog.closeAll();
-                    this.#_dialog.info(response.message);
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1000);
-                })
-                .catch(error => {
-                    this.#_dialog.closeAll();
-                    this.#_dialog.error(error.message);
-                });
-            break;
-        }
-    }
 }

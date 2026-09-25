@@ -31,10 +31,10 @@ class ProjectConfigFile extends ActiveRecord {
         $this->before_save = [
             'sanitizeFilename',
             'validateFormatType',
-            'validateUniqueFilename',
             'validateFormat',
             'encryptContent',
         ];
+        $this->before_insert = ['validateUniqueFilename'];
     }
 
     public function sanitizeFilename(): void {

@@ -29,12 +29,15 @@
                         <dmb-more-option
                             behavior="open-panel"
                             url="/admin/project_config_files/edit/<?= $row->id; ?>?project_id=<?= $this->projectId; ?>"
+                            action="edit"
                             panel="#panel-form-add-edit-reg">
                             Editar
                         </dmb-more-option>
                         <dmb-more-option
                             behavior="ajax"
-                            url="/admin/project_config_files/<?= $row->id; ?>">
+                            action="delete"
+                            data-id="<?= $row->id; ?>"
+                            url="/admin/project_config_files">
                             Eliminar
                         </dmb-more-option>
                     </dmb-more-options>

@@ -61,7 +61,6 @@ class AppModelClass extends BaseModelClass {
 
     deleteData(data, redirect) {
         let dialog = this.#_dialog.loader();
-
         this.deleteInServer(data)
             .then(() => {
                 dialog.close();

@@ -12,7 +12,7 @@
         <dmb-content>
             <div class="section group">
                 <? if (!empty($this->data->id)): ?>
-                <dmb-input type="hidden" dmb-name="project_config_file[id]" dmb-value="<?= $this->data->id; ?>"></dmb-input>
+                <input type="hidden" name="project_config_file[id]" value="<?=$this->data->id; ?>">
                 <? endif; ?>
                 <dmb-input
                     type="hidden"

@@ -1,5 +1,6 @@
 import { DumboDirective } from '../../libs/dumbojs/dumbo.min.js';
 import { DmbDialogService } from '../dmb-dialog/dmb-dialog.factory.js';
+import { appModel } from '../models/app-model.factory.js';
 
 export class DmbButtonAction extends DumboDirective {
     static selector = 'dmb-button-action';
@@ -7,6 +8,7 @@ export class DmbButtonAction extends DumboDirective {
     icon = '';
     type = null;
     #_dialog = null;
+    dataId = null;
 
     constructor() {
         super();
@@ -40,6 +42,9 @@ export class DmbButtonAction extends DumboDirective {
 
         if (this.icon.length) {
             this.setAttribute('icon', this.icon);
+        }
+        if (this.dataset.id) {
+            this.dataId = this.dataset.id;
         }
 
         this.addEventListener('click', () => {
@@ -78,19 +83,21 @@ export class DmbButtonAction extends DumboDirective {
             case 'ajax':
                 if(pageLoader) pageLoader.open();
                 if (this.#_action === 'delete') {
-                    reqParams.method = 'delete'
+                    appModel.url = url;
+                    appModel.deleteData({id: this.dataId});
+                } else {
+                    fetch(new Request(url, reqParams))
+                        .then(response => {
+                            return response.json();
+                        })
+                        .then(() => {
+                            window.location.reload();
+                        })
+                        .catch(error => {
+                            this.#_dialog.closeAll();
+                            this.#_dialog.error(error);
+                        });
                 }
-                fetch(new Request(url, reqParams))
-                    .then(response => {
-                        return response.json();
-                    })
-                    .then(() => {
-                        window.location.reload();
-                    })
-                    .catch(error => {
-                        this.#_dialog.closeAll();
-                        this.#_dialog.error(error);
-                    });
                 break;
             case 'download-file':
                 open(url, '_blank');
