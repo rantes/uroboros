@@ -48,6 +48,21 @@ export class BaseModelClass {
         return {options, url};
     }
 
+    /**
+     * Manejo de respuesta COMÚN de las lecturas GET (getFromServer y setElement): un status no-ok
+     * rechaza; 204 (sin cuerpo, p. ej. "sin resultados") se normaliza a {message, d: []} en vez de
+     * intentar parsear JSON de un cuerpo vacío ("Unexpected end of JSON input").
+     */
+    #_handleResponse(res) {
+        if (!res.ok) {
+            throw new Error(`HTTP error! Status: ${res.status}`);
+        }
+
+        return res.status === 204
+            ? Promise.resolve({message: 'No se encontraron registros', d: []})
+            : res.json();
+    }
+
     url(url = undefined) {
         if (url !== undefined) {
             this.#_url = url;
@@ -71,13 +86,13 @@ export class BaseModelClass {
     getElement(element, fromCache = true) {
         const dialog = this.dialog.loader();
 
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             dialog.close(undefined, true);
             if (fromCache) {
                 if (this.#_data[element] && this.#_data[element].length) {
                     resolve([...this.#_data[element]]);
                 } else {
-                    this.setElement(element).then(()=>resolve([...this.#_data[element]]));
+                    this.setElement(element).then(()=>resolve([...this.#_data[element]])).catch(reject);
                 }
             } else {
                 return this.getFromServer();
@@ -86,19 +101,26 @@ export class BaseModelClass {
     }
 
     setElement(element) {
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             this.useCache && (this.#_data[element] = JSON.parse(this.#_storage.getItem(element)));
 
             if (this.useCache && this.#_data[element] && this.#_data[element].length) {
                 resolve(this.#_data[element]);
             } else {
+                // La URL ya viene armada (con su query) por quien llama a url(): no se pasa por
+                // #_buildHeaders (que le añadiría un "?" extra); sí comparte el manejo de respuesta.
                 fetch(new Request(this.#_url))
-                    .then(res => res.json())
+                    .then(res => this.#_handleResponse(res))
                     .then(data => {
-                        this.useCache && this.#_storage.setItem(element, JSON.stringify(data.d));
-                        this.useCache && (this.#_data[element] = data.d);
-                        resolve(data.d);
-                    });
+                        const items = data.d ?? [];
+
+                        // Un resultado vacío (204 o lista vacía) no se persiste: no envenena la caché
+                        // (que de todos modos solo se usa con length > 0) y la próxima llamada reintenta.
+                        this.useCache && items.length && this.#_storage.setItem(element, JSON.stringify(items));
+                        this.useCache && (this.#_data[element] = items);
+                        resolve(items);
+                    })
+                    .catch(reject);
             }
         });
     }
@@ -106,21 +128,8 @@ export class BaseModelClass {
     getFromServer(params = {}, headers = {}) {
         const { options, url } = this.#_buildHeaders(params, 'GET', headers);
         const request = new Request(url, options);
-        let retValue = null;
 
-        return fetch(request)
-            .then(res => {
-                if (!res.ok) {
-                    throw new Error(`HTTP error! Status: ${res.status}`);
-                }
-
-                if (res.status === 204) {
-                    retValue = new Promise((resolve) => resolve({message: 'No se encontraron registros', d: []}));
-                } else {
-                    retValue = res.json();
-                }
-                return retValue;
-            });
+        return fetch(request).then(res => this.#_handleResponse(res));
     }
 
     updateToServer(body, params = {}, headers = {}) {
