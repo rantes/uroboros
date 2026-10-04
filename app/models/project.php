@@ -13,7 +13,11 @@ class Project extends ActiveRecord {
     public ?int    $status         = null;
 
     public function _init_(): void {
-        $this->has_many  = ['project_groups'];
+        // destroy borra TODO lo de este array, en este orden: pivote,
+        // workflows (con sus pasos y ejecuciones — cada hijo declara su propio
+        // $dependents), credenciales y archivos de configuración. Nada del
+        // Event Store: los eventos son inmutables y quedan como historia.
+        $this->has_many  = ['project_groups', 'workflow_definitions', 'project_credentials', 'project_config_files'];
         // Confirmado en ActiveRecord::_delete_or_nullify_dependents()
         // (DumboPHP/bin/dumbophp.php): recorre $has_many, resuelve
         // App\Models\ProjectGroup (existe como modelo real) y borra

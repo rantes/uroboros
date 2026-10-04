@@ -36,6 +36,7 @@
                         <dmb-more-option
                             behavior="ajax"
                             action="delete"
+                            confirm="Se eliminará el archivo de configuración «<?= $row->filename; ?>». Esta acción no se puede deshacer."
                             data-id="<?= $row->id; ?>"
                             target="/admin/project_config_files?project_id=<?= $this->projectId; ?>"
                             url="/admin/project_config_files">

@@ -2,9 +2,10 @@
 namespace App\Models;
 
 use DumboPHP\ActiveRecord;
-use DumboPHP\Secrets;
 
 class ProjectConfigFile extends ActiveRecord {
+    use SecretCipherTrait;
+
     public ?int    $project_id = null;
     public ?string $filename   = null;
     public ?string $format     = null;
@@ -107,7 +108,11 @@ class ProjectConfigFile extends ActiveRecord {
      * content vacío por un cifrado no-vacío.
      */
     public function validateFormat(): void {
+        // Un Find() + Save() llega aquí con el blob ya cifrado: se valida
+        // el texto plano real, no el base64 (que json/yaml siempre
+        // rechazarían, rompiendo cualquier re-guardado de esos formatos).
         $content = (string) $this->content;
+        $this->isEncrypted($content) and ($content = $this->DecryptedContent());
 
         $isValid = (trim($content) !== '') && match ($this->format) {
             'ini'   => (@parse_ini_string($content) !== false),
@@ -147,29 +152,9 @@ class ProjectConfigFile extends ActiveRecord {
      * que el propio framework hace con Connection::$_secrets.
      */
     public function encryptContent(): void {
-        $key = (new Secrets())->get('CONFIG_FILES_ENCRYPTION_KEY');
-
-        empty($key)
-            and throw new \Exception('CONFIG_FILES_ENCRYPTION_KEY no está configurada.');
-
-        $iv  = random_bytes(12); // 96 bits, tamaño recomendado para GCM
-        $tag = '';
-
-        $ciphertext = openssl_encrypt(
-            (string) $this->content,
-            'aes-256-gcm',
-            base64_decode($key),
-            OPENSSL_RAW_DATA,
-            $iv,
-            $tag
-        );
-
-        $ciphertext === false
-            and throw new \Exception('No se pudo cifrar el contenido del archivo.');
-
-        // Empaquetado: iv + tag + ciphertext, todo junto en base64 —
-        // un solo campo TEXT, sin columnas adicionales para iv/tag.
-        $this->content = base64_encode($iv . $tag . $ciphertext);
+        // Idempotente: un Find() + Save() llega aquí con el blob ya cifrado.
+        $this->isEncrypted((string) $this->content)
+            or ($this->content = $this->encryptSecret((string) $this->content, 'No se pudo cifrar el contenido del archivo.'));
     }
 
     /**
@@ -181,29 +166,6 @@ class ProjectConfigFile extends ActiveRecord {
      * pública del modelo, no un hook de ciclo de vida.
      */
     public function DecryptedContent(): string {
-        $key = (new Secrets())->get('CONFIG_FILES_ENCRYPTION_KEY');
-
-        empty($key)
-            and throw new \Exception('CONFIG_FILES_ENCRYPTION_KEY no está configurada.');
-
-        $raw = base64_decode((string) $this->content);
-
-        $iv         = substr($raw, 0, 12);
-        $tag        = substr($raw, 12, 16); // GCM tag real: 16 bytes (verificado)
-        $ciphertext = substr($raw, 28);
-
-        $plaintext = openssl_decrypt(
-            $ciphertext,
-            'aes-256-gcm',
-            base64_decode($key),
-            OPENSSL_RAW_DATA,
-            $iv,
-            $tag
-        );
-
-        $plaintext === false
-            and throw new \Exception('No se pudo descifrar el archivo — clave inválida o dato corrupto.');
-
-        return $plaintext;
+        return $this->decryptSecret((string) $this->content, 'No se pudo descifrar el archivo — clave inválida o dato corrupto.');
     }
 }

@@ -13,6 +13,8 @@ class WorkflowStepDefinition extends ActiveRecord {
 
     public function _init_(): void {
         $this->belongs_to = ['workflow_definition'];
+        $this->has_many   = ['step_executions'];
+        $this->dependents = 'destroy';
 
         $this->validate = [
             'presence_of' => [

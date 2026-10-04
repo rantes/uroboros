@@ -10,6 +10,10 @@ class CreateProjectGroups extends Migrations {
             ['field' => 'id',         'type' => 'INTEGER', 'autoincrement' => true, 'primary' => true],
             ['field' => 'project_id', 'type' => 'INTEGER', 'null' => 'false', 'limit' => '11'],
             ['field' => 'group_id',   'type' => 'INTEGER', 'null' => 'false', 'limit' => '11'],
+            // Workflow propio del Proyecto que corre al ejecutar el
+            // Grupo (ejecucion-batch-grupos). Nullable: miembro sin
+            // asignar = se omite del disparo batch.
+            ['field' => 'batch_workflow_definition_id', 'type' => 'INTEGER', 'null' => 'true', 'limit' => '11'],
             ['field' => 'created_at', 'type' => 'INTEGER', 'null' => 'false', 'limit' => '11'],
             ['field' => 'updated_at', 'type' => 'INTEGER', 'null' => 'false', 'limit' => '11'],
         ];

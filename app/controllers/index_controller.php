@@ -166,13 +166,19 @@ class IndexController extends MainController {
         $nodes            = [];
         $edges            = [];
         $chainedWorkflows = $this->WorkflowDefinition->Find([
-            'conditions' => 'workflow_definition_id IS NOT NULL',
+            // "Encadenado" = NOT NULL Y > 0: las desvinculaciones dejan 0 (FK NOT NULL
+            // semántico), nunca un id real — ver borrado con dependientes.
+            'conditions' => 'workflow_definition_id IS NOT NULL AND workflow_definition_id > 0',
         ]);
 
         foreach ($chainedWorkflows as $childWorkflow):
             $parentWorkflow = $this->WorkflowDefinition->Find((int) $childWorkflow->workflow_definition_id);
-            $childProject   = $childWorkflow->project();
-            $parentProject  = $parentWorkflow->project();
+
+            // Un padre inexistente (id colgante) NO se resuelve: project() sobre un
+            // registro vacío cae en el bug de __call() (FK vacía -> sin filtro) y
+            // devolvería el Proyecto de OTRO registro, dibujando una arista fantasma.
+            $childProject   = ($parentWorkflow->counter() > 0) ? $childWorkflow->project() : null;
+            $parentProject  = ($parentWorkflow->counter() > 0) ? $parentWorkflow->project() : null;
 
             (!empty($childProject->id) and !empty($parentProject->id) and (int) $childProject->id !== (int) $parentProject->id)
                 and ($nodes[(int) $parentProject->id] = $parentProject->name)

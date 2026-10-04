@@ -1,6 +1,7 @@
 <?php
 namespace tests;
 
+use DumboPHP\Secrets;
 use DumboPHP\lib\Timothy\dumboTests;
 
 class testProjectConfigFileModel extends dumboTests {
@@ -210,5 +211,115 @@ class testProjectConfigFileModel extends dumboTests {
         $reloaded = $this->ProjectConfigFile->Find($obj->id);
 
         $this->assertEquals($plain, $reloaded->DecryptedContent());
+    }
+    private function _newConfigFile(string $plain, string $filename = '.env', string $format = 'ini'): object {
+        $obj = $this->ProjectConfigFile->Niu(['project_id' => $this->_projectId, 'filename' => $filename, 'format' => $format, 'content' => $plain]);
+        $obj->Save() or die((string) $obj->_error);
+
+        return $obj;
+    }
+
+    public function createEncryptsExactlyOnceTest(): void {
+        $this->describe('Crear con texto plano: se cifra una sola vez y descifra al original');
+
+        $obj    = $this->_newConfigFile("A=1\nB=2");
+        $stored = $this->ProjectConfigFile->Find((int) $obj->id);
+
+        $this->assertTrue($stored->content !== "A=1\nB=2", 'No queda en claro');
+        $this->assertTrue($stored->isEncrypted((string) $stored->content), 'Queda como ciphertext válido');
+        $this->assertEquals("A=1\nB=2", $stored->DecryptedContent(), 'Un solo nivel de cifrado');
+    }
+
+    public function findChangeOtherFieldSaveKeepsContentTest(): void {
+        $this->describe('Find() + cambiar otro campo + Save(): el contenido sigue descifrando al original');
+
+        $obj    = $this->_newConfigFile("A=1\nB=2");
+        $loaded = $this->ProjectConfigFile->Find((int) $obj->id);
+        $before = $loaded->content;
+        $loaded->is_secret = 1;
+
+        $this->assertTrue($loaded->Save(), 'Save() debe funcionar: el blob cifrado no debe pasar por validateFormat como texto');
+        $after = $this->ProjectConfigFile->Find((int) $obj->id);
+
+        $this->assertEquals("A=1\nB=2", $after->DecryptedContent());
+        $this->assertEquals($before, $after->content, 'El blob no se vuelve a cifrar');
+        $this->assertEquals(1, (int) $after->is_secret);
+    }
+
+    public function findSaveWorksForJsonAndYamlFormatsTest(): void {
+        $this->describe('Find() + Save() de un archivo json no se rechaza por validar el blob cifrado como json');
+
+        $obj    = $this->_newConfigFile('{"a":[1,2]}', 'c.json', 'json');
+        $loaded = $this->ProjectConfigFile->Find((int) $obj->id);
+        $loaded->is_secret = 1;
+
+        $this->assertTrue($loaded->Save(), 'Re-guardar un json cifrado debe funcionar');
+        $this->assertEquals('{"a":[1,2]}', $this->ProjectConfigFile->Find((int) $obj->id)->DecryptedContent());
+    }
+
+    public function threeFindSaveCyclesDoNotDegradeTest(): void {
+        $this->describe('Tres ciclos Find()+Save() consecutivos sin degradación');
+
+        $obj = $this->_newConfigFile("A=1\nB=2");
+        for ($i = 1; $i <= 3; $i++):
+            $loaded = $this->ProjectConfigFile->Find((int) $obj->id);
+            $loaded->is_secret = $i % 2;
+            $loaded->Save() or die((string) $loaded->_error);
+        endfor;
+
+        $this->assertEquals("A=1\nB=2", $this->ProjectConfigFile->Find((int) $obj->id)->DecryptedContent());
+    }
+
+    public function updateWithNewPlaintextEncryptsTheNewContentTest(): void {
+        $this->describe('Actualizar con texto plano nuevo: se cifra el contenido nuevo');
+
+        $obj    = $this->_newConfigFile("A=1");
+        $loaded = $this->ProjectConfigFile->Find((int) $obj->id);
+        $loaded->content = "A=2\nC=3";
+        $loaded->Save() or die((string) $loaded->_error);
+
+        $this->assertEquals("A=2\nC=3", $this->ProjectConfigFile->Find((int) $obj->id)->DecryptedContent());
+    }
+
+    public function base64LookingPlaintextIsStillEncryptedTest(): void {
+        $this->describe('Contenido base64 largo que no autentica: se cifra normalmente, no se confunde con ciphertext');
+
+        $lookalike = json_encode(base64_encode(random_bytes(60)));            // JSON válido
+        $bare      = str_replace(['+', '/'], ['x', 'y'], base64_encode(random_bytes(60))); // base64-forma pura como ini
+        $asJson    = $this->_newConfigFile($lookalike, 'a.json', 'json');
+        $this->assertEquals($lookalike, $this->ProjectConfigFile->Find((int) $asJson->id)->DecryptedContent());
+
+        $this->assertFalse($asJson->isEncrypted($bare), 'Base64 de forma válida pero sin tag auténtico no es ciphertext');
+        $asIni = $this->_newConfigFile($bare, 'b.ini', 'ini');
+        $this->assertEquals($bare, $this->ProjectConfigFile->Find((int) $asIni->id)->DecryptedContent());
+    }
+
+    public function isEncryptedNeverThrowsOnOddInputTest(): void {
+        $this->describe('isEncrypted() con vacío, corto, no-base64 o sin tag válido: false, sin excepción ni warning');
+
+        $obj = $this->ProjectConfigFile->Niu();
+
+        foreach (['', 'a', 'abc', '!!!no-base64!!!', base64_encode('corto'), base64_encode(random_bytes(27)), base64_encode(random_bytes(28)), base64_encode(random_bytes(200))] as $odd):
+            $this->assertFalse($obj->isEncrypted($odd), 'false para: ' . substr($odd, 0, 20));
+        endforeach;
+    }
+
+    public function legacyBlobStillDecryptsAndIsNotReEncryptedTest(): void {
+        $this->describe('Un blob del formato original sigue descifrando y no se recifra');
+
+        $key = base64_decode((string) (new Secrets())->get('CONFIG_FILES_ENCRYPTION_KEY'));
+        $iv  = random_bytes(12);
+        $tag = '';
+        $ct  = openssl_encrypt("LEGADO=1\n", 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag);
+        $legacy = base64_encode($iv . $tag . $ct);
+
+        $obj = $this->_newConfigFile('X=1');
+        $obj->Update(['conditions' => "id='" . (int) $obj->id . "'", 'data' => ['content' => $legacy]]);
+
+        $loaded = $this->ProjectConfigFile->Find((int) $obj->id);
+        $this->assertEquals("LEGADO=1\n", $loaded->DecryptedContent());
+        $loaded->is_secret = 1;
+        $loaded->Save() or die((string) $loaded->_error);
+        $this->assertEquals($legacy, $this->ProjectConfigFile->Find((int) $obj->id)->content, 'El blob legado no se toca');
     }
 }

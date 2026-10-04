@@ -15,6 +15,10 @@ class WorkflowDefinition extends ActiveRecord {
     public function _init_(): void {
         $this->belongs_to = ['project'];
         $this->has_many   = ['workflow_step_definitions', 'workflow_executions'];
+        // destroy solo alcanza a has_many (pasos y ejecuciones). El encadenamiento
+        // (has_many_and_belongs_to) y la asignación batch del pivote NO pasan por la
+        // cascada: los desvincula el hook before_delete.
+        $this->dependents = 'destroy';
         $this->has_many_and_belongs_to = ['workflow_definition'];
 
         $this->validate = [
@@ -28,7 +32,8 @@ class WorkflowDefinition extends ActiveRecord {
             ],
         ];
 
-        $this->before_save = ['sanitizeName', 'sanitizeDescription', 'validateCascadeNotSelf'];
+        $this->before_save   = ['sanitizeName', 'sanitizeDescription', 'validateCascadeNotSelf'];
+        $this->before_delete = ['unlinkDependentReferences'];
     }
 
     public function sanitizeName(): void {
@@ -37,6 +42,31 @@ class WorkflowDefinition extends ActiveRecord {
 
     public function sanitizeDescription(): void {
         empty($this->description) or ($this->description = htmlentities(trim($this->description), ENT_QUOTES, 'UTF-8', false));
+    }
+
+    /**
+     * Desvincula (escribe 0, el "sin relación" de estas columnas) lo que apunta a
+     * este Workflow y no es hijo por has_many: los Workflows encadenados aguas abajo
+     * y la asignación batch del pivote Proyecto↔Grupo.
+     *
+     * Update() crudo y no Save(): Save() pasaría por las validaciones de OTRO
+     * workflow y podría bloquear este borrado por un motivo ajeno. Corre dentro de la
+     * transacción de Delete(): si falla, el error aborta el borrado y revierte todo.
+     */
+    public function unlinkDependentReferences(): void {
+        $id = (int) $this->id;
+
+        if ($id > 0):
+            $targets = [
+                [$this, 'workflow_definition_id'],
+                [new ProjectGroup(), 'batch_workflow_definition_id'],
+            ];
+
+            foreach ($targets as [$model, $column]):
+                $model->Update(['conditions' => "`{$column}`='{$id}'", 'data' => [$column => 0]])
+                    or $this->_error->add(['field' => $column, 'message' => "No se pudo desvincular {$column}"]);
+            endforeach;
+        endif;
     }
 
     // Sin sanitizeWebhookToken(): htmlentities() corrompería el token —

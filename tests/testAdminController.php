@@ -914,6 +914,30 @@ class testAdminController extends dumboTests {
         $this->assertEquals(HTTP_422, (int) $result->_code);
     }
 
+    public function syncconfigfilesUncreatableDirectoryIsClientError422Test(): void {
+        $this->describe('Un working_directory imposible de crear es un error corregible por el usuario: 422 con el mensaje, no 500');
+
+        $project = $this->_createProjectFixture(['working_directory' => '/proc/uroboros-no-se-puede-crear']);
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $result = $this->_runAction("/admin/syncconfigfiles/{$project->id}");
+
+        $this->assertEquals(HTTP_422, (int) $result->_code);
+        $this->assertTrue(str_contains((string) $result->_response['message'], 'No se pudo crear el directorio de trabajo'), 'El mensaje explica el motivo');
+    }
+
+    public function saveprojectUncreatableDirectoryIsClientError422Test(): void {
+        $this->describe('POST /admin/saveproject con un working_directory que no se puede crear: mensaje claro y el Proyecto no se crea');
+
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_POST = ['project' => ['name' => 'Dir imposible', 'type' => 'backend', 'working_directory' => '/proc/uroboros-no-se-puede-crear']];
+        $result = $this->_runAction('/admin/saveproject');
+
+        // saveprojectAction() usa $code local (ver notas de estos tests): se verifica mensaje y estado real.
+        $this->assertTrue(str_contains((string) $result->_response['message'], 'No se pudo crear el directorio de trabajo'));
+        $this->assertEquals(0, $this->Project->Find(['conditions' => "name='Dir imposible'"])->counter(), 'No se crea el Proyecto');
+    }
+
     /**
      * Tarea 23 — el caso de prueba de seguridad más importante del
      * spec. Path traversal real contra el filesystem real (no solo

@@ -2,9 +2,10 @@
 namespace App\Models;
 
 use DumboPHP\ActiveRecord;
-use DumboPHP\Secrets;
 
 class ProjectCredential extends ActiveRecord {
+    use SecretCipherTrait;
+
     public ?int    $project_id = null;
     public ?string $name       = null;
     public ?string $value      = null; // cifrado en reposo (AES-256-GCM) — nunca texto plano
@@ -68,29 +69,9 @@ class ProjectCredential extends ActiveRecord {
      * dato cifrado, sin reinventar.
      */
     public function encryptValue(): void {
-        $key = (new Secrets())->get('CONFIG_FILES_ENCRYPTION_KEY');
-
-        empty($key)
-            and throw new \Exception('CONFIG_FILES_ENCRYPTION_KEY no está configurada.');
-
-        $iv  = random_bytes(12); // 96 bits, tamaño recomendado para GCM
-        $tag = '';
-
-        $ciphertext = openssl_encrypt(
-            (string) $this->value,
-            'aes-256-gcm',
-            base64_decode($key),
-            OPENSSL_RAW_DATA,
-            $iv,
-            $tag
-        );
-
-        $ciphertext === false
-            and throw new \Exception('No se pudo cifrar el valor de la credencial.');
-
-        // Empaquetado: iv + tag + ciphertext, todo junto en base64 —
-        // un solo campo TEXT, sin columnas adicionales para iv/tag.
-        $this->value = base64_encode($iv . $tag . $ciphertext);
+        // Idempotente: un Find() + Save() llega aquí con el blob ya cifrado.
+        $this->isEncrypted((string) $this->value)
+            or ($this->value = $this->encryptSecret((string) $this->value, 'No se pudo cifrar el valor de la credencial.'));
     }
 
     /**
@@ -101,29 +82,6 @@ class ProjectCredential extends ActiveRecord {
      * AdminController que responda a un fetch del navegador.
      */
     public function DecryptedValue(): string {
-        $key = (new Secrets())->get('CONFIG_FILES_ENCRYPTION_KEY');
-
-        empty($key)
-            and throw new \Exception('CONFIG_FILES_ENCRYPTION_KEY no está configurada.');
-
-        $raw = base64_decode((string) $this->value);
-
-        $iv         = substr($raw, 0, 12);
-        $tag        = substr($raw, 12, 16); // GCM tag real: 16 bytes (verificado)
-        $ciphertext = substr($raw, 28);
-
-        $plaintext = openssl_decrypt(
-            $ciphertext,
-            'aes-256-gcm',
-            base64_decode($key),
-            OPENSSL_RAW_DATA,
-            $iv,
-            $tag
-        );
-
-        $plaintext === false
-            and throw new \Exception('No se pudo descifrar la credencial — clave inválida o dato corrupto.');
-
-        return $plaintext;
+        return $this->decryptSecret((string) $this->value, 'No se pudo descifrar la credencial — clave inválida o dato corrupto.');
     }
 }

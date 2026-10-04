@@ -50,11 +50,17 @@ class AdminController extends MainController {
                 if (in_array($this->params[0] ?? null, ['edit', 'add'])):
                     $this->groups = $this->Group->Find();
                     $this->selectedGroupIds = [];
+                    $this->batchByGroup     = [];
+                    $this->projectWorkflows = [];
                     if ($this->params[0] === 'edit' and !empty($this->params[1])):
                         $assigned = $this->ProjectGroup->Find(['conditions' => [['project_id', (int) $this->params[1]]]]);
                         foreach ($assigned as $projectGroup):
                             $this->selectedGroupIds[] = (int) $projectGroup->group_id;
+                            $this->batchByGroup[(int) $projectGroup->group_id] = (int) $projectGroup->batch_workflow_definition_id;
                         endforeach;
+                        // Solo los Workflows propios de este Proyecto —
+                        // candidatos a "workflow de ejecución batch".
+                        $this->projectWorkflows = $this->WorkflowDefinition->Find(['conditions' => [['project_id', (int) $this->params[1]]]]);
                     endif;
                 endif;
             break;
@@ -288,9 +294,20 @@ class AdminController extends MainController {
             $data = $_POST['project'] ?? [];
             empty($data) and throw new ControllerException('Datos de proyecto requeridos', HTTP_422);
 
-            $groupIds = $data['groups'] ?? [];
-            unset($data['groups']);
+            $groupIds       = $data['groups'] ?? [];
+            $batchSelection = (array) ($data['batch_workflows'] ?? []);
+            unset($data['groups'], $data['batch_workflows']);
             !empty($data['id']) and ($data['id'] = (int) $data['id']);
+
+            // El workflow batch debe ser del propio Proyecto — nunca
+            // confiar en el id crudo del formulario. Se valida ANTES de
+            // guardar nada: rechazar después de borrar/recrear el pivote
+            // dejaría al Proyecto sin sus grupos.
+            foreach ($batchSelection as $submittedId):
+                (int) $submittedId > 0
+                    and $this->WorkflowDefinition->Find(['conditions' => [['id', (int) $submittedId], ['project_id', (int) ($data['id'] ?? 0)]]])->counter() === 0
+                    and throw new ControllerException('El workflow batch debe pertenecer al propio proyecto.', HTTP_422);
+            endforeach;
 
             $project = $this->Project->Niu($data);
 
@@ -310,7 +327,7 @@ class AdminController extends MainController {
 
                 ensureWritableProjectDirectory($project->working_directory);
                 is_dir($project->working_directory)
-                    or throw new ControllerException("No se pudo crear el directorio de trabajo: {$project->working_directory}", HTTP_500);
+                    or throw new ControllerException("No se pudo crear el directorio de trabajo: {$project->working_directory}", HTTP_422);
 
                 is_writable($project->working_directory)
                     or throw new ControllerException("El directorio de trabajo existe pero no tiene permisos de escritura ({$project->working_directory}). Ajusta los permisos (ej. chown/chmod) e intenta de nuevo.", HTTP_422);
@@ -324,16 +341,26 @@ class AdminController extends MainController {
             // Sync simple del pivote: borra todas las filas existentes
             // de este proyecto y recrea desde la selección actual.
             // Más simple que diffear altas/bajas — la escala (pocos
-            // grupos por proyecto) no justifica un diff real.
-            $existing = $this->ProjectGroup->Find(['conditions' => [['project_id', $project->id]]]);
+            // grupos por proyecto) no justifica un diff real. Pero
+            // antes se recuerda el workflow batch ya asignado por
+            // Grupo: borrar/recrear lo perdería en silencio en cada
+            // edición del Proyecto (ejecucion-batch-grupos, Req. 1.2).
+            $existing    = $this->ProjectGroup->Find(['conditions' => [['project_id', $project->id]]]);
+            $batchByGroup = [];
             foreach ($existing as $projectGroup):
+                $batchByGroup[(int) $projectGroup->group_id] = (int) $projectGroup->batch_workflow_definition_id;
                 $projectGroup->Delete();
             endforeach;
 
             foreach ($groupIds as $groupId):
+                $groupId = (int) $groupId;
+                // Selección enviada en este guardado > asignación previa.
+                $batchId = (int) ($batchSelection[$groupId] ?? $batchByGroup[$groupId] ?? 0);
+
                 $newProjectGroup = $this->ProjectGroup->Niu([
-                    'project_id' => $project->id,
-                    'group_id'   => (int) $groupId,
+                    'project_id'                   => $project->id,
+                    'group_id'                     => $groupId,
+                    'batch_workflow_definition_id' => ($batchId > 0) ? $batchId : null,
                 ]);
                 $newProjectGroup->Save()
                     or throw new ControllerException((string) $newProjectGroup->_error, HTTP_422);
@@ -351,6 +378,301 @@ class AdminController extends MainController {
             $this->setResponseCode($code);
             $this->respondToAJAX(json_encode($this->_response));
         }
+    }
+
+    /**
+     * Dispara el workflow batch asignado de cada Proyecto miembro de un
+     * Grupo (ejecucion-batch-grupos). Despacho secuencial dentro de este
+     * único proceso — nunca en paralelo. Un miembro sin workflow
+     * asignado (o con uno que ya no existe) se omite y queda señalado
+     * con su razón; un fallo individual tampoco detiene al resto.
+     * Responde 202, igual que executeworkflowAction(). 'executegroup'
+     * NO está en $this->_actions deliberadamente.
+     */
+    public function executegroupAction(): void {
+        $this->layout = null;
+        $this->_code  = HTTP_202;
+        $triggered    = [];
+        $skipped      = [];
+
+        try {
+            $groupId = (int) ($this->params['id'] ?? $this->params[0] ?? 0);
+            $group   = $this->Group->Find($groupId);
+
+            $group->counter() > 0
+                or throw new ControllerException('Grupo no encontrado.', HTTP_404);
+
+            $members = $this->ProjectGroup->Find([
+                'fields'     => 'project_groups.*, projects.name AS project_name',
+                'join'       => 'INNER JOIN projects ON projects.id = project_groups.project_id',
+                'conditions' => "project_groups.group_id = '{$groupId}'",
+                'sort'       => 'projects.name ASC',
+            ]);
+
+            foreach ($members as $member):
+                $batchId  = (int) $member->batch_workflow_definition_id;
+                $workflow = ($batchId > 0)
+                    ? $this->WorkflowDefinition->Find(['conditions' => [['id', $batchId], ['project_id', (int) $member->project_id]]])
+                    : null;
+
+                if ($workflow === null):
+                    $skipped[] = ['project' => $member->project_name, 'reason' => 'Sin workflow asignado para ejecución batch'];
+                elseif ($workflow->counter() === 0):
+                    $skipped[] = ['project' => $member->project_name, 'reason' => 'El workflow asignado ya no existe'];
+                else:
+                    try {
+                        (new CommandBus())->Dispatch(new ExecuteWorkflowCommand($batchId, 'batch'));
+                        $triggered[] = ['project' => $member->project_name, 'workflow_definition_id' => $batchId, 'workflow' => $workflow->name];
+                    } catch (Exception $e) {
+                        $skipped[] = ['project' => $member->project_name, 'reason' => 'Error al disparar: ' . $e->getMessage()];
+                    }
+                endif;
+            endforeach;
+
+            $this->_response['d']       = ['triggered' => $triggered, 'skipped' => $skipped];
+            $this->_response['message'] = $this->_batch_summary($triggered, $skipped);
+        } catch (ControllerException $e) {
+            $this->_code                = $e->getCode();
+            $this->_response['message'] = $e->getMessage();
+        } catch (Exception $e) {
+            $this->_code                = HTTP_500;
+            $this->_response['message'] = $e->getMessage();
+        } finally {
+            $this->setResponseCode($this->_code);
+            $this->respondToAJAX(json_encode($this->_response));
+        }
+    }
+
+    /**
+     * El diálogo de dmb-button-action muestra solo texto plano
+     * (textContent), así que las dos listas viajan dentro del mensaje.
+     */
+    private function _batch_summary(array $triggered, array $skipped): string {
+        $firedList   = implode('; ', array_map(fn($item) => "{$item['project']} ({$item['workflow']})", $triggered));
+        $skippedList = implode('; ', array_map(fn($item) => "{$item['project']} — {$item['reason']}", $skipped));
+
+        return count($triggered) . ' workflow(s) disparados' . (empty($firedList) ? '' : ": {$firedList}")
+            . '. ' . count($skipped) . ' proyecto(s) omitidos' . (empty($skippedList) ? '' : ": {$skippedList}") . '.';
+    }
+
+    /**
+     * Panel pequeño que pide el nombre del Proyecto duplicado — mismo
+     * patrón que los addedit (open-panel + dmb-simple-form), no un
+     * diálogo nuevo. 'projectduplicateform' NO está en $this->_actions
+     * deliberadamente, mismo criterio que saveproject/executeworkflow.
+     */
+    public function projectduplicateformAction(): void {
+        $this->layout = false;
+        $projectId    = (int) ($this->params['id'] ?? $this->params[0] ?? 0);
+
+        try {
+            $this->data = $this->Project->Find($projectId);
+
+            if ($this->data->counter() > 0):
+                $this->render = ['file' => 'admin/project_duplicate.phtml'];
+            else:
+                $this->setResponseCode(HTTP_404);
+                $this->render = ['text' => 'Proyecto no encontrado.'];
+            endif;
+        } catch (\Exception $e) {
+            $this->setResponseCode(HTTP_500);
+            $this->render = ['text' => 'Ocurrió un error al cargar el formulario.'];
+        }
+    }
+
+    /**
+     * Duplica un Proyecto completo (credenciales, archivos de
+     * configuración, Workflows + pasos). Ver
+     * .claude/specs/duplicar-proyecto/design.md. Si algo falla a
+     * mitad, borra lo ya creado — de lo contrario el nombre (único)
+     * del Proyecto quedaría ocupado por una copia a medias y el
+     * reintento fallaría.
+     */
+    public function duplicateprojectAction(): void {
+        $this->layout = null;
+        $this->_code  = HTTP_201;
+        $newProject   = null;
+        $unchained    = [];
+
+        try {
+            $sourceId      = (int) ($this->params['id'] ?? $this->params[0] ?? 0);
+            $sourceProject = $this->Project->Find($sourceId);
+            $newName       = trim((string) ($_POST['new_name'] ?? ''));
+
+            $sourceProject->counter() > 0
+                or throw new ControllerException('Proyecto origen no encontrado.', HTTP_404);
+            empty($newName)
+                and throw new ControllerException('Se requiere un nombre para el nuevo proyecto.', HTTP_422);
+
+            // working_directory deliberadamente ausente — queda vacío
+            // hasta que el usuario configure una ruta real.
+            $newProject = $this->Project->Niu([
+                'name'           => $newName,
+                'description'    => $sourceProject->description,
+                'type'           => $sourceProject->type,
+                'repository_url' => $sourceProject->repository_url,
+                'status'         => $sourceProject->status,
+            ]);
+            $newProject->Save()
+                or throw new ControllerException((string) $newProject->_error, HTTP_422);
+
+            $this->_duplicate_credentials((int) $sourceProject->id, (int) $newProject->id);
+            $this->_duplicate_config_files((int) $sourceProject->id, (int) $newProject->id);
+            $unchained = $this->_duplicate_workflows((int) $sourceProject->id, (int) $newProject->id);
+
+            $this->_response['d']       = $newProject;
+            $this->_response['message'] = 'Proyecto duplicado correctamente.'
+                . (empty($unchained) ? '' : ' Workflows cuyo encadenamiento apuntaba a otro proyecto quedaron sin encadenar: ' . implode('; ', $unchained) . '.');
+        } catch (ControllerException $e) {
+            $this->_code                = $e->getCode();
+            $this->_response['message'] = $e->getMessage();
+            $this->_discard_duplicate($newProject);
+        } catch (Exception $e) {
+            $this->_code                = HTTP_500;
+            $this->_response['message'] = $e->getMessage();
+            $this->_discard_duplicate($newProject);
+        } finally {
+            $this->setResponseCode($this->_code);
+            $this->respondToAJAX(json_encode($this->_response));
+        }
+    }
+
+    private function _duplicate_credentials(int $sourceProjectId, int $newProjectId): void {
+        $credentials = $this->ProjectCredential->Find(['conditions' => [['project_id', $sourceProjectId]]]);
+
+        foreach ($credentials as $credential):
+            // DecryptedValue() + before_save encryptValue(): nunca se
+            // copia el blob cifrado (IV propio por registro).
+            $copy = $this->ProjectCredential->Niu([
+                'project_id' => $newProjectId,
+                'name'       => $credential->name,
+                'value'      => $credential->DecryptedValue(),
+            ]);
+            $copy->Save()
+                or throw new ControllerException("No se pudo duplicar la credencial {$credential->name}: {$copy->_error}", HTTP_500);
+        endforeach;
+    }
+
+    private function _duplicate_config_files(int $sourceProjectId, int $newProjectId): void {
+        $files = $this->ProjectConfigFile->Find(['conditions' => [['project_id', $sourceProjectId]]]);
+
+        foreach ($files as $file):
+            $copy = $this->ProjectConfigFile->Niu([
+                'project_id' => $newProjectId,
+                'filename'   => $file->filename,
+                'format'     => $file->format,
+                'is_secret'  => $file->is_secret,
+                'content'    => $file->DecryptedContent(),
+            ]);
+            $copy->Save()
+                or throw new ControllerException("No se pudo duplicar el archivo {$file->filename}: {$copy->_error}", HTTP_500);
+        endforeach;
+    }
+
+    /**
+     * Dos pasadas: el Workflow al que otro apunta puede no existir
+     * todavía en la primera. Retorna los nombres de los Workflows cuyo
+     * encadenamiento apuntaba a OTRO Proyecto — por decisión, la copia
+     * queda sin encadenar (no se crea una relación cruzada que nadie
+     * pidió duplicar).
+     *
+     * @return array<string>
+     */
+    private function _duplicate_workflows(int $sourceProjectId, int $newProjectId): array {
+        $sourceWorkflows = $this->WorkflowDefinition->Find(['conditions' => [['project_id', $sourceProjectId]]]);
+        $idMap           = [];
+        $unchained       = [];
+        $copyNames       = [];
+
+        foreach ($sourceWorkflows as $sourceWorkflow):
+            $newWorkflow = $this->WorkflowDefinition->Niu([
+                'project_id'    => $newProjectId,
+                'name'          => $this->_available_copy_name((string) $sourceWorkflow->name),
+                'description'   => $sourceWorkflow->description,
+                'status'        => $sourceWorkflow->status,
+                // Secreto propio — el webhook_token del origen nunca se
+                // comparte: dispararía el Workflow equivocado.
+                'webhook_token' => bin2hex(random_bytes(16)),
+            ]);
+            $newWorkflow->Save()
+                or throw new ControllerException("No se pudo duplicar el workflow {$sourceWorkflow->name}: {$newWorkflow->_error}", HTTP_500);
+            $idMap[(int) $sourceWorkflow->id]      = (int) $newWorkflow->id;
+            $copyNames[(int) $sourceWorkflow->id] = (string) $newWorkflow->name;
+
+            $this->_duplicate_steps((int) $sourceWorkflow->id, (int) $newWorkflow->id);
+        endforeach;
+
+        foreach ($sourceWorkflows as $sourceWorkflow):
+            $targetId = (int) $sourceWorkflow->workflow_definition_id;
+
+            if ($targetId > 0 and isset($idMap[$targetId])):
+                $copy = $this->WorkflowDefinition->Find($idMap[(int) $sourceWorkflow->id]);
+                $copy->workflow_definition_id = $idMap[$targetId];
+                $copy->Save()
+                    or throw new ControllerException("No se pudo remapear el encadenamiento de {$sourceWorkflow->name}: {$copy->_error}", HTTP_500);
+            elseif ($targetId > 0):
+                $external     = $this->WorkflowDefinition->Find($targetId);
+                $externalName = ($external->counter() > 0) ? (string) $external->name : "#{$targetId} (ya no existe)";
+                $unchained[]  = "«{$copyNames[(int) $sourceWorkflow->id]}» (apuntaba a «{$externalName}»)";
+            endif;
+        endforeach;
+
+        return $unchained;
+    }
+
+    private function _duplicate_steps(int $sourceWorkflowId, int $newWorkflowId): void {
+        $steps = $this->WorkflowStepDefinition->Find(['conditions' => [['workflow_definition_id', $sourceWorkflowId]]]);
+
+        foreach ($steps as $step):
+            $copy = $this->WorkflowStepDefinition->Niu([
+                'workflow_definition_id' => $newWorkflowId,
+                'name'                   => $step->name,
+                'type'                   => $step->type,
+                'command'                => $step->command,
+                'step_order'             => $step->step_order,
+            ]);
+            $copy->Save()
+                or throw new ControllerException("No se pudo duplicar el paso {$step->name}: {$copy->_error}", HTTP_500);
+        endforeach;
+    }
+
+    /**
+     * "{nombre} (copia)" — WorkflowDefinition::name es único global,
+     * así que una segunda duplicación del mismo Proyecto (o un nombre
+     * ya tomado) recibe "(copia 2)", "(copia 3)"…
+     */
+    private function _available_copy_name(string $originalName): string {
+        $candidate = "{$originalName} (copia)";
+        $counter   = 2;
+
+        while ($this->WorkflowDefinition->Find(['conditions' => [['name', $candidate]]])->counter() > 0):
+            $candidate = "{$originalName} (copia {$counter})";
+            $counter++;
+        endwhile;
+
+        return $candidate;
+    }
+
+    /**
+     * Deshace una duplicación fallida a mitad de camino.
+     */
+    private function _discard_duplicate($newProject): void {
+        if (!empty($newProject) and !empty($newProject->id)):
+            $workflows = $this->WorkflowDefinition->Find(['conditions' => [['project_id', $newProject->id]]]);
+            foreach ($workflows as $workflow):
+                foreach ($this->WorkflowStepDefinition->Find(['conditions' => [['workflow_definition_id', $workflow->id]]]) as $step):
+                    $step->Delete();
+                endforeach;
+                $workflow->Delete();
+            endforeach;
+            foreach ($this->ProjectCredential->Find(['conditions' => [['project_id', $newProject->id]]]) as $credential):
+                $credential->Delete();
+            endforeach;
+            foreach ($this->ProjectConfigFile->Find(['conditions' => [['project_id', $newProject->id]]]) as $file):
+                $file->Delete();
+            endforeach;
+            $newProject->Delete();
+        endif;
     }
 
     /**
@@ -374,7 +696,7 @@ class AdminController extends MainController {
 
             ensureWritableProjectDirectory($project->working_directory);
             is_dir($project->working_directory)
-                or throw new ControllerException("No se pudo crear el directorio de trabajo: {$project->working_directory}", HTTP_500);
+                or throw new ControllerException("No se pudo crear el directorio de trabajo: {$project->working_directory}", HTTP_422);
 
             $files = $this->ProjectConfigFile->Find(['conditions' => [['project_id', $projectId]]]);
 
