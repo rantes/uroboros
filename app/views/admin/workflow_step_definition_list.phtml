@@ -26,7 +26,11 @@
                         </dmb-more-option>
                         <dmb-more-option
                             behavior="ajax"
-                            url="/admin/workflow_step_definitions/<?= $row->id; ?>">
+                            action="delete"
+                            confirm="Se eliminará el paso «<?= $row->name; ?>» y sus ejecuciones."
+                            data-id="<?= $row->id; ?>"
+                            target="/admin/workflow_step_definitions?workflow_definition_id=<?= $this->workflowDefinitionId; ?>"
+                            url="/admin/workflow_step_definitions">
                             Eliminar
                         </dmb-more-option>
                     </dmb-more-options>

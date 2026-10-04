@@ -200,6 +200,28 @@ class testIndexController extends dumboTests {
         $this->assertEquals(null, $result->dependencyGraphSvg, 'Auto-referencia dentro del mismo Proyecto no debe producir grafo');
     }
 
+    public function dependencyGraphIgnoresUnlinkedZeroAndDanglingChainTest(): void {
+        $this->describe('Un Workflow con workflow_definition_id = 0 (desvinculado) o con un id colgante no produce arista ni nodo fantasma');
+
+        $projectA = $this->_createProjectFixture('Alpha Zero ' . bin2hex(random_bytes(4)));
+        $projectB = $this->_createProjectFixture('Beta Zero ' . bin2hex(random_bytes(4)));
+        $projectC = $this->_createProjectFixture('Gamma Zero ' . bin2hex(random_bytes(4)));
+
+        $this->_createWorkflowDefinitionFixture((int) $projectA->id);
+        $this->_createWorkflowDefinitionFixture((int) $projectB->id, 0);     // desvinculado
+        $this->_createWorkflowDefinitionFixture((int) $projectC->id, 99999); // id colgante: el padre ya no existe
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $index  = $this->_runAction('/index/index');
+        $detail = $this->_runAction('/index/dependencygraph');
+
+        $this->assertEquals(HTTP_200, (int) $index->_code);
+        $this->assertEquals(null, $index->dependencyGraphSvg, 'Ni 0 ni un id colgante deben dibujar nada en el widget');
+        $this->assertEquals(HTTP_200, (int) $detail->_code);
+        $this->assertEquals(null, $detail->dependencyGraphSvg, 'Ni en el detalle');
+        $this->assertEquals(null, $detail->dependencyCyclePath);
+    }
+
     public function dependencyGraphShowsRealRelationsBetweenRealProjectsTest(): void {
         $this->describe('Con relaciones reales entre Proyectos reales, el widget y el detalle deben mostrar el grafo con los nombres reales, sin advertencia de ciclo');
 

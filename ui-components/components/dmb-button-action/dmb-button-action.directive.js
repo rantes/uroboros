@@ -52,7 +52,51 @@ export class DmbButtonAction extends DumboDirective {
         });
     }
 
+    /**
+     * Con el atributo opcional `confirm="texto"` pide confirmación antes de actuar: un
+     * dmb-dialog (showModal() + botones type="modal-answer") y solo continúa si el usuario
+     * acepta. Sin el atributo, el comportamiento no cambia. Vive aquí (y no en el listener de
+     * click de init()) porque dmb-more-option hereda handleClick() pero registra su propio
+     * listener.
+     */
     handleClick() {
+        const message = this.getAttribute('confirm');
+
+        message === null
+            ? this.#dispatchBehavior()
+            : this.#askConfirmation(message).then((accepted) => accepted && this.#dispatchBehavior());
+    }
+
+    #askConfirmation(message) {
+        return new Promise((resolve) => {
+            const wrapper = document.createElement('div');
+            const text = document.createElement('p');
+            const actions = document.createElement('div');
+            const cancel = document.createElement('button');
+            const accept = document.createElement('button');
+
+            wrapper.classList.add('confirm-dialog');
+            text.classList.add('confirm-dialog-message');
+            text.textContent = message; // textContent: el texto nunca se interpreta como HTML
+            actions.classList.add('confirm-dialog-actions');
+
+            cancel.setAttribute('type', 'modal-answer');
+            cancel.setAttribute('value', 'cancelled');
+            cancel.textContent = 'Cancelar';
+            accept.setAttribute('type', 'modal-answer');
+            accept.setAttribute('value', 'accepted');
+            accept.classList.add('primary');
+            accept.textContent = 'Aceptar';
+
+            actions.append(cancel, accept);
+            wrapper.append(text, actions);
+
+            const dialog = this.#_dialog.drawer(wrapper, 'small', false);
+            dialog.addEventListener('close', () => resolve(dialog.returnValue === 'accepted'), {once: true});
+        });
+    }
+
+    #dispatchBehavior() {
         let panel = null;
         let form = null;
         const url = this.getAttribute('url');
@@ -81,7 +125,10 @@ export class DmbButtonAction extends DumboDirective {
                 location.href = url;
                 break;
             case 'ajax':
-                appModel.url = url;
+                // url() es un método de BaseModelClass — asignarlo
+                // (`appModel.url = url`) lo reemplazaba por un string y el
+                // GET iba a la URL anterior (la propia página → HTML).
+                appModel.url(url);
                 if(pageLoader) pageLoader.open();
                 if (this._action === 'delete') {
                     appModel.deleteData({id: this.dataId}, target);

@@ -9,6 +9,8 @@ class Group extends ActiveRecord {
 
     public function _init_(): void {
         $this->has_many = ['project_groups'];
+        // El pivote no tiene sentido sin su Grupo (Proyectos y workflows no se tocan).
+        $this->dependents = 'destroy';
 
         $this->validate = [
             'presence_of' => [

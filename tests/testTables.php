@@ -111,5 +111,22 @@ class testTables extends dumboTests {
             in_array('project', $this->ProjectCredential->belongs_to),
             'Verify ProjectCredential belongs_to Project relation'
         );
+
+        $this->describe('Verifying has_many + dependents (borrado en cascada, sin tocar el Event Store)');
+        $cascades = [
+            'Project'                => [$this->Project, ['project_groups', 'workflow_definitions', 'project_credentials', 'project_config_files'], 'destroy'],
+            'Group'                  => [$this->Group, ['project_groups'], 'destroy'],
+            'WorkflowDefinition'     => [$this->WorkflowDefinition, ['workflow_step_definitions', 'workflow_executions'], 'destroy'],
+            'WorkflowStepDefinition' => [$this->WorkflowStepDefinition, ['step_executions'], 'destroy'],
+            'WorkflowExecution'      => [$this->WorkflowExecution, ['step_executions'], 'destroy'],
+        ];
+        foreach ($cascades as $name => [$model, $children, $mode]):
+            $this->assertEquals($children, $model->has_many, "{$name} has_many");
+            $this->assertEquals($mode, (new \ReflectionProperty($model, 'dependents'))->getValue($model), "{$name} dependents");
+            $this->assertFalse(in_array('events', $model->has_many, true), "{$name} nunca debe tener eventos en has_many (inmutables)");
+        endforeach;
+        foreach (['StepExecution' => $this->StepExecution, 'ProjectCredential' => $this->ProjectCredential, 'ProjectConfigFile' => $this->ProjectConfigFile] as $name => $model):
+            $this->assertTrue(empty((new \ReflectionProperty($model, 'dependents'))->getValue($model)), "{$name} sin dependents");
+        endforeach;
     }
 }

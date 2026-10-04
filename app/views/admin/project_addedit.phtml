@@ -68,6 +68,21 @@
                         <? endforeach; ?>
                     </dmb-select>
                 </div>
+                <? foreach ($this->groups as $group): ?>
+                <? if (isset($this->batchByGroup[(int) $group->id])): ?>
+                <div class="col col12">
+                    <dmb-select
+                        label="Workflow batch en «<?= $group->name; ?>»"
+                        dmb-name="project[batch_workflows][<?= (int) $group->id; ?>]"
+                        dmb-value="<?= $this->batchByGroup[(int) $group->id] ?: ''; ?>">
+                        <option value="">Sin asignar (se omite al ejecutar el grupo)</option>
+                        <? foreach ($this->projectWorkflows as $workflow): ?>
+                        <option value="<?= $workflow->id; ?>"><?= $workflow->name; ?></option>
+                        <? endforeach; ?>
+                    </dmb-select>
+                </div>
+                <? endif; ?>
+                <? endforeach; ?>
             </div>
         </dmb-content>
         <dmb-footer class="section group">

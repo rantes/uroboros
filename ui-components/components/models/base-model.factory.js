@@ -52,10 +52,18 @@ export class BaseModelClass {
      * Manejo de respuesta COMÚN de las lecturas GET (getFromServer y setElement): un status no-ok
      * rechaza; 204 (sin cuerpo, p. ej. "sin resultados") se normaliza a {message, d: []} en vez de
      * intentar parsear JSON de un cuerpo vacío ("Unexpected end of JSON input").
+     *
+     * Un status no-ok MENOR a 500 usa el `message` del JSON del servidor cuando existe (los controladores lo
+     * envían con el motivo real; mismo criterio que POST/PUT/DELETE: un 5xx nunca lo muestra); si el cuerpo no es JSON o no trae message, queda el genérico
+     * con el status.
      */
     #_handleResponse(res) {
         if (!res.ok) {
-            throw new Error(`HTTP error! Status: ${res.status}`);
+            return res.json()
+                .catch(() => null)
+                .then(data => {
+                    throw new Error((res.status < 500 && data && data.message) || `HTTP error! Status: ${res.status}`);
+                });
         }
 
         return res.status === 204
@@ -158,7 +166,7 @@ export class BaseModelClass {
                     if (!res.ok) {
                         const message = res.status < 500
                             ? (data.message || `Error ${res.status}`)
-                            : null;
+                            : undefined; // 5xx: sin message del servidor — new Error(null) mostraba el texto "null"; vacío cae al genérico del llamador
                         throw new Error(message);
                     }
                     return data;
@@ -193,7 +201,7 @@ export class BaseModelClass {
                     if (!res.ok) {
                         const message = res.status < 500
                             ? (data.message || `Error ${res.status}`)
-                            : null;
+                            : undefined; // 5xx: sin message del servidor — new Error(null) mostraba el texto "null"; vacío cae al genérico del llamador
                         throw new Error(message);
                     }
                     return data;
@@ -228,7 +236,7 @@ export class BaseModelClass {
                     if (!res.ok) {
                         const message = res.status < 500
                             ? (data.message || `Error ${res.status}`)
-                            : null;
+                            : undefined; // 5xx: sin message del servidor — new Error(null) mostraba el texto "null"; vacío cae al genérico del llamador
                         throw new Error(message);
                     }
                     return data;

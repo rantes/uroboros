@@ -11,6 +11,12 @@
             <tr>
                 <td><?= $row->name; ?></td>
                 <td>
+                    <dmb-button-action
+                        action="execute"
+                        url="/admin/executegroup/<?= $row->id; ?>"
+                        behavior="ajax">
+                        Ejecutar grupo
+                    </dmb-button-action>
                     <dmb-more-options>
                         <dmb-more-option
                             behavior="open-panel"
@@ -20,7 +26,11 @@
                         </dmb-more-option>
                         <dmb-more-option
                             behavior="ajax"
-                            url="/admin/groups/<?= $row->id; ?>">
+                            action="delete"
+                            confirm="Se eliminará el grupo «<?= $row->name; ?>». Los proyectos no se tocan."
+                            data-id="<?= $row->id; ?>"
+                            target="/admin/groups"
+                            url="/admin/groups">
                             Eliminar
                         </dmb-more-option>
                     </dmb-more-options>

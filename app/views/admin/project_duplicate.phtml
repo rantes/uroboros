@@ -1,0 +1,37 @@
+<dmb-simple-form redirect="/admin/projects" close-panel="#panel-form-add-edit-reg">
+    <dmb-form
+        id="form-project-duplicate"
+        name="project_duplicate"
+        action="/admin/duplicateproject/<?= (int) $this->data->id; ?>"
+        method="post"
+        async>
+        <header>
+            <dmb-close-panel orientation="right"></dmb-close-panel>
+            <h3>Duplicar proyecto</h3>
+        </header>
+        <dmb-content>
+            <div class="section group">
+                <div class="col col12">
+                    <p>Se copiarán credenciales, archivos de configuración y workflows de
+                        <strong><?= $this->data->name; ?></strong>. El directorio de trabajo
+                        queda vacío.</p>
+                </div>
+                <div class="col col12">
+                    <dmb-input
+                        label="Nombre del nuevo proyecto"
+                        dmb-name="new_name"
+                        validate="required">
+                    </dmb-input>
+                </div>
+            </div>
+        </dmb-content>
+        <dmb-footer class="section group">
+            <div class="col col6">
+                <dmb-button type="reset">Cancelar</dmb-button>
+            </div>
+            <div class="col col6">
+                <dmb-button type="submit">Duplicar</dmb-button>
+            </div>
+        </dmb-footer>
+    </dmb-form>
+</dmb-simple-form>

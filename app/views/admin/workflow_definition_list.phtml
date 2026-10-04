@@ -35,7 +35,11 @@
                         </dmb-more-option>
                         <dmb-more-option
                             behavior="ajax"
-                            url="/admin/workflow_definitions/<?= $row->id; ?>">
+                            action="delete"
+                            data-id="<?= $row->id; ?>"
+                            confirm="Se eliminará el workflow «<?= $row->name; ?>» con sus pasos y sus ejecuciones.&#10;Los workflows encadenados a él quedan desvinculados (sin encadenar)."
+                            target="/admin/workflow_definitions<?= empty($this->projectId) ? '' : '?project_id=' . (int) $this->projectId; ?>"
+                            url="/admin/workflow_definitions">
                             Eliminar
                         </dmb-more-option>
                     </dmb-more-options>

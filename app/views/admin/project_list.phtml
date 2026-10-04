@@ -38,8 +38,18 @@
                             Editar
                         </dmb-more-option>
                         <dmb-more-option
+                            behavior="open-panel"
+                            url="/admin/projectduplicateform/<?= $row->id; ?>"
+                            panel="#panel-form-add-edit-reg">
+                            Duplicar
+                        </dmb-more-option>
+                        <dmb-more-option
                             behavior="ajax"
-                            url="/admin/projects/<?= $row->id; ?>">
+                            action="delete"
+                            confirm="Se eliminará el proyecto «<?= $row->name; ?>» junto con:&#10;• sus workflows, con sus pasos y ejecuciones&#10;• sus credenciales&#10;• sus archivos de configuración&#10;El directorio de trabajo en disco no se toca. Esta acción no se puede deshacer."
+                            data-id="<?= $row->id; ?>"
+                            target="/admin/projects"
+                            url="/admin/projects">
                             Eliminar
                         </dmb-more-option>
                     </dmb-more-options>

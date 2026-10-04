@@ -14,6 +14,7 @@ class WorkflowExecution extends ActiveRecord {
     public function _init_(): void {
         $this->belongs_to = ['workflow_definition'];
         $this->has_many   = ['step_executions'];
+        $this->dependents = 'destroy';
 
         $this->validate = [
             'presence_of' => [
@@ -40,7 +41,7 @@ class WorkflowExecution extends ActiveRecord {
     }
 
     public function validateTriggerType(): void {
-        $validTriggerTypes = ['manual', 'webhook', 'cascade', 'retry'];
+        $validTriggerTypes = ['manual', 'webhook', 'cascade', 'retry', 'batch'];
 
         in_array($this->trigger_type, $validTriggerTypes, true)
             or $this->_error->add(['field' => 'trigger_type', 'message' => 'El trigger_type debe ser uno de: ' . implode(', ', $validTriggerTypes)]);

@@ -35,3 +35,9 @@ dmb-button-action {
         max-width: 14em;
     }
 }
+
+// Diálogo de confirmación del atributo `confirm` (comparte .confirm-dialog con
+// dmb-simple-form): el texto puede traer saltos de línea (listas de lo que se elimina).
+.confirm-dialog .confirm-dialog-message {
+    white-space: pre-line;
+}
