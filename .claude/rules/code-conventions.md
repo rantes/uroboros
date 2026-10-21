@@ -289,7 +289,7 @@ $nombre = htmlentities(trim($data[0]), ENT_QUOTES, 'UTF-8', false);
 ```php
 // Siempre castear IDs y enteros de params
 $id = (int) $this->params['id'];
-$id = (integer) $this->params[1];
+$id = (int) $this->params[1];
 
 // Castear resultados de COUNT
 $total = (int) $this->Model->Find(['fields' => 'COUNT(id) AS total'])->total;

@@ -178,7 +178,7 @@ trait AdminBaseTrait {
 
         $id = $this->params['id'] ?? $this->params[0];
         if (!empty($this->_model) and !empty($id)):
-            $obj = $this->{$this->_model_camelized}->Find((integer)$id);
+            $obj = $this->{$this->_model_camelized}->Find((int)$id);
             (
                 $obj->Delete()
                     and ($code = HTTP_200)
