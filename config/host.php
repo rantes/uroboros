@@ -48,3 +48,16 @@ $res = setlocale(LC_ALL, 'es_CO.utf8');
 
 define('GANALYTICS', $env_vars['GANALYTICS']);
 $GLOBALS['env'] = APP_ENV;
+
+/**
+ * Runner de Workflows (runner-pasos-atascados)
+ * step_executions.output es TEXT (65.535 bytes); se deja margen.
+ */
+const STEP_OUTPUT_MAX_BYTES            = 60000;
+const STEP_OUTPUT_HEAD_BYTES           = 8000;
+const STEP_TIMEOUT_SECONDS             = 1800;
+const STEP_TIMEOUT_KILL_AFTER_SECONDS  = 10;
+const STEP_TIMEOUT_EXIT_CODE           = 124;
+const STEP_STUCK_GRACE_SECONDS         = 300;
+define('STEP_RUNNER_LOG', INST_PATH . 'tmp/logs/workflow_runner.log');
+define('STEP_RUNNER_LOCK_FILE', INST_PATH . 'tmp/workflow_runner.lock');

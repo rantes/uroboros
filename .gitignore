@@ -22,3 +22,5 @@ app/webroot/js/specs.min.js
 app/webroot/test.html
 coverage.xml
 test-result.xml
+
+tmp/workflow_runner.lock

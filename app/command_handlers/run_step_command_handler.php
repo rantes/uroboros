@@ -2,10 +2,15 @@
 namespace App\CommandHandlers;
 
 use App\Commands\RunStepCommand;
+use App\Commands\FailStepCommand;
 use App\Buses\EventBus;
+use App\Buses\CommandBus;
 use DumboPHP\Controller;
 
 class RunStepCommandHandler extends Controller {
+
+    /** Sobrescribible (tests); por defecto STEP_TIMEOUT_SECONDS. */
+    public int $timeoutSeconds = STEP_TIMEOUT_SECONDS;
 
     /**
      * SOLO se despacha desde el controlador de background
@@ -13,8 +18,61 @@ class RunStepCommandHandler extends Controller {
      * ni desde un request HTTP. Ejecuta el comando externo de forma
      * bloqueante dentro de ese proceso. Ver design.md — "Ejecución
      * real del script externo".
+     *
+     * Ningún fallo deja el paso en `running`: cualquier Throwable
+     * cierra el paso vía FailStepCommand (runner-pasos-atascados).
      */
     public function Handle(RunStepCommand $command): void {
+        $error = null;
+
+        try {
+            $this->_execute($command);
+        } catch (\Throwable $e) {
+            $error = $e;
+        }
+
+        $error === null or $this->_failStep($command->stepExecutionId, $error);
+    }
+
+    private function _failStep(int $stepId, \Throwable $error): void {
+        $reason = 'Error interno del runner: ' . get_class($error) . ': ' . substr($error->getMessage(), 0, 500);
+
+        // Último recurso, siempre: ids en el log del runner.
+        error_log("RunStepCommandHandler: paso #{$stepId} falló - {$reason}");
+
+        try {
+            (new CommandBus())->Dispatch(new FailStepCommand($stepId, $reason));
+        } catch (\Throwable $e) {
+            error_log("RunStepCommandHandler: NO se pudo cerrar el paso #{$stepId} (queda sin cerrar): " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Guarda el resultado final. Si el guardado falla (excepción o
+     * false) reintenta UNA vez con salida mínima, conservando el
+     * estado real. Devuelve false solo si ambos intentos fallan.
+     */
+    private function _saveResult(object $stepExecution, string $output): bool {
+        $saved    = false;
+        $attempts = [$output, '[Uroboros] No se pudo guardar la salida completa del paso (ver log del runner).'];
+
+        foreach ($attempts as $text):
+            if (!$saved):
+                try {
+                    $stepExecution->output = $text;
+                    $saved                 = (bool) $stepExecution->Save();
+                } catch (\Throwable $e) {
+                    error_log("RunStepCommandHandler: Save() del paso #{$stepExecution->id} falló: " . $e->getMessage());
+                }
+            endif;
+        endforeach;
+
+        return $saved;
+    }
+
+    private function _execute(RunStepCommand $command): void {
+        $this->LoadHelper('StepOutput');
+
         // No dispatchado vía HTTP — el auto-load de $this->helper del
         // framework (DumboPHP\index::__construct()) nunca corre para
         // esta clase. LoadHelper() no depende de eso, es seguro
@@ -108,17 +166,35 @@ class RunStepCommandHandler extends Controller {
                 else:
                     $outputLines[] = "[Uroboros] cd {$project->working_directory}";
                     $outputLines[] = '--- Salida del comando ---';
-                    exec('cd ' . escapeshellarg($project->working_directory) . ' && ' . $substitution['command'] . ' 2>&1', $outputLines, $exitCode);
+                    $startedAt = time();
+                    // `timeout` mata el grupo de procesos (hijos incluidos);
+                    // --kill-after escala a SIGKILL si ignoran SIGTERM.
+                    $result      = $this->_runCommand(
+                        'cd ' . escapeshellarg($project->working_directory)
+                        . ' && timeout --kill-after=' . (int) STEP_TIMEOUT_KILL_AFTER_SECONDS . ' ' . (int) $this->timeoutSeconds
+                        . ' sh -c ' . escapeshellarg($substitution['command']) . ' 2>&1'
+                    );
+                    $outputLines = array_merge($outputLines, $result['lines']);
+                    $exitCode    = $result['exit'];
+
+                    // 124 = timeout; 137 = SIGKILL tras --kill-after (solo
+                    // cuenta como timeout si realmente se agotó el tiempo).
+                    $timedOut = $exitCode === STEP_TIMEOUT_EXIT_CODE
+                        || ($exitCode === 137 && (time() - $startedAt) >= $this->timeoutSeconds);
+                    $timedOut and ($outputLines[] = "[Uroboros] Tiempo agotado tras {$this->timeoutSeconds} s");
                 endif;
             endif;
         endif;
 
+        // Enmascarar ANTES de truncar: un secreto partido por el corte
+        // no se reconocería después.
+        $finalOutput = truncateStepOutput($this->_maskCredentials(implode("\n", $outputLines), (int) $project->id));
+
         $stepExecution->exit_code    = $exitCode;
-        $stepExecution->output       = $this->_maskCredentials(implode("\n", $outputLines), (int) $project->id);
         $stepExecution->completed_at = time();
         $stepExecution->status       = $exitCode === 0 ? 'completed' : 'failed';
-        $stepExecution->Save()
-            or throw new \Exception((string) $stepExecution->_error);
+        $this->_saveResult($stepExecution, $finalOutput)
+            or throw new \Exception('No se pudo guardar el resultado del paso #' . $stepExecution->id);
 
         $event = $this->Event->Niu([
             'aggregate_type' => 'StepExecution',
@@ -135,6 +211,56 @@ class RunStepCommandHandler extends Controller {
             or throw new \Exception((string) $event->_error);
 
         (new EventBus())->Dispatch($event);
+    }
+
+    /**
+     * Ejecuta el comando (stdout; el 2>&1 va dentro del string) SIN
+     * que el hijo herede el lock del runner. PHP abre el archivo del
+     * lock sin close-on-exec, así que exec()/proc_open() lo pasan al
+     * hijo; un hijo huérfano tras un kill -9 al runner retendría el
+     * flock. proc_open permite reemplazar ese fd en el hijo por
+     * /dev/null (dup2), con cualquier número de fd y sin extensiones.
+     */
+    private function _runCommand(string $shellCommand): array {
+        $descriptors = [0 => ['file', '/dev/null', 'r'], 1 => ['pipe', 'w']];
+        $pipes       = [];
+        $lines       = [];
+        $exit        = 1;
+
+        foreach ($this->_lockDescriptors() as $fd):
+            $descriptors[$fd] = ['file', '/dev/null', 'r'];
+        endforeach;
+
+        $process = proc_open($shellCommand, $descriptors, $pipes);
+
+        if (is_resource($process)):
+            $raw = (string) stream_get_contents($pipes[1]);
+            fclose($pipes[1]);
+            $exit  = proc_close($process);
+            $lines = $raw === '' ? [] : array_map('rtrim', explode("\n", rtrim($raw, "\n")));
+        else:
+            $lines = ['[Uroboros] No se pudo lanzar el comando del paso.'];
+        endif;
+
+        return ['lines' => $lines, 'exit' => $exit];
+    }
+
+    /**
+     * Números de fd (>2) de ESTE proceso que apuntan al archivo del
+     * lock. Linux (/proc); sin /proc devuelve [] y no hay override.
+     */
+    private function _lockDescriptors(): array {
+        $lockPath = realpath(STEP_RUNNER_LOCK_FILE);
+        $found    = [];
+
+        foreach ((array) glob('/proc/self/fd/*') as $entry):
+            $fd = (int) basename($entry);
+            if ($lockPath !== false && $fd > 2 && @readlink($entry) === $lockPath):
+                $found[] = $fd;
+            endif;
+        endforeach;
+
+        return $found;
     }
 
     /**

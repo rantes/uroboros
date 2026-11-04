@@ -22,6 +22,7 @@ class FailWorkflowCommandHandler extends Controller {
             'payload'        => json_encode([
                 'workflow_definition_id'   => $execution->workflow_definition_id,
                 'failed_step_execution_id' => $command->failedStepExecutionId,
+                'reason'                   => $command->reason,
             ]),
         ]);
 
