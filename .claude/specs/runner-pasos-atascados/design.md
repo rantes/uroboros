@@ -1,7 +1,8 @@
 # Diseño técnico — Runner: pasos atascados
 
-- `config/host.php`: constantes `STEP_OUTPUT_MAX_BYTES`,
-  `STEP_OUTPUT_HEAD_BYTES`, `STEP_TIMEOUT_SECONDS`,
+- `config/host.php`: constantes `STEP_TIMEOUT_SECONDS`, (`STEP_OUTPUT_MAX_BYTES` y
+  `STEP_OUTPUT_HEAD_BYTES` se eliminaron en `salida-pasos-en-archivos`: ahora
+  `truncateStepOutput()` recibe el máximo y la cabecera por parámetro),
   `STEP_TIMEOUT_KILL_AFTER_SECONDS`, `STEP_STUCK_GRACE_SECONDS`,
   `STEP_RUNNER_LOG`, `STEP_RUNNER_LOCK_FILE`.
 - `app/helpers/StepOutput_Helper.php`: `truncateStepOutput()` y

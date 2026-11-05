@@ -1,0 +1,49 @@
+<?
+$__status = htmlspecialchars((string) $this->step->status, ENT_QUOTES, 'UTF-8');
+$__escape = fn($text) => htmlspecialchars((string) $text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+?>
+<div class="section group">
+    <div class="col col12">
+        <a href="/admin/workflowexecutiondetail/<?= (int) $this->step->workflow_execution_id; ?>">&laquo; Volver a la ejecución</a>
+        <h2>Log — <?= $__escape($this->stepName); ?></h2>
+        <dmb-status-badge tone="<?= $__status; ?>"><?= ucfirst($__status); ?></dmb-status-badge>
+    </div>
+</div>
+
+<dmb-table>
+    <table>
+        <tbody>
+            <tr>
+                <th>Código de salida</th>
+                <td><?= $this->step->exit_code === null ? '—' : (int) $this->step->exit_code; ?></td>
+            </tr>
+            <tr>
+                <th>Tamaño del archivo</th>
+                <td><?= number_format((int) $this->step->output_size / 1024, 1); ?> KB</td>
+            </tr>
+            <tr>
+                <th>SHA-256</th>
+                <td><code><?= $__escape($this->step->output_checksum ?: '—'); ?></code></td>
+            </tr>
+        </tbody>
+    </table>
+</dmb-table>
+
+<? if ($this->logAvailable): ?>
+<dmb-button-action behavior="download-file" url="/step_log/download/<?= (int) $this->step->id; ?>">
+    Descargar log completo
+</dmb-button-action>
+<? endif; ?>
+
+<dmb-log-viewer>
+    <? if (!$this->checksumOk): ?>
+    <p class="log-viewer-warning" role="alert">⚠ El archivo no coincide con su checksum: pudo alterarse o corromperse. Se muestra su contenido tal cual.</p>
+    <? endif; ?>
+
+    <? if ($this->logAvailable): ?>
+    <pre><?= $__escape($this->logContent); ?></pre>
+    <? else: ?>
+    <p class="log-viewer-notice" role="status">ⓘ Archivo no disponible (purgado por retención o perdido). Se muestra el extracto final guardado.</p>
+    <pre><?= $__escape($this->step->output_tail); ?></pre>
+    <? endif; ?>
+</dmb-log-viewer>

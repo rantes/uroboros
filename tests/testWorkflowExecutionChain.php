@@ -145,7 +145,7 @@ class testWorkflowExecutionChain extends dumboTests {
         $completed = $this->StepExecution->Find((int) $stepExecution->id);
         $this->assertEquals('completed', $completed->status, 'Should mark the step completed on exit_code=0');
         $this->assertEquals(0, (int) $completed->exit_code, 'Should record exit_code=0');
-        $this->assertTrue(str_contains((string) $completed->output, 'build'), 'Should capture the command output');
+        $this->assertTrue(str_contains((string) $completed->output_tail, 'build'), 'Should capture the command output');
 
         $secondStep = $this->WorkflowStepDefinition->Find([
             ':first',
@@ -307,7 +307,7 @@ class testWorkflowExecutionChain extends dumboTests {
         // El output ahora lleva el log verboso de orquestación
         // (Uroboros — log de ejecución) antes de la salida real del
         // comando — la última línea sigue siendo el pwd real.
-        $outputLines = explode("\n", trim((string) $completed->output));
+        $outputLines = explode("\n", trim((string) $completed->output_tail));
         $this->assertEquals(realpath(sys_get_temp_dir()), end($outputLines), 'pwd debe reportar el working_directory del proyecto, no el cwd de Uroboros');
     }
 
@@ -359,8 +359,8 @@ class testWorkflowExecutionChain extends dumboTests {
         $failed = $this->StepExecution->Find((int) $stepExecution->id);
         $this->assertEquals('failed', $failed->status, 'Debe fallar, no lanzar una excepción no capturada');
         $this->assertEquals(1, (int) $failed->exit_code, 'exit_code=1 sintético, no el de un exec() que nunca corrió');
-        $this->assertTrue(str_contains((string) $failed->output, 'working_directory'), 'El mensaje debe explicar la causa real, no un error crudo de PHP');
-        $this->assertFalse(str_contains((string) $failed->output, 'should-not-run'), 'El comando real nunca debió ejecutarse');
+        $this->assertTrue(str_contains((string) $failed->output_tail, 'working_directory'), 'El mensaje debe explicar la causa real, no un error crudo de PHP');
+        $this->assertFalse(str_contains((string) $failed->output_tail, 'should-not-run'), 'El comando real nunca debió ejecutarse');
     }
 
     /**
@@ -416,7 +416,7 @@ class testWorkflowExecutionChain extends dumboTests {
         $completed = $this->StepExecution->Find((int) $stepExecution->id);
         $this->assertEquals('completed', $completed->status, 'El comando debe correr con éxito dentro del directorio recién creado');
 
-        $outputLines = explode("\n", trim((string) $completed->output));
+        $outputLines = explode("\n", trim((string) $completed->output_tail));
         $this->assertEquals(realpath($newDir), end($outputLines), 'pwd debe reportar el directorio recién creado');
 
         rmdir($newDir);

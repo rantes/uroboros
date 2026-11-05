@@ -5,12 +5,16 @@ use App\Commands\RunStepCommand;
 use App\Commands\FailStepCommand;
 use App\Buses\EventBus;
 use App\Buses\CommandBus;
+use App\Helpers\StepLogStore;
 use DumboPHP\Controller;
 
 class RunStepCommandHandler extends Controller {
 
     /** Sobrescribible (tests); por defecto STEP_TIMEOUT_SECONDS. */
     public int $timeoutSeconds = STEP_TIMEOUT_SECONDS;
+
+    /** Sobrescribible (tests); por defecto StepLogStore sobre STEP_LOG_BASE_PATH. */
+    public ?StepLogStore $logStore = null;
 
     /**
      * SOLO se despacha desde el controlador de background
@@ -48,19 +52,24 @@ class RunStepCommandHandler extends Controller {
     }
 
     /**
-     * Guarda el resultado final. Si el guardado falla (excepción o
-     * false) reintenta UNA vez con salida mínima, conservando el
-     * estado real. Devuelve false solo si ambos intentos fallan.
+     * Guarda el resultado final (puntero al log, tamaño, checksum y
+     * extracto). Si el guardado falla (excepción o false) reintenta UNA
+     * vez con un extracto mínimo, conservando el estado real del paso.
+     * Devuelve false solo si ambos intentos fallan.
      */
-    private function _saveResult(object $stepExecution, string $output): bool {
+    private function _saveResult(object $stepExecution, array $stored): bool {
         $saved    = false;
-        $attempts = [$output, '[Uroboros] No se pudo guardar la salida completa del paso (ver log del runner).'];
+        $attempts = [$stored['tail'], '[Uroboros] No se pudo guardar el extracto de la salida del paso (ver log del runner).'];
 
-        foreach ($attempts as $text):
+        $stepExecution->output_path     = $stored['path'];
+        $stepExecution->output_size     = $stored['size'];
+        $stepExecution->output_checksum = $stored['checksum'];
+
+        foreach ($attempts as $tail):
             if (!$saved):
                 try {
-                    $stepExecution->output = $text;
-                    $saved                 = (bool) $stepExecution->Save();
+                    $stepExecution->output_tail = $tail;
+                    $saved                      = (bool) $stepExecution->Save();
                 } catch (\Throwable $e) {
                     error_log("RunStepCommandHandler: Save() del paso #{$stepExecution->id} falló: " . $e->getMessage());
                 }
@@ -68,6 +77,12 @@ class RunStepCommandHandler extends Controller {
         endforeach;
 
         return $saved;
+    }
+
+    private function _store(): StepLogStore {
+        $this->logStore ??= new StepLogStore();
+
+        return $this->logStore;
     }
 
     private function _execute(RunStepCommand $command): void {
@@ -186,15 +201,22 @@ class RunStepCommandHandler extends Controller {
             endif;
         endif;
 
-        // Enmascarar ANTES de truncar: un secreto partido por el corte
-        // no se reconocería después.
-        $finalOutput = truncateStepOutput($this->_maskCredentials(implode("\n", $outputLines), (int) $project->id));
+        // Orden obligatorio: enmascarar -> (truncar + escribir). Un secreto
+        // partido por el corte de 5 MB no se reconocería después, y el
+        // archivo nunca debe contener un secreto.
+        $masked = $this->_maskCredentials(implode("\n", $outputLines), (int) $project->id);
+        $stored = $this->_store()->write((int) $stepExecution->workflow_execution_id, (int) $stepExecution->id, $masked);
+        $stored['error'] === null
+            or error_log("RunStepCommandHandler: paso #{$stepExecution->id} sin log en archivo: {$stored['error']}");
 
         $stepExecution->exit_code    = $exitCode;
         $stepExecution->completed_at = time();
         $stepExecution->status       = $exitCode === 0 ? 'completed' : 'failed';
-        $this->_saveResult($stepExecution, $finalOutput)
-            or throw new \Exception('No se pudo guardar el resultado del paso #' . $stepExecution->id);
+        if (!$this->_saveResult($stepExecution, $stored)):
+            // El archivo quedaría huérfano de su fila: no dejarlo.
+            $this->_store()->delete($stored['path']);
+            throw new \Exception('No se pudo guardar el resultado del paso #' . $stepExecution->id);
+        endif;
 
         $event = $this->Event->Niu([
             'aggregate_type' => 'StepExecution',

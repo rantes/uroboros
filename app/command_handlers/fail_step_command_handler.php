@@ -22,7 +22,10 @@ class FailStepCommandHandler extends Controller {
         if (!empty($stepExecution->id) and in_array($stepExecution->status, $open, true)):
             $stepExecution->status       = 'failed';
             $stepExecution->exit_code    = $command->exitCode;
-            $stepExecution->output       = truncateStepOutput($command->reason);
+            // Sin archivo: solo el motivo, como extracto (salida-pasos-en-archivos).
+            $stepExecution->output_path = null;
+            $stepExecution->output_size = 0;
+            $stepExecution->output_tail = truncateStepOutput($command->reason, STEP_OUTPUT_TAIL_BYTES, intdiv(STEP_OUTPUT_TAIL_BYTES, 4));
             $stepExecution->completed_at = time();
             $stepExecution->Save()
                 or throw new \Exception((string) $stepExecution->_error);

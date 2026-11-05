@@ -5,6 +5,7 @@ use App\Commands\RunStepCommand;
 use App\Commands\FailStepCommand;
 use App\Commands\FailWorkflowCommand;
 use App\Buses\CommandBus;
+use App\Helpers\StepLogStore;
 use DumboPHP\Controller;
 
 /**
@@ -17,6 +18,12 @@ class WorkflowRunnerController extends Controller {
 
     /** Sobrescribible (tests); por defecto timeout + gracia. */
     public int $stuckAfterSeconds = STEP_TIMEOUT_SECONDS + STEP_STUCK_GRACE_SECONDS;
+
+    /** Sobrescribible (tests); por defecto StepLogStore sobre STEP_LOG_BASE_PATH. */
+    public ?StepLogStore $logStore = null;
+
+    /** Sobrescribible (tests); por defecto STEP_LOG_RETENTION_DAYS. */
+    public int $retentionDays = STEP_LOG_RETENTION_DAYS;
 
     /**
      * Un solo runner a la vez (flock): si ya hay otro, sale en
@@ -44,8 +51,11 @@ class WorkflowRunnerController extends Controller {
             $locked = $lock !== false && flock($lock, LOCK_EX | LOCK_NB);
 
             if ($locked):
+                $this->_checkLogBase();
                 $this->_failStuckSteps();
                 $this->_failOrphanExecutions();
+                $this->_purgeOldLogs();
+                $this->_sweepOrphanLogs();
                 $this->_processPending();
             endif;
         } catch (\Throwable $e) {
@@ -154,6 +164,83 @@ class WorkflowRunnerController extends Controller {
                 $this->_log("No se pudo cerrar la ejecución huérfana #{$execution->id}: " . $e);
             }
         endforeach;
+    }
+
+    private function _store(): StepLogStore {
+        $this->logStore ??= new StepLogStore();
+
+        return $this->logStore;
+    }
+
+    /**
+     * Al arrancar: la base de logs debe existir y ser escribible. Si no
+     * se puede, se registra con un mensaje claro; los pasos igual se
+     * cierran con su estado real (write() devuelve el error al handler).
+     */
+    private function _checkLogBase(): void {
+        $base = $this->_store()->ensureBase();
+
+        $base['ready'] or $this->_log('Carpeta de logs de pasos NO disponible: ' . $base['error']);
+    }
+
+    /**
+     * Retención: pasos con archivo cuyo fin es anterior al umbral. Borra el
+     * archivo (y la carpeta si queda vacía), vacía output_path y
+     * conserva output_size, output_checksum y output_tail. Lote acotado;
+     * un fallo en un elemento no detiene la pasada.
+     */
+    private function _purgeOldLogs(): void {
+        $threshold = time() - ($this->retentionDays * 86400);
+        $store     = $this->_store();
+
+        try {
+            $expired = $this->StepExecution->Find([
+                'conditions' => "`output_path` <> '' AND COALESCE(`completed_at`, `updated_at`) < {$threshold}",
+                'sort'       => '`id` ASC',
+                'limit'      => STEP_LOG_PURGE_BATCH,
+            ]);
+
+            foreach ($expired as $step):
+                try {
+                    if ($store->delete($step->output_path)):
+                        // Save() ignora propiedades null (isset): 'sin archivo' se escribe ''
+                        // (la BD lo lee igual que NULL); la consulta usa <> ''.
+                        $step->output_path = '';
+                        $step->Save() or throw new \Exception((string) $step->_error);
+                    else:
+                        $this->_log("No se pudo borrar el log del paso #{$step->id} ({$step->output_path}); se reintentará");
+                    endif;
+                } catch (\Throwable $e) {
+                    $this->_log("Fallo al purgar el log del paso #{$step->id}: " . $e->getMessage());
+                }
+            endforeach;
+        } catch (\Throwable $e) {
+            $this->_log('Fallo de la purga de logs: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Barrido de huérfanos: carpetas de ejecuciones que ya no existen en
+     * la BD (p. ej. tras borrar un proyecto en cascada; el borrado de la BD
+     * no toca archivos). Lote acotado por pasada.
+     */
+    private function _sweepOrphanLogs(): void {
+        try {
+            $this->_store()->sweepOrphans(STEP_LOG_PURGE_BATCH, function (array $ids): array {
+                $alive = $this->WorkflowExecution->Find([
+                    'fields'     => 'id',
+                    'conditions' => '`id` IN (' . implode(',', array_map('intval', $ids)) . ')',
+                ]);
+                $found = [];
+                foreach ($alive as $execution):
+                    $found[] = (int) $execution->id;
+                endforeach;
+
+                return $found;
+            });
+        } catch (\Throwable $e) {
+            $this->_log('Fallo del barrido de logs huérfanos: ' . $e->getMessage());
+        }
     }
 
     private function _log(string $message): void {

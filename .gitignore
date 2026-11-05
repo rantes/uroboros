@@ -24,3 +24,4 @@ coverage.xml
 test-result.xml
 
 tmp/workflow_runner.lock
+storage/step_logs/

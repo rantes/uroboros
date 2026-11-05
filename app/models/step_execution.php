@@ -9,7 +9,10 @@ class StepExecution extends ActiveRecord {
     public ?int    $workflow_step_definition_id = null;
     public ?string $status                      = null;
     public ?int    $exit_code                   = null;
-    public ?string $output                      = null;
+    public ?string $output_path                 = null;
+    public ?int    $output_size                 = null;
+    public ?string $output_checksum             = null;
+    public ?string $output_tail                 = null;
     public ?int    $started_at                  = null;
     public ?int    $completed_at                = null;
 
@@ -27,10 +30,10 @@ class StepExecution extends ActiveRecord {
         $this->before_save = ['validateStatus'];
     }
 
-    // Sin sanitizeOutput(): es la salida cruda del script/comando
+    // Sin sanitizeOutput(): output_tail es salida cruda del script/comando
     // externo (logs), no texto para render. htmlentities() la
-    // corrompería. Mismo criterio que Event::payload y
-    // WorkflowDefinition::webhook_token. Ver design.md.
+    // corrompería; se escapa al mostrarla. Mismo criterio que
+    // Event::payload y WorkflowDefinition::webhook_token.
 
     /**
      * No existe una regla de validación tipo "inclusión en lista" en

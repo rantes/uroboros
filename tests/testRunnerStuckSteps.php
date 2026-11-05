@@ -6,10 +6,15 @@ use App\Commands\ExecuteWorkflowCommand;
 use App\Commands\RunStepCommand;
 use App\CommandHandlers\RunStepCommandHandler;
 use App\Buses\CommandBus;
+use tests\fixtures\StepLogFixture;
 
 require_once INST_PATH . 'app/helpers/StepOutput_Helper.php';
 
 class testRunnerStuckSteps extends dumboTests {
+    // Límites explícitos: truncateStepOutput() ya no tiene un límite propio de BD.
+    private const MAX  = 60000;
+    private const HEAD = 8000;
+
 
     public function beforeEach(): void {
         $this->_migrateTables([
@@ -62,20 +67,20 @@ class testRunnerStuckSteps extends dumboTests {
 
         $after = $this->StepExecution->Find((int) $stepExec->id);
         $this->assertEquals('failed', $after->status, 'Step must be failed, not running/pending');
-        $this->assertTrue(str_contains((string) $after->output, 'Error interno del runner'));
+        $this->assertTrue(str_contains((string) $after->output_tail, 'Error interno del runner'));
     }
 
     public function truncateKeepsShortOutputIntactTest(): void {
         $this->describe('short output is untouched');
-        $this->assertEquals("ok\nñandú", truncateStepOutput("ok\nñandú"));
+        $this->assertEquals("ok\nñandú", truncateStepOutput("ok\nñandú", self::MAX, self::HEAD));
     }
 
     public function truncateLongOutputTest(): void {
         $this->describe('long output keeps head and tail, marker present, within limit');
         $text   = '[Uroboros] inicio' . str_repeat("linea\n", 40000) . 'FINAL-CAUSA';
-        $result = truncateStepOutput($text);
+        $result = truncateStepOutput($text, self::MAX, self::HEAD);
 
-        $this->assertTrue(strlen($result) <= STEP_OUTPUT_MAX_BYTES);
+        $this->assertTrue(strlen($result) <= self::MAX);
         $this->assertTrue(str_starts_with($result, '[Uroboros] inicio'));
         $this->assertTrue(str_ends_with($result, 'FINAL-CAUSA'));
         $this->assertTrue((bool) preg_match('/\[\.\.\. \d+ bytes omitidos \.\.\.\]/', $result));
@@ -87,16 +92,16 @@ class testRunnerStuckSteps extends dumboTests {
         // Cualquier desfase de 0..3 bytes deja el multibyte justo en el corte.
         foreach ([0, 1, 2, 3] as $shift):
             $text   = str_repeat('a', $shift) . str_repeat('ñ€😀', 30000);
-            $result = truncateStepOutput($text);
+            $result = truncateStepOutput($text, self::MAX, self::HEAD);
             $this->assertTrue((bool) preg_match('//u', $result), "Invalid UTF-8 with shift {$shift}");
             $this->assertTrue($result !== '' && $result !== false);
-            $this->assertTrue(strlen($result) <= STEP_OUTPUT_MAX_BYTES);
+            $this->assertTrue(strlen($result) <= self::MAX);
         endforeach;
     }
 
     public function truncateSanitizesInvalidInputTest(): void {
         $this->describe('invalid bytes never produce false or empty output');
-        $result = truncateStepOutput("a\xFF\xFEb" . str_repeat("\xC3", 70000) . 'fin');
+        $result = truncateStepOutput("a\xFF\xFEb" . str_repeat("\xC3", 70000) . 'fin', self::MAX, self::HEAD);
 
         $this->assertTrue((bool) preg_match('//u', $result));
         $this->assertTrue($result !== '');
@@ -113,9 +118,9 @@ class testRunnerStuckSteps extends dumboTests {
 
         $secret = 'SUPERSECRETVALUE1234';
         // Secreto justo en el límite de la cabeza (8000 bytes).
-        $text = str_repeat('x', STEP_OUTPUT_HEAD_BYTES - 5) . $secret . str_repeat('y', 100000);
+        $text = str_repeat('x', self::HEAD - 5) . $secret . str_repeat('y', 100000);
         $masked = str_replace($secret, '***', $text); // mismo orden que el handler: mask -> truncate
-        $result = truncateStepOutput($masked);
+        $result = truncateStepOutput($masked, self::MAX, self::HEAD);
 
         $this->assertFalse(str_contains($result, 'SUPERSECRET'));
         $this->assertFalse(str_contains($result, '1234'));
@@ -133,7 +138,7 @@ class testRunnerStuckSteps extends dumboTests {
 
         $after = $this->StepExecution->Find((int) $stepExec->id);
         $this->assertEquals('failed', $after->status);
-        $this->assertTrue(str_contains((string) $after->output, 'Tiempo agotado tras 1 s'));
+        $this->assertTrue(str_contains((string) $after->output_tail, 'Tiempo agotado tras 1 s'));
         $this->assertTrue((time() - $started) < 10, 'Must not wait for the full sleep');
     }
 
@@ -171,7 +176,7 @@ class testRunnerStuckSteps extends dumboTests {
 
         $old = $this->StepExecution->Find((int) $stepOld->id);
         $this->assertEquals('failed', $old->status);
-        $this->assertTrue(str_contains((string) $old->output, 'Interrumpido'));
+        $this->assertTrue(str_contains((string) $old->output_tail, 'Interrumpido'));
         $this->assertEquals('failed', $this->WorkflowExecution->Find((int) $execOld->id)->status);
 
         $this->assertEquals('running', $this->StepExecution->Find((int) $stepNew->id)->status);
@@ -195,7 +200,7 @@ class testRunnerStuckSteps extends dumboTests {
         $after = $this->StepExecution->Find((int) $stepExec->id);
         $this->assertTrue($held >= 1, 'Control: the test process really holds the lock fd');
         $this->assertEquals('completed', $after->status);
-        $this->assertFalse(str_contains((string) $after->output, 'workflow_runner.lock'), 'Child must not see the lock file');
+        $this->assertFalse(str_contains((new StepLogFixture())->read($after), 'workflow_runner.lock'), 'Child must not see the lock file');
     }
 
     public function userCommandEscapingIsPreservedTest(): void {
@@ -204,7 +209,7 @@ class testRunnerStuckSteps extends dumboTests {
         [$execution, $stepExec] = $this->_queueStep("printf '%s\\n' \"a'b\" 'c\"d' \"\$(echo sub)\"");
         (new RunStepCommandHandler())->Handle(new RunStepCommand((int) $stepExec->id));
 
-        $output = (string) $this->StepExecution->Find((int) $stepExec->id)->output;
+        $output = (new StepLogFixture())->read($this->StepExecution->Find((int) $stepExec->id));
         $this->assertTrue(str_contains($output, "a'b\nc\"d\nsub"), 'Output was: ' . $output);
     }
 

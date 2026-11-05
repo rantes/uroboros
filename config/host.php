@@ -51,13 +51,27 @@ $GLOBALS['env'] = APP_ENV;
 
 /**
  * Runner de Workflows (runner-pasos-atascados)
- * step_executions.output es TEXT (65.535 bytes); se deja margen.
  */
-const STEP_OUTPUT_MAX_BYTES            = 60000;
-const STEP_OUTPUT_HEAD_BYTES           = 8000;
 const STEP_TIMEOUT_SECONDS             = 1800;
 const STEP_TIMEOUT_KILL_AFTER_SECONDS  = 10;
 const STEP_TIMEOUT_EXIT_CODE           = 124;
 const STEP_STUCK_GRACE_SECONDS         = 300;
 define('STEP_RUNNER_LOG', INST_PATH . 'tmp/logs/workflow_runner.log');
 define('STEP_RUNNER_LOCK_FILE', INST_PATH . 'tmp/workflow_runner.lock');
+
+/**
+ * Salida de pasos en archivos (salida-pasos-en-archivos)
+ * STEP_LOG_BASE_PATH: fuera del webroot, nunca se sirve estático. Se
+ * sobrescribe con STEP_LOG_BASE_PATH (ruta absoluta) en .env. En tests
+ * (dumboTest define APP_ENV='test' antes de cargar este archivo) apunta
+ * a una carpeta temporal para que ningún test toque los logs de dev.
+ */
+const STEP_LOG_FILE_MAX_BYTES  = 5242880; // tope del archivo (5 MB)
+const STEP_LOG_FILE_HEAD_BYTES = 262144;  // cabecera conservada si se recorta
+const STEP_OUTPUT_TAIL_BYTES   = 2048;    // extracto en BD (output_tail)
+const STEP_LOG_VIEW_MAX_BYTES  = 262144;  // máximo mostrado en la vista
+const STEP_LOG_RETENTION_DAYS  = 60;
+const STEP_LOG_PURGE_BATCH     = 200;
+define('STEP_LOG_BASE_PATH', APP_ENV === 'test'
+    ? sys_get_temp_dir() . '/uroboros_step_logs_test'
+    : (!empty($env_vars['STEP_LOG_BASE_PATH']) ? rtrim($env_vars['STEP_LOG_BASE_PATH'], '/') : INST_PATH . 'storage/step_logs'));

@@ -12,7 +12,14 @@ class CreateStepExecutions extends Migrations {
             ['field' => 'workflow_step_definition_id', 'type' => 'INTEGER', 'null' => 'false', 'limit' => '11'],
             ['field' => 'status',                       'type' => 'VARCHAR', 'null' => 'false', 'limit' => '20'],
             ['field' => 'exit_code',                    'type' => 'INTEGER', 'null' => 'true'],
-            ['field' => 'output',                        'type' => 'TEXT',    'null' => 'true'],
+            // salida-pasos-en-archivos: la salida completa vive en un archivo
+            // (STEP_LOG_BASE_PATH/output_path); aquí solo el puntero, los
+            // metadatos, el checksum SHA-256 y un extracto del final. Los tipos
+            // son los que soporta Migrations (sin CHAR ni UNSIGNED).
+            ['field' => 'output_path',                   'type' => 'VARCHAR', 'null' => 'true',  'limit' => '255'],
+            ['field' => 'output_size',                   'type' => 'INTEGER', 'null' => 'false', 'limit' => '11', 'default' => '0'],
+            ['field' => 'output_checksum',               'type' => 'VARCHAR', 'null' => 'true',  'limit' => '64'],
+            ['field' => 'output_tail',                   'type' => 'TEXT',    'null' => 'true'],
             ['field' => 'started_at',                    'type' => 'INTEGER', 'null' => 'true'],
             ['field' => 'completed_at',                  'type' => 'INTEGER', 'null' => 'true'],
             ['field' => 'created_at',                    'type' => 'INTEGER', 'null' => 'false', 'limit' => '11'],

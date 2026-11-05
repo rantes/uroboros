@@ -15,6 +15,12 @@ CUANDO el handler termina ENTONCES el paso queda `failed` (vía
 `FailStepCommand` → evento `StepFailed` → `FailWorkflowCommand`).
 
 ### 2. Límite de salida
+> **Actualizado por `salida-pasos-en-archivos`:** el límite de 60.000 bytes en la BD
+> ya no existe (`STEP_OUTPUT_MAX_BYTES` se eliminó). La salida completa va a un
+> archivo (tope `STEP_LOG_FILE_MAX_BYTES`, 5 MB) y la BD guarda solo un extracto
+> (`output_tail`, `STEP_OUTPUT_TAIL_BYTES`). El requisito de abajo se conserva
+> como historia; el criterio vigente es el de ese spec.
+
 DADO una salida > `STEP_OUTPUT_MAX_BYTES` CUANDO se persiste ENTONCES se
 conserva inicio + final con marcador intermedio, UTF-8 válido, y las
 credenciales se enmascaran ANTES de truncar.

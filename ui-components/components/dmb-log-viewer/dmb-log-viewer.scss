@@ -1,0 +1,41 @@
+dmb-log-viewer {
+    display: block;
+
+    // Estilo terminal (design-guide.md 15) — JetBrains Mono, fondo
+    // oscuro, nunca para texto de interfaz general.
+    pre {
+        background: var(--primary-surface);
+        border-radius: 0.8em;
+        color: var(--main-font-color);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: var(--font-size-xs);
+        margin: 0;
+        max-height: 40em;
+        overflow: auto;
+        padding: 0.8em;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    // Estados = Color + Ícono + Texto (design-guide.md 12)
+    .log-viewer-warning,
+    .log-viewer-notice {
+        border: 1px solid;
+        border-radius: 0.533rem;
+        font-size: var(--font-size-sm);
+        margin-bottom: 1.067em;
+        padding: 0.533em 0.8em;
+    }
+
+    .log-viewer-warning {
+        background: var(--warning-hover);
+        border-color: var(--warning);
+        color: var(--warning);
+    }
+
+    .log-viewer-notice {
+        background: var(--information-hover);
+        border-color: var(--information);
+        color: var(--information);
+    }
+}

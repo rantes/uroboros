@@ -25,6 +25,7 @@ class AdminController extends MainController {
         $this->helper[]  = 'OperationalShell';
         $this->helper[]  = 'HealthMetrics';
         $this->helper[]  = 'ProjectDirectory';
+        $this->helper[]  = 'StepOutput';
         $this->_readOnlyModels = ['event', 'workflow_execution', 'step_execution'];
         $this->_actions  = [
             'projects',
