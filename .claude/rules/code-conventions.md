@@ -1,4 +1,4 @@
-# Convenciones de código — Uroboros
+# Convenciones de código — Komodo
 
 ## PHP
 
@@ -11,19 +11,6 @@
 | Helpers | `App\Helpers` | `app/helpers/` | `Nombre_Helper.php` |
 | Migraciones | `Migrations` | `migrations/` | `create_nombre_tabla.php` |
 | Tests | `tests` | `tests/` | `testNombreClase.php` |
-| Commands | `App\Commands` | `app/commands/` | `nombre_command.php` |
-| Command Handlers | `App\CommandHandlers` | `app/command_handlers/` | `nombre_command_handler.php` |
-| Reactions | `App\Reactions` | `app/reactions/` | `nombre_reaction.php` |
-| Buses | `App\Buses` | `app/buses/` | `nombre_bus.php` |
-| Configuración runtime | (ninguno — archivo plano, retorna array) | `config/` | `nombre_config.php` (ej. reactions_map.php, junto a host.php, db_settings.php) |
-| Fixtures de test | `tests\fixtures` (minúscula, como tests\) | `tests/fixtures/` | `NombreClase.php` — PascalCase idéntico a la clase, igual que el resto de tests/, no snake_case como app/ |
-
-Nota aparte para dejar explícita en el documento, porque no es obvia
-para quien lea la tabla por primera vez: config/ es la única
-carpeta de esta lista que no participa del autoload por namespace.
-Sus archivos se cargan con include/require explícito desde donde
-se necesiten (ver App\Buses\EventBus::Dispatch()), no por
-resolución automática de clase.
 
 ### Clases
 
@@ -39,20 +26,6 @@ class CreateUserProperties extends Migrations { }
 
 // Test
 class testUserPropertyModel extends dumboTests { }
-
-// Command — DTO plano, sin lógica, nunca persiste
-class PingCommand { }
-
-// Command Handler — único autorizado a crear Events
-class PingCommandHandler extends \DumboPHP\Controller { }
-
-// Reaction — nunca crea Events, solo despacha Commands
-class OnPingStartedReaction extends \DumboPHP\Controller { }
-
-// Bus — clase concreta, se instancia con `new` en cada punto de uso,
-// sin loader mágico ni interfaz
-class CommandBus { }
-class EventBus { }
 ```
 
 ### Métodos
@@ -157,7 +130,7 @@ empty($this->params[0]) and ($this->params[0] = 'list');
 
 ### Type hints
 
-Usar type hints en todos los métodos públicos y protegidos. Para propiedades de modelos, siempre `?string` — el ORM castea internamente:
+Usar type hints en todos los métodos públicos y protegidos. Las propiedades de modelo **reflejan el tipo real de la columna**: `?string` para texto, `?int` para enteros, IDs, timestamps y flags (0/1), `?float` para decimales. **Nunca `?bool`**: se usa `?int` con 0/1. El `generate model` del framework ya emite el tipo correcto.
 
 ```php
 // Métodos — tipos específicos
@@ -166,21 +139,25 @@ public function login(string $email, string $password, int $level): int { }
 public function _init_(): void { }
 public function beforeEach(): void { }
 
-// Propiedades de modelo — siempre ?string
-public ?string $nombre   = null;
-public ?string $precio   = null;  // aunque sea numérico en BD
-public ?string $status   = null;
+// Propiedades de modelo — el tipo de la columna
+public ?string $nombre = null;   // VARCHAR / TEXT
+public ?int    $status = null;   // INTEGER, ids, timestamps, flags 0/1
+public ?float  $factor = null;   // FLOAT / decimales
 
-// Incorrecto en propiedades de modelo
-public int   $precio = 0;   // el ORM trabaja con strings internamente
-public float $factor = 0;
-public bool  $activo = false;
+// Incorrecto
+public ?string $status = null;   // si la columna es entero
+public ?bool   $activo = null;   // nunca ?bool: ?int con 0/1
 ```
+
+El tipo es una capa de seguridad contra datos inválidos del POST. Con asignación en bloque (`Niu`, constructor) un valor que no cabe **no lanza excepción**: se registra en `_error` (campo en `errFields()`), la propiedad queda sin asignar y `Save()` devuelve `false`. Reglas (comprobadas en el framework): `""` vale `0` (`0.0` en `?float`); `"5.0"`, `"100.00"`, `" 5"`, `"+5"`, `"007"` y `"1e3"` se aceptan en un `?int`; `"5.7"`, `"abc"`, `"0x1A"`, `".5"` y un entero que desborda 64 bits se rechazan en un `?int`; un arreglo se rechaza en cualquier tipo. Un `NULL` de la base se lee como `0` o `""`. Los mensajes por defecto salen en español y se cambian redeclarando `_typeMessages` en el cuerpo de la clase del modelo (solo las claves `int`, `float` o `string` que cambian).
+
+Límite: la asignación directa de un valor inválido a una propiedad tipada (`$obj->qty = 'abc'`) sigue lanzando `TypeError`; la validación controlada solo cubre la asignación en bloque, que es la ruta del POST.
 
 ### Manejo de errores en controladores
 
 ```php
 // Siempre este patrón para acciones JSON
+// (al inicio del archivo: use Exception; — nunca \Exception en el cuerpo)
 public function miAccionAction(): void {
     $this->layout = null;
     try {
@@ -188,100 +165,44 @@ public function miAccionAction(): void {
     } catch (ControllerException $e) {
         $this->_code = $e->getCode();
         $this->_response['message'] = $e->getMessage();
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         $this->_code = HTTP_500;
         $this->_response['message'] = $e->getMessage();
     } finally {
-        $this->setResponseCode($this->_code);
+        http_response_code($this->_code);
         $this->respondToAJAX(json_encode($this->_response));
     }
 }
 ```
 
-**Nunca `http_response_code($this->_code)` directo.** El pipeline del
-framework (`Controller::parseContent()`) emite el código HTTP real al
-cliente al final, vía `http_response_code($this->_http_response_code)`
-— `$this->_http_response_code` es una propiedad **privada** que solo
-`setResponseCode()` actualiza. Una llamada directa a
-`http_response_code()` dentro de la acción se pisa silenciosamente
-después: el cliente real sigue recibiendo `200` aunque `$this->_code`
-diga `202`/`401`/lo que sea. `_runAction()` en tests **no detecta
-esto** — lee `$result->_code` (la propiedad pública del controlador),
-no el código HTTP realmente emitido. Confirmado con `curl` real contra
-el servidor, no solo con tests — ver auditoría en
-`.claude/specs/ejecucion-workflows/` (Parte 3).
+### Errores fuera de los controladores (semillas, tests, scripts)
 
-### Toda acción de controlador dentro de `try`/`catch`
-
-**Regla del proyecto, sin excepción**: cada acción de controlador
-(`*Action()`) debe estar envuelta en `try`/`catch` — incluidas las que
-renderizan una página HTML completa, no solo las que responden JSON.
-Sin esto, una excepción sin capturar en una acción de página completa
-no tiene ningún manejador global (no hay `set_exception_handler()` ni
-catch en el dispatcher del framework — verificado contra
-`/etc/dumbophp/bin/dumbophp.php`) y termina en un fatal error crudo,
-sin control sobre el código HTTP ni el mensaje mostrado.
-
-El formato de la respuesta ante un error **no tiene que ser JSON** —
-depende de qué tipo de acción es:
+**Nunca** `trigger_error(..., E_USER_ERROR)`: está obsoleto desde PHP 8.4, mata el proceso sin que nadie pueda atraparlo y oculta qué falló. Se lanza una excepción y se maneja con `try/catch`.
 
 ```php
-// Acción JSON/AJAX — patrón ya documentado arriba
-public function miAccionAction(): void {
-    $this->layout = null;
-    try {
-        // lógica
-    } catch (ControllerException $e) {
-        $this->_code = $e->getCode();
-        $this->_response['message'] = $e->getMessage();
-    } catch (\Exception $e) {
-        $this->_code = HTTP_500;
-        $this->_response['message'] = $e->getMessage();
-    } finally {
-        $this->setResponseCode($this->_code);
-        $this->respondToAJAX(json_encode($this->_response));
-    }
-}
+// Semillas y tests: un Save() fallido lanza, con el mensaje real del modelo
+// (al inicio del archivo: use Exception;)
+$model->Save() or throw new Exception((string) $model->_error);
 
-// Acción de página completa (renderiza layout + vista real) — mismo
-// principio, patrón de respuesta distinto: $this->render en vez de
-// respondToAJAX(). No forzar el patrón JSON aquí.
-public function miPaginaAction(): void {
-    try {
-        $registro = $this->MiModelo->Find((int) ($this->params['id'] ?? 0));
+// Errores de negocio en un controlador: ControllerException con el código HTTP correcto
+$model->Save() or throw new ControllerException((string) $model->_error, $code);
 
-        if ($registro->counter() > 0):
-            // if positivo — nunca un return anticipado para evitar
-            // esto (ver "Control de flujo — return vs throw vs if
-            // positivo" más abajo)
-            $this->data = $registro;
-            $this->render = ['file' => 'admin/mi_modelo_detail.phtml'];
-        else:
-            $this->setResponseCode(HTTP_404);
-            $this->render = ['text' => 'Registro no encontrado.'];
-        endif;
-    } catch (\Exception $e) {
-        $this->setResponseCode(HTTP_500);
-        $this->render = ['text' => 'Ocurrió un error al cargar la página.'];
-    }
-}
+// INCORRECTO — nunca
+$model->Save() or trigger_error($model->_error, E_USER_ERROR);
 ```
 
-Caso aplicado: `AdminController::workflowexecutiondetailAction()` —
-ver `.claude/specs/vista-ejecucion/design.md` y el hallazgo de
-seguridad que originó esta regla (bypass de autenticación real,
-`MainController::requireLogin()`).
+Scripts de línea de comandos: un `try/catch` de nivel superior que escriba el mensaje en STDERR y termine con código distinto de cero. La guardia `testErrorHandlingGuard` falla si aparece `E_USER_ERROR` en `app/`, `migrations/` o `tests/`.
 
 ### Sanitización de datos
 
 ```php
 // Siempre en hooks before_save del modelo
 public function sanitizarCampo(): void {
-    $this->campo = htmlentities(trim($this->campo) ?? '', ENT_QUOTES, 'UTF-8', false);
+    $this->campo = htmlentities($this->campo ?? '', ENT_QUOTES, 'UTF-8', false);
 }
 
-// En controladores al recibir datos de formulario, esto sólo aplica si el campo no es un modelo (ej. login, search, etc.)
-$nombre = htmlentities(trim($data[0]), ENT_QUOTES, 'UTF-8', false);
+// En controladores al recibir datos de formulario
+$nombre = htmlentities(trim($data[0]), ENT_QUOTES, 'ISO-8859-15', false);
 ```
 
 ### Casting explícito
@@ -289,7 +210,7 @@ $nombre = htmlentities(trim($data[0]), ENT_QUOTES, 'UTF-8', false);
 ```php
 // Siempre castear IDs y enteros de params
 $id = (int) $this->params['id'];
-$id = (int) $this->params[1];
+$id = (integer) $this->params[1];
 
 // Castear resultados de COUNT
 $total = (int) $this->Model->Find(['fields' => 'COUNT(id) AS total'])->total;
@@ -439,228 +360,3 @@ miMetodo(param) { }
 - Una feature = una rama
 - No commitear `.env` ni `.env.secrets` (están en `.gitignore`)
 - No commitear `tmp/`, `vendor/` ni `app/webroot/dist/`
-
----
-
-## Sin métodos ni atributos estáticos
-
-Jamás usar métodos estáticos ni atributos estáticos propios.
-Solo se permiten recursos estáticos nativos del lenguaje PHP:
-`ClasePHP::CONSTANTE`, `PDO::ATTR_*`, etc.
-Siempre usar instancias de objetos.
-
-```php
-// MAL
-$setting = Setting::get();
-
-// BIEN
-$setting = $this->Setting->Find([':first']);
-```
-
-## Retorno único — código óptimo
-
-Evitar múltiples `return` en un método. Mantener un flujo de
-retorno único usando índices calculados cuando sea posible.
-
-```php
-// MAL
-if ($a) return 'x';
-if ($b) return 'y';
-return 'z';
-
-// BIEN
-$values = ['z', 'y', 'x'];
-return $values[(int)$a + (int)$b];
-```
-
-## Control de flujo — return vs throw vs if positivo
-
-### Regla
-
-- `throw` → cuando la condición es un error que debe
-  detener la ejecución (fail fast real)
-- `if` positivo → cuando la condición define cuándo
-  ejecutar algo (sin return silencioso)
-- `return` anticipado → solo aceptable cuando hay
-  múltiples condiciones de error con throw previas
-  y continuar sería anidar excesivamente
-
-### Anti-patrones — nunca hacer esto
-
-```php
-// MAL — return silencioso en lugar de if positivo
-public function validateSomething(): void {
-    if (empty($this->id)):
-        return;
-    endif;
-    // lógica...
-}
-
-// MAL — return silencioso en controlador
-public function someAction(): void {
-    if (!$this->someCondition()):
-        return;
-    endif;
-    // lógica...
-}
-```
-
-### Correcto
-
-```php
-// BIEN — if positivo (la condición define cuándo ejecutar)
-public function validateSomething(): void {
-    if (!empty($this->id)):
-        // lógica...
-    endif;
-}
-
-// BIEN — fail fast real con throw
-public function validateSomething(): void {
-    if (empty($this->name)):
-        throw new \Exception('Nombre requerido');
-    endif;
-    // lógica continúa con garantía
-}
-
-// BIEN — return aceptable después de múltiples throws
-public function someAction(): void {
-    if (empty($input)):
-        throw new ControllerException('...', HTTP_400);
-    endif;
-    if (!$this->condition()):
-        throw new ControllerException('...', HTTP_422);
-    endif;
-    // aquí un return temprano es aceptable
-    // si evita anidamiento excesivo
-}
-```
-
-### Aplica a
-
-- Modelos (hooks before_save, validaciones)
-- Controladores (acciones, métodos privados)
-- Traits, helpers y servicios
-- Todo el proyecto sin excepción
-
-## Bloque de definiciones al tope del scope
-
-### Regla
-
-Todas las variables (y constantes locales) de un método,
-función o closure se declaran juntas en un bloque al
-inicio del scope — nunca intercaladas entre líneas de
-lógica, condicionales o llamadas a otros métodos.
-
-Esto aplica incluso cuando se sigue el principio de
-"fail fast" (throw temprano) — el fail fast define
-CUÁNDO se interrumpe la ejecución, no dónde se declaran
-las variables. Ambas reglas conviven: primero el bloque
-de definiciones, luego la lógica (que puede incluir
-throws tempranos).
-
-### Anti-patrón — nunca hacer esto
-
-```php
-public function ejemploAction(): void {
-    $a = $this->algo();
-    if ($a <= 0):
-        throw new ControllerException('...', HTTP_400);
-    endif;
-
-    $b = $this->otraCosa(); // ← declarada a mitad
-                             //   de la lógica
-    if (empty($b)):
-        throw new ControllerException('...', HTTP_404);
-    endif;
-
-    $c = $b->calculo(); // ← más variables intercaladas
-    // ...
-}
-```
-
-### Correcto
-
-```php
-public function ejemploAction(): void {
-    // Bloque de definiciones — todo al inicio
-    $a = $this->algo();
-    $b = $this->otraCosa();
-    $c = null; // si depende de validación previa,
-               // se inicializa aquí y se asigna
-               // después en la lógica
-
-    // Lógica — después del bloque de definiciones
-    if ($a <= 0):
-        throw new ControllerException('...', HTTP_400);
-    endif;
-    if (empty($b)):
-        throw new ControllerException('...', HTTP_404);
-    endif;
-
-    $c = $b->calculo();
-    // ...
-}
-```
-
-### Casos límite
-
-- Si una variable solo tiene sentido DESPUÉS de un
-  early-throw (ej: depende de que otra variable ya
-  esté validada como no-vacía), se declara con un
-  valor inicial neutro (null, 0, '', []) en el bloque
-  de definiciones, y se le asigna el valor real en
-  la lógica posterior
-- Las variables de un foreach/while (el iterador en
-  sí) no están sujetas a esta regla — son parte del
-  control de flujo del bucle, no declaraciones sueltas
-- Aplica a PHP (controladores, modelos, traits) y a
-  JS de componentes DumboJS por igual
-
-## Valores mágicos — constantes globales
-
-### Regla
-
-Cualquier valor numérico o string usado como umbral,
-límite, o comparación que se repita en más de un lugar
-del código, o que tenga un significado no evidente por
-sí mismo, debe definirse como constante en
-`config/host.php` — nunca como literal hardcodeado
-repetido en múltiples archivos.
-
-### Ejemplos de valores que SÍ requieren constante
-
-```php
-// MAL — literal repetido sin nombre, significado
-// no evidente
-if ($discount > 0.009): ...
-if (abs($amount - $expected) < 0.009): ...
-
-// BIEN — constante nombrada en config/host.php
-define('MONEY_EPSILON', 0.009);
-if ($discount > MONEY_EPSILON): ...
-if (abs($amount - $expected) < MONEY_EPSILON): ...
-```
-
-### Cuándo aplica
-
-- Umbrales de comparación (epsilon, tolerancias)
-- Límites de negocio (días de gracia, montos mínimos,
-  cantidad máxima de reintentos)
-- Cualquier "número mágico" que aparezca 2+ veces
-  en el código
-
-### Cuándo NO aplica
-
-- Valores que ya están en params/settings del proyecto
-  (esos van en `seeds.php`, no en `host.php` — son
-  configurables por proyecto, no globales del sistema)
-- Valores usados una sola vez con significado evidente
-  en su contexto inmediato (ej: `array_slice($arr, 0, 5)`
-  para "primeros 5 elementos" en un contexto claro)
-
-### Ubicación
-
-Todas las constantes globales del sistema (no
-configurables por proyecto) van en `config/host.php`,
-agrupadas con comentario explicando su propósito.
